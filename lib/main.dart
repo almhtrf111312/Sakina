@@ -8,8 +8,7 @@ import 'core/i18n/app_localizations.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
 import 'data/notifications/prayer_alarm_sync.dart';
-import 'data/settings/settings_repository.dart' show sharedPreferencesProvider;
-import 'domain/models/settings_model.dart';
+import 'data/settings/settings_repository.dart';
 import 'features/home/home_screen.dart';
 import 'features/azkar/azkar_screen.dart';
 import 'features/qibla/qibla_screen.dart';
@@ -19,10 +18,6 @@ import 'features/settings/settings_screen.dart';
 // ---------------------------------------------------------------------------
 // Providers
 // ---------------------------------------------------------------------------
-
-final settingsProvider = StateNotifierProvider<SettingsNotifier, SettingsModel>(
-  (ref) => SettingsNotifier(),
-);
 
 final currentTabProvider = StateProvider<int>((ref) => 0);
 
@@ -71,17 +66,19 @@ class SakinaApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(settingsProvider);
+    final settings = ref.watch(appSettingsProvider);
 
     final themeMode = switch (settings.themeMode) {
       AppThemeMode.night => ThemeMode.dark,
       AppThemeMode.day => ThemeMode.light,
       AppThemeMode.amoled => ThemeMode.dark,
+      AppThemeMode.systemAuto => ThemeMode.system,
+      AppThemeMode.sunriseAuto => ThemeMode.system,
     };
 
-    final locale = Locale(settings.language.code);
+    final locale = Locale(settings.languageCode);
 
-    final isRtl = settings.language == AppLanguage.arabic;
+    final isRtl = settings.languageCode == 'ar';
 
     return MaterialApp(
       title: AppConstants.appName,
@@ -161,7 +158,6 @@ class _SakinaShellState extends ConsumerState<SakinaShell>
   @override
   Widget build(BuildContext context) {
     final currentTab = ref.watch(currentTabProvider);
-    final settings = ref.watch(settingsProvider);
     // Keep native adhan alarms in sync with prayer times & settings.
     ref.watch(prayerAlarmSyncProvider);
     final l10n = AppLocalizations.of(context);
