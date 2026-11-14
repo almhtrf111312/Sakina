@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wallpaper xmlns:android="http://schemas.android.com/apk/res/android"
+    android:thumbnail="@drawable/ic_mosque"
+    android:description="@string/wallpaper_description"
+    android:settingsActivity="com.sakina.app.MainActivity"
+    android:author="@string/app_name" />

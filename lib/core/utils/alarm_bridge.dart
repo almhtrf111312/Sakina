@@ -1,0 +1,229 @@
+import 'dart:convert';
+import 'package:flutter/services.dart';
+
+/// Flutter MethodChannel wrapper for calling Kotlin AlarmScheduler and AodActivity.
+class AlarmBridge {
+  static const MethodChannel _alarmChannel =
+      MethodChannel('com.sakina.app/alarm');
+  static const MethodChannel _aodChannel = MethodChannel('com.sakina.app/aod');
+  static const EventChannel _alarmEventChannel =
+      EventChannel('com.sakina.app/alarm_events');
+
+  // ─── Alarm / Scheduler Methods ───────────────────────────────────────────
+
+  /// Schedule prayer alarms for a list of prayer times.
+  /// [prayers] is a list of maps with keys: name, timeMs, notificationType,
+  /// soundId, volume, gradualVolume, preAdhanMinutes, iqamaMinutes.
+  static Future<void> schedulePrayerAlarms(
+      List<Map<String, dynamic>> prayers) async {
+    try {
+      await _alarmChannel.invokeMethod(
+          'schedulePrayerAlarms', {'prayers': jsonEncode(prayers)});
+    } on PlatformException catch (e) {
+      throw AlarmBridgeException('schedulePrayerAlarms failed: ${e.message}');
+    }
+  }
+
+  /// Cancel all scheduled alarms.
+  static Future<void> cancelAllAlarms() async {
+    try {
+      await _alarmChannel.invokeMethod('cancelAllAlarms');
+    } on PlatformException catch (e) {
+      throw AlarmBridgeException('cancelAllAlarms failed: ${e.message}');
+    }
+  }
+
+  /// Cancel a specific alarm by prayer name.
+  static Future<void> cancelAlarm(String prayerName) async {
+    try {
+      await _alarmChannel
+          .invokeMethod('cancelAlarm', {'prayerName': prayerName});
+    } on PlatformException catch (e) {
+      throw AlarmBridgeException('cancelAlarm failed: ${e.message}');
+    }
+  }
+
+  /// Check all alarm-related permissions, returns a map of permission → bool.
+  static Future<Map<String, bool>> checkPermissions() async {
+    try {
+      final result = await _alarmChannel.invokeMethod('checkPermissions');
+      return Map<String, bool>.from(result as Map);
+    } on PlatformException catch (e) {
+      throw AlarmBridgeException('checkPermissions failed: ${e.message}');
+    }
+  }
+
+  /// Request SCHEDULE_EXACT_ALARM permission (opens system settings on Android 12+).
+  static Future<void> requestExactAlarmPermission() async {
+    try {
+      await _alarmChannel.invokeMethod('requestExactAlarmPermission');
+    } on PlatformException catch (e) {
+      throw AlarmBridgeException(
+          'requestExactAlarmPermission failed: ${e.message}');
+    }
+  }
+
+  /// Request battery optimization exemption (opens system settings).
+  static Future<void> requestBatteryOptimizationExemption() async {
+    try {
+      await _alarmChannel
+          .invokeMethod('requestBatteryOptimizationExemption');
+    } on PlatformException catch (e) {
+      throw AlarmBridgeException(
+          'requestBatteryOptimizationExemption failed: ${e.message}');
+    }
+  }
+
+  /// Play a test adhan sound.
+  static Future<void> testAdhan(
+      {required String soundId, required double volume}) async {
+    try {
+      await _alarmChannel
+          .invokeMethod('testAdhan', {'soundId': soundId, 'volume': volume});
+    } on PlatformException catch (e) {
+      throw AlarmBridgeException('testAdhan failed: ${e.message}');
+    }
+  }
+
+  /// Stop any currently playing adhan/test sound.
+  static Future<void> stopTestAdhan() async {
+    try {
+      await _alarmChannel.invokeMethod('stopTestAdhan');
+    } on PlatformException catch (e) {
+      throw AlarmBridgeException('stopTestAdhan failed: ${e.message}');
+    }
+  }
+
+  /// Stream of alarm events from native (e.g. alarm fired, error).
+  static Stream<AlarmEvent> get alarmEvents {
+    return _alarmEventChannel.receiveBroadcastStream().map((dynamic event) {
+      final map = Map<String, dynamic>.from(event as Map);
+      return AlarmEvent(
+        type: map['type'] as String,
+        prayerName: map['prayerName'] as String?,
+        message: map['message'] as String?,
+      );
+    });
+  }
+
+  // ─── AOD Methods ─────────────────────────────────────────────────────────
+
+  /// Show the native AOD screen (AodActivity), passing prayer data.
+  static Future<void> showAodScreen(Map<String, dynamic> prayerData) async {
+    try {
+      await _aodChannel
+          .invokeMethod('showAodScreen', {'data': jsonEncode(prayerData)});
+    } on PlatformException catch (e) {
+      throw AlarmBridgeException('showAodScreen failed: ${e.message}');
+    }
+  }
+
+  /// Hide/finish the AOD screen.
+  static Future<void> hideAodScreen() async {
+    try {
+      await _aodChannel.invokeMethod('hideAodScreen');
+    } on PlatformException catch (e) {
+      throw AlarmBridgeException('hideAodScreen failed: ${e.message}');
+    }
+  }
+
+  /// Returns true if the device supports AOD (can draw over lock screen).
+  static Future<bool> isAodSupported() async {
+    try {
+      final result = await _aodChannel.invokeMethod('isAodSupported');
+      return result as bool;
+    } on PlatformException catch (e) {
+      throw AlarmBridgeException('isAodSupported failed: ${e.message}');
+    }
+  }
+
+  /// Push updated data (prayer times, settings) to the running AOD screen.
+  static Future<void> updateAodData(Map<String, dynamic> data) async {
+    try {
+      await _aodChannel
+          .invokeMethod('updateAodData', {'data': jsonEncode(data)});
+    } on PlatformException catch (e) {
+      throw AlarmBridgeException('updateAodData failed: ${e.message}');
+    }
+  }
+
+  /// Open DRAW_OVER_OTHER_APPS system settings for the app.
+  static Future<void> requestDrawOverApps() async {
+    try {
+      await _aodChannel.invokeMethod('requestDrawOverApps');
+    } on PlatformException catch (e) {
+      throw AlarmBridgeException('requestDrawOverApps failed: ${e.message}');
+    }
+  }
+
+  // ─── Live Lockscreen Wallpaper Methods ─────────────────────────────────────
+
+  /// Set Sakina as the Live Wallpaper (lock screen & home screen).
+  static Future<bool> setAsLockscreenWallpaper() async {
+    try {
+      final result = await _aodChannel.invokeMethod('setAsLockscreenWallpaper');
+      return result == true;
+    } on PlatformException catch (e) {
+      throw AlarmBridgeException('setAsLockscreenWallpaper failed: ${e.message}');
+    }
+  }
+
+  /// Check if Live Wallpaper is supported on this device.
+  static Future<bool> isWallpaperSupported() async {
+    try {
+      final result = await _aodChannel.invokeMethod('isWallpaperSupported');
+      return result as bool? ?? false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  /// Update wallpaper preferences (clock style, colors, prayer times, etc.)
+  static Future<void> updateWallpaperSettings({
+    int? clockStyle,
+    int? accentColor,
+    bool? showHijri,
+    bool? showGregorian,
+    bool? showCountdown,
+    bool? showPrayersRow,
+    int? hijriOffset,
+    bool? useArabicNumerals,
+    Map<String, dynamic>? prayerData,
+  }) async {
+    try {
+      await _aodChannel.invokeMethod('updateWallpaperSettings', {
+        if (clockStyle != null) 'clockStyle': clockStyle,
+        if (accentColor != null) 'accentColor': accentColor,
+        if (showHijri != null) 'showHijri': showHijri,
+        if (showGregorian != null) 'showGregorian': showGregorian,
+        if (showCountdown != null) 'showCountdown': showCountdown,
+        if (showPrayersRow != null) 'showPrayersRow': showPrayersRow,
+        if (hijriOffset != null) 'hijriOffset': hijriOffset,
+        if (useArabicNumerals != null) 'useArabicNumerals': useArabicNumerals,
+        if (prayerData != null) 'prayerData': prayerData,
+      });
+    } on PlatformException catch (e) {
+      throw AlarmBridgeException('updateWallpaperSettings failed: ${e.message}');
+    }
+  }
+}
+
+class AlarmBridgeException implements Exception {
+  final String message;
+  AlarmBridgeException(this.message);
+
+  @override
+  String toString() => 'AlarmBridgeException: $message';
+}
+
+class AlarmEvent {
+  final String type;
+  final String? prayerName;
+  final String? message;
+
+  const AlarmEvent({
+    required this.type,
+    this.prayerName,
+    this.message,
+  });
+}

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AMOLED / Night background -->
+    <color name="launch_background">#000000</color>
+    <!-- Primary teal -->
+    <color name="primary">#5FB59B</color>
+    <!-- Secondary gold -->
+    <color name="secondary">#C9A86A</color>
+    <!-- Surface -->
+    <color name="surface">#0E1514</color>
+</resources>

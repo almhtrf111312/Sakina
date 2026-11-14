@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">سكينة</string>
+    <string name="adhan_channel_name">أذان الصلاة</string>
+    <string name="adhan_channel_description">إشعارات وقت الصلاة والأذان</string>
+    <string name="prayer_channel_name">أوقات الصلاة</string>
+    <string name="prayer_channel_description">تذكيرات أوقات الصلاة</string>
+    <string name="general_channel_name">إشعارات عامة</string>
+    <string name="general_channel_description">الإشعارات العامة لتطبيق سكينة</string>
+    <string name="stop_adhan">إيقاف الأذان</string>
+    <string name="snooze_adhan">تأجيل 5 دقائق</string>
+    <string name="fajr">الفجر</string>
+    <string name="dhuhr">الظهر</string>
+    <string name="asr">العصر</string>
+    <string name="maghrib">المغرب</string>
+    <string name="isha">العشاء</string>
+    <string name="sunrise">الشروق</string>
+    <string name="prayer_time_notification">حان وقت صلاة %1$s</string>
+    <string name="workmanager_job_tag">sakina_prayer_scheduler</string>
+    <string name="widget_description">ودجت مواقيت الصلاة القادمة والعد التنازلي</string>
+    <string name="wallpaper_description">خلفية الشاشة الدائمة لقفل الشاشة مع مواقيت الصلاة والساعة</string>
+</resources>
