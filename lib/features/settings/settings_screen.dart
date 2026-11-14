@@ -106,19 +106,43 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         return 'أبيض نقي';
       case AccentColor.blue:
         return 'أزرق سماوي';
+      case AccentColor.teal:
+        return 'تركوازي';
+      case AccentColor.purple:
+        return 'بنفسجي';
+      case AccentColor.rose:
+        return 'وردي';
+      case AccentColor.orange:
+        return 'برتقالي';
+      case AccentColor.red:
+        return 'أحمر';
+      case AccentColor.lime:
+        return 'أخضر ليموني';
     }
   }
 
   Color _accentColorValue(AccentColor c) {
     switch (c) {
       case AccentColor.green:
-        return const Color(0xFF5FB59B);
+        return AppColors.nightPrimary;
       case AccentColor.gold:
         return const Color(0xFFD9B46A);
       case AccentColor.white:
-        return const Color(0xFFE8EFEC);
+        return AppColors.nightTextPrimary;
       case AccentColor.blue:
         return const Color(0xFF6FA8DC);
+      case AccentColor.teal:
+        return const Color(0xFF4DD0C8);
+      case AccentColor.purple:
+        return const Color(0xFFB39DDB);
+      case AccentColor.rose:
+        return const Color(0xFFF28DB2);
+      case AccentColor.orange:
+        return const Color(0xFFF0A15A);
+      case AccentColor.red:
+        return const Color(0xFFE57373);
+      case AccentColor.lime:
+        return const Color(0xFFB5D96B);
     }
   }
 
@@ -997,12 +1021,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   Padding(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text('اللون المميز (Accent Color)',
                             style: TextStyle(fontFamily: 'Cairo', fontSize: 15)),
-                        Row(
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
                           children: AccentColor.values.map((acc) {
                             final cv = _accentColorValue(acc);
                             final isSel = settings.accentColor == acc;
@@ -1010,9 +1037,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               onTap: () => notifier.update(
                                   (s) => s.copyWith(accentColor: acc)),
                               child: Container(
-                                margin: const EdgeInsets.only(left: 8),
-                                width: 32,
-                                height: 32,
+                                width: 36,
+                                height: 36,
                                 decoration: BoxDecoration(
                                   color: cv,
                                   shape: BoxShape.circle,

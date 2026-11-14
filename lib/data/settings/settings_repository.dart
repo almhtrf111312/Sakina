@@ -23,7 +23,7 @@ enum NumeralType { arabic, western }
 
 enum NotificationMode { fullAdhan, shortBeep, silent, vibrate, off }
 
-enum AccentColor { green, gold, white, blue }
+enum AccentColor { green, gold, white, blue, teal, purple, rose, orange, red, lime }
 
 class AppSettings {
   // ── Location & Calculation ─────────────────────────────────────────────
@@ -100,7 +100,7 @@ class AppSettings {
       'Maghrib': NotificationMode.fullAdhan,
       'Isha': NotificationMode.fullAdhan,
     },
-    this.selectedAdhanSound = 'adhan_takbeer',
+    this.selectedAdhanSound = 'adhan_5',
     this.adhanVolume = 1.0,
     this.gradualVolume = false,
     this.preAdhanReminderMinutes = 0,
@@ -324,7 +324,7 @@ class AppSettings {
                   en(NotificationMode.values, v as String?,
                       NotificationMode.fullAdhan))),
       selectedAdhanSound:
-          (j['selectedAdhanSound'] as String?) ?? 'adhan_takbeer',
+          (j['selectedAdhanSound'] as String?) ?? 'adhan_5',
       adhanVolume: (j['adhanVolume'] as num?)?.toDouble() ?? 1.0,
       gradualVolume: (j['gradualVolume'] as bool?) ?? false,
       preAdhanReminderMinutes: (j['preAdhanReminderMinutes'] as int?) ?? 0,

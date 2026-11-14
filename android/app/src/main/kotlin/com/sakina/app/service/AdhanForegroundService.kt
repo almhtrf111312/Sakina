@@ -58,7 +58,7 @@ class AdhanForegroundService : Service() {
         const val EXTRA_NOTIF_ID    = "notification_id"
 
         // Adhan asset filenames (placed in android/app/src/main/assets/audio/)
-        private const val ADHAN_ASSET_DEFAULT = "flutter_assets/assets/audio/adhan_takbeer.mp3"
+        private const val ADHAN_ASSET_DEFAULT = "flutter_assets/assets/audio/adhan_5.mp3"
         private const val ADHAN_ASSET_FAJR    = "flutter_assets/assets/audio/adhan_fajr.mp3"   // includes sobhi
 
         private const val DEFAULT_TIMEOUT_MS  = 3 * 60 * 1000L  // 3 min

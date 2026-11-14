@@ -95,8 +95,8 @@ class HeroPrayerCard extends ConsumerWidget {
                       fontWeight: FontWeight.w700,
                       fontFamily: 'Cairo',
                       color: isDark
-                          ? const Color(0xFFE8EFEC)
-                          : const Color(0xFF1B2A27),
+                          ? AppColors.nightTextPrimary
+                          : AppColors.dayTextPrimary,
                     ),
                   ),
                 ],
@@ -107,8 +107,8 @@ class HeroPrayerCard extends ConsumerWidget {
                 'حان موعدها الساعة $formattedTime',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: isDark
-                      ? const Color(0xFF9DB0AA)
-                      : const Color(0xFF607068),
+                      ? AppColors.nightTextSecondary
+                      : AppColors.dayTextSecondary,
                   fontFamily: 'Cairo',
                 ),
               ),
@@ -158,7 +158,7 @@ class HeroPrayerCard extends ConsumerWidget {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: isDark
-                            ? const Color(0xFF0E1514).withOpacity(0.6)
+                            ? AppColors.nightBackground.withOpacity(0.6)
                             : Colors.white,
                         boxShadow: [
                           BoxShadow(
@@ -178,8 +178,8 @@ class HeroPrayerCard extends ConsumerWidget {
                             style: theme.textTheme.labelMedium?.copyWith(
                               fontFamily: 'Cairo',
                               color: isDark
-                                  ? const Color(0xFF9DB0AA)
-                                  : const Color(0xFF607068),
+                                  ? AppColors.nightTextSecondary
+                                  : AppColors.dayTextSecondary,
                               fontSize: 12,
                             ),
                           ),
@@ -192,8 +192,8 @@ class HeroPrayerCard extends ConsumerWidget {
                               fontWeight: FontWeight.bold,
                               letterSpacing: 2.0,
                               color: isDark
-                                  ? const Color(0xFFE8EFEC)
-                                  : const Color(0xFF1B2A27),
+                                  ? AppColors.nightTextPrimary
+                                  : AppColors.dayTextPrimary,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -202,16 +202,16 @@ class HeroPrayerCard extends ConsumerWidget {
                                 horizontal: 10, vertical: 3),
                             decoration: BoxDecoration(
                               color: isDark
-                                  ? const Color(0xFFC9A86A).withOpacity(0.18)
-                                  : const Color(0xFFA9884A).withOpacity(0.15),
+                                  ? AppColors.nightSecondary.withOpacity(0.18)
+                                  : AppColors.daySecondary.withOpacity(0.15),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
                               'سكينة وطمأنينة',
                               style: theme.textTheme.labelSmall?.copyWith(
                                 color: isDark
-                                    ? const Color(0xFFC9A86A)
-                                    : const Color(0xFFA9884A),
+                                    ? AppColors.nightSecondary
+                                    : AppColors.daySecondary,
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'Cairo',
                                 fontSize: 10,
@@ -242,10 +242,10 @@ class HeroPrayerCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(28),
         color: isDark ? AppColors.nightSurface : Colors.white,
       ),
-      child: const Center(
+      child: Center(
         child: CircularProgressIndicator(
           strokeWidth: 2.5,
-          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF5FB59B)),
+          valueColor: AlwaysStoppedAnimation<Color>(AppColors.nightPrimary),
         ),
       ),
     );
@@ -283,7 +283,7 @@ class _LiveClockState extends State<_LiveClock> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primary = isDark ? AppColors.nightPrimary : AppColors.dayPrimary;
-    final sub = isDark ? const Color(0xFF9DB0AA) : const Color(0xFF607068);
+    final sub = isDark ? AppColors.nightTextSecondary : AppColors.dayTextSecondary;
     String two(int n) => n.toString().padLeft(2, '0');
     final date = DateFormat('EEEE، d MMMM yyyy', 'ar').format(_now);
     return Column(

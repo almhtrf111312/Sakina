@@ -21,9 +21,19 @@ android {
         versionName = flutter.versionName
     }
 
+    // Fixed signing key (committed) so every CI build can be installed over the previous one.
+    signingConfigs {
+        create("sakina") {
+            storeFile = file("sakina-release.jks")
+            storePassword = "sakina2026"
+            keyAlias = "sakina"
+            keyPassword = "sakina2026"
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("sakina")
         }
     }
 }

@@ -19,61 +19,46 @@ class AdhanSoundOption {
   });
 }
 
-/// Default sound: a short takbeer ("الله أكبر الله أكبر", ~5 seconds).
-const String kDefaultAdhanSound = 'adhan_takbeer';
+/// Default sound: the shortest adhan (الأذان الخامس, ~11 s).
+const String kDefaultAdhanSound = 'adhan_5';
 
 /// Known sounds. A sound only appears in the picker when its file
-/// `assets/audio/<id>.mp3` exists, so adding a file with one of these names
-/// (or any `adhan_*.mp3`) makes it show up automatically.
+/// `assets/audio/<id>.mp3` exists (any extra `adhan_*.mp3` is added too).
 const List<AdhanSoundOption> adhanSoundList = [
   AdhanSoundOption(
-    id: 'adhan_takbeer',
-    nameAr: 'تكبير فقط (الله أكبر الله أكبر)',
-    muadhinAr: 'الافتراضي',
-    durationText: '٥ ثوانٍ',
-    descriptionAr: 'تكبيرتان قصيرتان بصوت هادئ، وهو الصوت الافتراضي للأذان.',
-  ),
-  AdhanSoundOption(
-    id: 'adhan_mecca',
-    nameAr: 'أذان الحرم المكي',
-    muadhinAr: 'مكة المكرمة',
-    durationText: '',
-    descriptionAr: 'الأذان كاملاً.',
-  ),
-  AdhanSoundOption(
-    id: 'adhan_madina',
-    nameAr: 'أذان المسجد النبوي',
-    muadhinAr: 'المدينة المنورة',
-    durationText: '',
-    descriptionAr: 'الأذان كاملاً.',
-  ),
-  AdhanSoundOption(
-    id: 'adhan_aqsa',
-    nameAr: 'أذان المسجد الأقصى',
-    muadhinAr: 'القدس',
-    durationText: '',
-    descriptionAr: 'الأذان كاملاً.',
-  ),
-  AdhanSoundOption(
-    id: 'adhan_egypt',
-    nameAr: 'أذان مصري',
-    muadhinAr: 'القاهرة',
-    durationText: '',
-    descriptionAr: 'الأذان كاملاً.',
-  ),
-  AdhanSoundOption(
-    id: 'adhan_sham',
-    nameAr: 'أذان شامي',
-    muadhinAr: 'دمشق',
-    durationText: '',
-    descriptionAr: 'الأذان كاملاً.',
-  ),
-  AdhanSoundOption(
-    id: 'adhan_fajr',
-    nameAr: 'أذان الفجر',
+    id: 'adhan_1',
+    nameAr: 'الأذان الأول',
     muadhinAr: '',
-    durationText: '',
-    descriptionAr: 'الأذان كاملاً مع "الصلاة خير من النوم".',
+    durationText: '٢٢ ثانية',
+    descriptionAr: 'الأذان كاملاً.',
+  ),
+  AdhanSoundOption(
+    id: 'adhan_2',
+    nameAr: 'الأذان الثاني',
+    muadhinAr: '',
+    durationText: '٣٠ ثانية',
+    descriptionAr: 'الأذان كاملاً.',
+  ),
+  AdhanSoundOption(
+    id: 'adhan_3',
+    nameAr: 'الأذان الثالث',
+    muadhinAr: '',
+    durationText: '١٨ ثانية',
+    descriptionAr: 'الأذان كاملاً.',
+  ),
+  AdhanSoundOption(
+    id: 'adhan_4',
+    nameAr: 'الأذان الرابع',
+    muadhinAr: '',
+    durationText: '١٩ ثانية',
+    descriptionAr: 'الأذان كاملاً.',
+  ),
+  AdhanSoundOption(
+    id: 'adhan_5',
+    nameAr: 'الأذان الخامس (الافتراضي)',
+    muadhinAr: 'الأقصر',
+    durationText: '١١ ثانية',
+    descriptionAr: 'الأذان الأقصر مدة، وهو الصوت الافتراضي.',
   ),
 ];
 

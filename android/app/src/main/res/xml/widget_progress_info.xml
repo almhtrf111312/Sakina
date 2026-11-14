@@ -8,4 +8,5 @@
     android:initialLayout="@layout/widget_progress_card"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
+    android:previewImage="@drawable/preview_progress"
     android:description="@string/widget_description" />

@@ -189,7 +189,7 @@ abstract final class AppColors {
 abstract final class AppPalette {
   static bool amoled = false;
 
-  /// 'green' | 'gold' | 'white' | 'blue'
+  /// green | gold | white | blue | teal | purple | rose | orange | red | lime
   static String accent = 'green';
 
   static Color get primaryDark {
@@ -200,6 +200,18 @@ abstract final class AppPalette {
         return const Color(0xFFE8EFEC);
       case 'blue':
         return const Color(0xFF6FA8DC);
+      case 'teal':
+        return const Color(0xFF4DD0C8);
+      case 'purple':
+        return const Color(0xFFB39DDB);
+      case 'rose':
+        return const Color(0xFFF28DB2);
+      case 'orange':
+        return const Color(0xFFF0A15A);
+      case 'red':
+        return const Color(0xFFE57373);
+      case 'lime':
+        return const Color(0xFFB5D96B);
       default:
         return const Color(0xFF5FB59B);
     }
@@ -213,6 +225,18 @@ abstract final class AppPalette {
         return const Color(0xFF3B4A46);
       case 'blue':
         return const Color(0xFF3F78B5);
+      case 'teal':
+        return const Color(0xFF1F8A84);
+      case 'purple':
+        return const Color(0xFF6A4FB0);
+      case 'rose':
+        return const Color(0xFFC2477A);
+      case 'orange':
+        return const Color(0xFFC9702A);
+      case 'red':
+        return const Color(0xFFB83A3A);
+      case 'lime':
+        return const Color(0xFF6E9A1F);
       default:
         return const Color(0xFF2F7F69);
     }

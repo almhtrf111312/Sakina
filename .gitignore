@@ -55,3 +55,4 @@ lcov.info
 .env
 .env.*
 !.env.example
+!android/app/sakina-release.jks

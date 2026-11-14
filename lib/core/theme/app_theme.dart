@@ -25,6 +25,7 @@ class AppTheme {
       fontFamily: 'Cairo',
       colorScheme: ColorScheme.dark(
         primary: primary,
+        surfaceTint: Colors.transparent,
         onPrimary: const Color(0xFF0E1514),
         secondary: secondary,
         onSecondary: const Color(0xFF0E1514),
@@ -213,6 +214,7 @@ class AppTheme {
       fontFamily: 'Cairo',
       colorScheme: ColorScheme.light(
         primary: primary,
+        surfaceTint: Colors.transparent,
         onPrimary: Colors.white,
         secondary: secondary,
         onSecondary: Colors.white,
@@ -397,6 +399,7 @@ class AppTheme {
       fontFamily: 'Cairo',
       colorScheme: ColorScheme.dark(
         primary: primary,
+        surfaceTint: Colors.transparent,
         onPrimary: Colors.black,
         secondary: secondary,
         onSecondary: Colors.black,

@@ -218,7 +218,7 @@ class _CompassDialPainter extends CustomPainter {
     );
 
     final kaabaBadgePaint = Paint()
-      ..color = const Color(0xFFC9A86A)
+      ..color = AppColors.nightSecondary
       ..style = PaintingStyle.fill;
     canvas.drawCircle(kaabaOffset, 7.0, kaabaBadgePaint);
 
@@ -291,7 +291,7 @@ class _QiblaNeedlePainter extends CustomPainter {
 
     final primaryGold = isAligned
         ? AppColors.success
-        : (isDark ? const Color(0xFFD4AF37) : const Color(0xFFA9884A));
+        : (isDark ? const Color(0xFFD4AF37) : AppColors.daySecondary);
 
     // Top arrow pointing up towards Qibla
     final needlePath = Path();

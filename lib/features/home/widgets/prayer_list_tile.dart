@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../../core/utils/prayer_icons.dart';
 import '../../../data/settings/settings_repository.dart';
 import '../providers/home_providers.dart';
+import '../../../core/theme/app_colors.dart';
 
 class PrayerListTile extends ConsumerWidget {
   final String prayerName;
@@ -37,16 +38,16 @@ class PrayerListTile extends ConsumerWidget {
     // Highlight styles if this prayer is the next upcoming prayer
     final cardBg = isNext
         ? (isDark
-            ? const Color(0xFF1D2B28)
+            ? AppColors.nightElevated
             : const Color(0xFFE9F5F1))
         : (isDark
-            ? const Color(0xFF16211F)
+            ? AppColors.nightSurface
             : Colors.white);
 
     final borderColor = isNext
         ? (isDark
-            ? const Color(0xFF5FB59B)
-            : const Color(0xFF2F7F69))
+            ? AppColors.nightPrimary
+            : AppColors.dayPrimary)
         : Colors.transparent;
 
     return Container(
@@ -63,8 +64,8 @@ class PrayerListTile extends ConsumerWidget {
           if (isNext)
             BoxShadow(
               color: isDark
-                  ? const Color(0xFF5FB59B).withOpacity(0.12)
-                  : const Color(0xFF2F7F69).withOpacity(0.08),
+                  ? AppColors.nightPrimary.withOpacity(0.12)
+                  : AppColors.dayPrimary.withOpacity(0.08),
               blurRadius: 10,
               offset: const Offset(0, 4),
             )
@@ -84,8 +85,8 @@ class PrayerListTile extends ConsumerWidget {
             decoration: BoxDecoration(
               color: isNext
                   ? (isDark
-                      ? const Color(0xFF5FB59B).withOpacity(0.2)
-                      : const Color(0xFF2F7F69).withOpacity(0.15))
+                      ? AppColors.nightPrimary.withOpacity(0.2)
+                      : AppColors.dayPrimary.withOpacity(0.15))
                   : (isDark
                       ? Colors.white.withOpacity(0.05)
                       : Colors.black.withOpacity(0.04)),
@@ -96,11 +97,11 @@ class PrayerListTile extends ConsumerWidget {
               size: 20,
               color: isNext
                   ? (isDark
-                      ? const Color(0xFF5FB59B)
-                      : const Color(0xFF2F7F69))
+                      ? AppColors.nightPrimary
+                      : AppColors.dayPrimary)
                   : (isDark
-                      ? const Color(0xFF9DB0AA)
-                      : const Color(0xFF607068)),
+                      ? AppColors.nightTextSecondary
+                      : AppColors.dayTextSecondary),
             ),
           ),
           const SizedBox(width: 14),
@@ -115,8 +116,8 @@ class PrayerListTile extends ConsumerWidget {
                     fontFamily: 'Cairo',
                     fontWeight: isNext ? FontWeight.bold : FontWeight.w600,
                     color: isDark
-                        ? const Color(0xFFE8EFEC)
-                        : const Color(0xFF1B2A27),
+                        ? AppColors.nightTextPrimary
+                        : AppColors.dayTextPrimary,
                   ),
                 ),
                 if (isNext) ...[
@@ -126,8 +127,8 @@ class PrayerListTile extends ConsumerWidget {
                         horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
                       color: isDark
-                          ? const Color(0xFF5FB59B).withOpacity(0.2)
-                          : const Color(0xFF2F7F69).withOpacity(0.12),
+                          ? AppColors.nightPrimary.withOpacity(0.2)
+                          : AppColors.dayPrimary.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
@@ -137,8 +138,8 @@ class PrayerListTile extends ConsumerWidget {
                         fontWeight: FontWeight.bold,
                         fontSize: 10,
                         color: isDark
-                            ? const Color(0xFF5FB59B)
-                            : const Color(0xFF2F7F69),
+                            ? AppColors.nightPrimary
+                            : AppColors.dayPrimary,
                       ),
                     ),
                   ),
@@ -154,8 +155,8 @@ class PrayerListTile extends ConsumerWidget {
               fontFamily: 'Cairo',
               fontWeight: FontWeight.w600,
               color: isDark
-                  ? const Color(0xFFE8EFEC)
-                  : const Color(0xFF1B2A27),
+                  ? AppColors.nightTextPrimary
+                  : AppColors.dayTextPrimary,
             ),
           ),
           const SizedBox(width: 12),
@@ -177,8 +178,8 @@ class PrayerListTile extends ConsumerWidget {
       case NotificationMode.fullAdhan:
         icon = Icons.notifications_active_rounded;
         iconColor = isDark
-            ? const Color(0xFFC9A86A) // Gold
-            : const Color(0xFFA9884A);
+            ? AppColors.nightSecondary // Gold
+            : AppColors.daySecondary;
         tooltip = 'أذان كامل';
         break;
       case NotificationMode.silent:
@@ -186,15 +187,15 @@ class PrayerListTile extends ConsumerWidget {
       case NotificationMode.shortBeep:
         icon = Icons.notifications_rounded;
         iconColor = isDark
-            ? const Color(0xFF5FB59B) // Primary teal
-            : const Color(0xFF2F7F69);
+            ? AppColors.nightPrimary // Primary teal
+            : AppColors.dayPrimary;
         tooltip = 'تنبيه صامت / اهتزاز';
         break;
       case NotificationMode.off:
         icon = Icons.notifications_off_outlined;
         iconColor = isDark
-            ? const Color(0xFF9DB0AA).withOpacity(0.4)
-            : const Color(0xFF607068).withOpacity(0.4);
+            ? AppColors.nightTextSecondary.withOpacity(0.4)
+            : AppColors.dayTextSecondary.withOpacity(0.4);
         tooltip = 'معطل';
         break;
     }

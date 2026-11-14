@@ -5,7 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
+import 'dart:async';
+
 import '../../data/location/location_service.dart';
+import '../../data/location/place_search.dart';
 import '../../data/location/world_locations.dart';
 import '../../data/prayer/prayer_repository.dart';
 
@@ -21,6 +24,9 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
   WorldLocations? _world;
   WorldCountry? _country;
   String _query = '';
+  Timer? _debounce;
+  List<PlaceResult> _places = const [];
+  bool _searching = false;
 
   @override
   void initState() {
@@ -28,6 +34,51 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
     WorldLocations.load().then((w) {
       if (mounted) setState(() => _world = w);
     });
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onQuery(String v) {
+    setState(() => _query = v);
+    _debounce?.cancel();
+    if (_country != null || v.trim().length < 2) {
+      setState(() {
+        _places = const [];
+        _searching = false;
+      });
+      return;
+    }
+    setState(() => _searching = true);
+    _debounce = Timer(const Duration(milliseconds: 450), () async {
+      final r = await PlaceSearch.search(v);
+      if (!mounted || v != _query) return;
+      setState(() {
+        _places = r;
+        _searching = false;
+      });
+    });
+  }
+
+  Future<void> _choosePlace(PlaceResult p) async {
+    final loc = AppLocation(
+      latitude: p.lat,
+      longitude: p.lon,
+      elevation: p.elevation,
+      cityName: p.name,
+      countryName: [p.admin1, p.country]
+          .where((e) => e.isNotEmpty && e != p.name)
+          .join('، '),
+      isManual: true,
+    );
+    await ref.read(locationNotifierProvider.notifier).setManualLocation(loc);
+    await ref.read(prayerRepositoryProvider).invalidateCache();
+    ref.invalidate(prayerTimesProvider);
+    ref.invalidate(todayPrayerTimesProvider);
+    if (mounted) Navigator.of(context).pop();
   }
 
   Future<void> _choose(WorldCountry c, {WorldRegion? region}) async {
@@ -83,10 +134,10 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                   child: TextField(
                     key: ValueKey(country?.code ?? 'countries'),
-                    onChanged: (v) => setState(() => _query = v),
+                    onChanged: _onQuery,
                     decoration: InputDecoration(
                       hintText: country == null
-                          ? 'ابحث عن دولة...'
+                          ? 'ابحث عن دولة أو مدينة أو قرية...'
                           : 'ابحث عن محافظة / ولاية...',
                       prefixIcon: const Icon(Icons.search),
                     ),
@@ -105,10 +156,42 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
   Widget _countryList(WorldLocations world) {
     final items =
         world.countries.where((c) => _match(c.nameAr, c.nameEn)).toList();
+    final showPlaces = _query.trim().length >= 2;
+    final extra = showPlaces ? 1 + (_places.isEmpty ? 1 : _places.length) : 0;
     return ListView.builder(
-      itemCount: items.length,
+      itemCount: extra + items.length,
       itemBuilder: (_, i) {
-        final c = items[i];
+        if (showPlaces && i < extra) {
+          if (i == 0) {
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: Text(
+                _searching
+                    ? 'جارٍ البحث عن المدن والقرى...'
+                    : 'مدن وقرى ومحافظات مطابقة',
+                style: const TextStyle(fontFamily: 'Cairo', fontSize: 12),
+              ),
+            );
+          }
+          if (_places.isEmpty) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
+                _searching ? '' : 'لا توجد نتائج (يلزم اتصال بالإنترنت للبحث)',
+                style: const TextStyle(fontFamily: 'Cairo', fontSize: 12),
+              ),
+            );
+          }
+          final p = _places[i - 1];
+          return ListTile(
+            leading: const Icon(Icons.location_city_outlined),
+            title: Text(p.name, style: const TextStyle(fontFamily: 'Cairo')),
+            subtitle: Text(p.subtitle,
+                style: const TextStyle(fontFamily: 'Cairo', fontSize: 11)),
+            onTap: () => _choosePlace(p),
+          );
+        }
+        final c = items[i - extra];
         return ListTile(
           title: Text(c.name, style: const TextStyle(fontFamily: 'Cairo')),
           subtitle: c.nameAr.isNotEmpty

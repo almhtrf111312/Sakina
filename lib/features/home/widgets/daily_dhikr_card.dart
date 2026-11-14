@@ -22,12 +22,12 @@ class DailyDhikrCard extends ConsumerWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF16211F) : Colors.white,
+        color: isDark ? AppColors.nightSurface : Colors.white,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: isDark
-              ? const Color(0xFFC9A86A).withOpacity(0.2)
-              : const Color(0xFFA9884A).withOpacity(0.18),
+              ? AppColors.nightSecondary.withOpacity(0.2)
+              : AppColors.daySecondary.withOpacity(0.18),
           width: 1.2,
         ),
         boxShadow: [
@@ -51,16 +51,16 @@ class DailyDhikrCard extends ConsumerWidget {
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
                       color: isDark
-                          ? const Color(0xFFC9A86A).withOpacity(0.15)
-                          : const Color(0xFFA9884A).withOpacity(0.12),
+                          ? AppColors.nightSecondary.withOpacity(0.15)
+                          : AppColors.daySecondary.withOpacity(0.12),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.auto_awesome_rounded,
                       size: 18,
                       color: isDark
-                          ? const Color(0xFFC9A86A)
-                          : const Color(0xFFA9884A),
+                          ? AppColors.nightSecondary
+                          : AppColors.daySecondary,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -71,8 +71,8 @@ class DailyDhikrCard extends ConsumerWidget {
                       fontWeight: FontWeight.bold,
                       fontSize: 19,
                       color: isDark
-                          ? const Color(0xFFC9A86A)
-                          : const Color(0xFFA9884A),
+                          ? AppColors.nightSecondary
+                          : AppColors.daySecondary,
                     ),
                   ),
                 ],
@@ -82,8 +82,8 @@ class DailyDhikrCard extends ConsumerWidget {
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF5FB59B).withOpacity(0.15)
-                      : const Color(0xFF2F7F69).withOpacity(0.1),
+                      ? AppColors.nightPrimary.withOpacity(0.15)
+                      : AppColors.dayPrimary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -92,8 +92,8 @@ class DailyDhikrCard extends ConsumerWidget {
                     fontFamily: 'Cairo',
                     fontWeight: FontWeight.bold,
                     color: isDark
-                        ? const Color(0xFF5FB59B)
-                        : const Color(0xFF2F7F69),
+                        ? AppColors.nightPrimary
+                        : AppColors.dayPrimary,
                   ),
                 ),
               ),
@@ -106,7 +106,7 @@ class DailyDhikrCard extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
             decoration: BoxDecoration(
               color: isDark
-                  ? const Color(0xFF0E1514).withOpacity(0.6)
+                  ? AppColors.nightBackground.withOpacity(0.6)
                   : const Color(0xFFF9F8F5),
               borderRadius: BorderRadius.circular(16),
             ),
@@ -119,8 +119,8 @@ class DailyDhikrCard extends ConsumerWidget {
                 fontSize: 21,
                 height: 1.8,
                 color: isDark
-                    ? const Color(0xFFE8EFEC)
-                    : const Color(0xFF1B2A27),
+                    ? AppColors.nightTextPrimary
+                    : AppColors.dayTextPrimary,
               ),
             ),
           ),
@@ -134,8 +134,8 @@ class DailyDhikrCard extends ConsumerWidget {
                 Icons.format_quote_rounded,
                 size: 16,
                 color: isDark
-                    ? const Color(0xFF9DB0AA)
-                    : const Color(0xFF607068),
+                    ? AppColors.nightTextSecondary
+                    : AppColors.dayTextSecondary,
               ),
               const SizedBox(width: 6),
               Expanded(
@@ -148,8 +148,8 @@ class DailyDhikrCard extends ConsumerWidget {
                         fontFamily: 'Cairo',
                         height: 1.4,
                         color: isDark
-                            ? const Color(0xFF9DB0AA)
-                            : const Color(0xFF607068),
+                            ? AppColors.nightTextSecondary
+                            : AppColors.dayTextSecondary,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -160,8 +160,8 @@ class DailyDhikrCard extends ConsumerWidget {
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                         color: isDark
-                            ? const Color(0xFFC9A86A)
-                            : const Color(0xFFA9884A),
+                            ? AppColors.nightSecondary
+                            : AppColors.daySecondary,
                       ),
                     ),
                   ],
@@ -183,8 +183,8 @@ class DailyDhikrCard extends ConsumerWidget {
                 ),
                 style: TextButton.styleFrom(
                   foregroundColor: isDark
-                      ? const Color(0xFF5FB59B)
-                      : const Color(0xFF2F7F69),
+                      ? AppColors.nightPrimary
+                      : AppColors.dayPrimary,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 ),

@@ -62,15 +62,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       backgroundColor: isDark
-          ? const Color(0xFF0E1514)
-          : const Color(0xFFF6F4EE),
+          ? AppColors.nightBackground
+          : AppColors.dayBackground,
       body: SafeArea(
         child: RefreshIndicator(
           color: isDark
-              ? const Color(0xFF5FB59B)
-              : const Color(0xFF2F7F69),
+              ? AppColors.nightPrimary
+              : AppColors.dayPrimary,
           backgroundColor: isDark
-              ? const Color(0xFF16211F)
+              ? AppColors.nightSurface
               : Colors.white,
           onRefresh: _refreshData,
           child: CustomScrollView(
@@ -95,8 +95,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               fontFamily: 'Cairo',
                               fontWeight: FontWeight.bold,
                               color: isDark
-                                  ? const Color(0xFFC9A86A)
-                                  : const Color(0xFFA9884A),
+                                  ? AppColors.nightSecondary
+                                  : AppColors.daySecondary,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -105,8 +105,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             style: theme.textTheme.bodySmall?.copyWith(
                               fontFamily: 'Cairo',
                               color: isDark
-                                  ? const Color(0xFF9DB0AA)
-                                  : const Color(0xFF607068),
+                                  ? AppColors.nightTextSecondary
+                                  : AppColors.dayTextSecondary,
                             ),
                           ),
                         ],
@@ -121,13 +121,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               horizontal: 14, vertical: 8),
                           decoration: BoxDecoration(
                             color: isDark
-                                ? const Color(0xFF16211F)
+                                ? AppColors.nightSurface
                                 : Colors.white,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: isDark
-                                  ? const Color(0xFF5FB59B).withOpacity(0.2)
-                                  : const Color(0xFF2F7F69).withOpacity(0.15),
+                                  ? AppColors.nightPrimary.withOpacity(0.2)
+                                  : AppColors.dayPrimary.withOpacity(0.15),
                             ),
                             boxShadow: [
                               BoxShadow(
@@ -146,8 +146,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     : Icons.my_location_rounded,
                                 size: 16,
                                 color: isDark
-                                    ? const Color(0xFF5FB59B)
-                                    : const Color(0xFF2F7F69),
+                                    ? AppColors.nightPrimary
+                                    : AppColors.dayPrimary,
                               ),
                               const SizedBox(width: 6),
                               Text(
@@ -156,8 +156,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   fontFamily: 'Cairo',
                                   fontWeight: FontWeight.w600,
                                   color: isDark
-                                      ? const Color(0xFFE8EFEC)
-                                      : const Color(0xFF1B2A27),
+                                      ? AppColors.nightTextPrimary
+                                      : AppColors.dayTextPrimary,
                                 ),
                               ),
                               const SizedBox(width: 4),
@@ -165,8 +165,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 Icons.keyboard_arrow_down_rounded,
                                 size: 18,
                                 color: isDark
-                                    ? const Color(0xFF9DB0AA)
-                                    : const Color(0xFF607068),
+                                    ? AppColors.nightTextSecondary
+                                    : AppColors.dayTextSecondary,
                               ),
                             ],
                           ),
@@ -193,7 +193,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           title: 'أذكار الصباح',
                           subtitle: 'نور وبركة ليومك',
                           icon: Icons.wb_sunny_outlined,
-                          accentColor: const Color(0xFFC9A86A),
+                          accentColor: AppColors.nightSecondary,
                           onTap: () => _openAzkar(context, AzkarCategory.morning),
                         ),
                       ),
@@ -203,7 +203,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           title: 'أذكار المساء',
                           subtitle: 'حفظ وسكينة لليلتك',
                           icon: Icons.nights_stay_outlined,
-                          accentColor: const Color(0xFF5FB59B),
+                          accentColor: AppColors.nightPrimary,
                           onTap: () => _openAzkar(context, AzkarCategory.evening),
                         ),
                       ),
@@ -225,8 +225,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           fontFamily: 'Cairo',
                           fontWeight: FontWeight.bold,
                           color: isDark
-                              ? const Color(0xFFE8EFEC)
-                              : const Color(0xFF1B2A27),
+                              ? AppColors.nightTextPrimary
+                              : AppColors.dayTextPrimary,
                         ),
                       ),
                       Text(
@@ -234,8 +234,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         style: theme.textTheme.bodySmall?.copyWith(
                           fontFamily: 'Cairo',
                           color: isDark
-                              ? const Color(0xFF9DB0AA)
-                              : const Color(0xFF607068),
+                              ? AppColors.nightTextSecondary
+                              : AppColors.dayTextSecondary,
                         ),
                       ),
                     ],
@@ -301,11 +301,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         gradient: LinearGradient(
                           colors: isDark
                               ? [
-                                  const Color(0xFF5FB59B).withOpacity(0.18),
-                                  const Color(0xFF16211F),
+                                  AppColors.nightPrimary.withOpacity(0.18),
+                                  AppColors.nightSurface,
                                 ]
                               : [
-                                  const Color(0xFF2F7F69).withOpacity(0.12),
+                                  AppColors.dayPrimary.withOpacity(0.12),
                                   Colors.white,
                                 ],
                           begin: Alignment.topLeft,
@@ -314,8 +314,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         borderRadius: BorderRadius.circular(18),
                         border: Border.all(
                           color: isDark
-                              ? const Color(0xFF5FB59B).withOpacity(0.3)
-                              : const Color(0xFF2F7F69).withOpacity(0.2),
+                              ? AppColors.nightPrimary.withOpacity(0.3)
+                              : AppColors.dayPrimary.withOpacity(0.2),
                         ),
                       ),
                       child: Row(
@@ -324,15 +324,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
                               color: isDark
-                                  ? const Color(0xFF5FB59B).withOpacity(0.2)
-                                  : const Color(0xFF2F7F69).withOpacity(0.15),
+                                  ? AppColors.nightPrimary.withOpacity(0.2)
+                                  : AppColors.dayPrimary.withOpacity(0.15),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
                               Icons.lock_clock,
                               color: isDark
-                                  ? const Color(0xFF5FB59B)
-                                  : const Color(0xFF2F7F69),
+                                  ? AppColors.nightPrimary
+                                  : AppColors.dayPrimary,
                               size: 24,
                             ),
                           ),
@@ -348,8 +348,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
                                     color: isDark
-                                        ? const Color(0xFFE8EFEC)
-                                        : const Color(0xFF1B2A27),
+                                        ? AppColors.nightTextPrimary
+                                        : AppColors.dayTextPrimary,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
@@ -359,8 +359,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     fontFamily: 'Cairo',
                                     fontSize: 12,
                                     color: isDark
-                                        ? const Color(0xFF9DB0AA)
-                                        : const Color(0xFF607068),
+                                        ? AppColors.nightTextSecondary
+                                        : AppColors.dayTextSecondary,
                                   ),
                                 ),
                               ],
@@ -369,7 +369,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           const Icon(
                             Icons.arrow_forward_ios_rounded,
                             size: 16,
-                            color: Color(0xFF9DB0AA),
+                            color: AppColors.nightTextSecondary,
                           ),
                         ],
                       ),
@@ -421,7 +421,7 @@ class _AzkarShortcutCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF16211F) : Colors.white,
+          color: isDark ? AppColors.nightSurface : Colors.white,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: accentColor.withOpacity(0.2),
@@ -456,8 +456,8 @@ class _AzkarShortcutCard extends StatelessWidget {
                       fontFamily: 'Cairo',
                       fontWeight: FontWeight.bold,
                       color: isDark
-                          ? const Color(0xFFE8EFEC)
-                          : const Color(0xFF1B2A27),
+                          ? AppColors.nightTextPrimary
+                          : AppColors.dayTextPrimary,
                     ),
                   ),
                   Text(
@@ -465,8 +465,8 @@ class _AzkarShortcutCard extends StatelessWidget {
                     style: theme.textTheme.labelSmall?.copyWith(
                       fontFamily: 'Cairo',
                       color: isDark
-                          ? const Color(0xFF9DB0AA)
-                          : const Color(0xFF607068),
+                          ? AppColors.nightTextSecondary
+                          : AppColors.dayTextSecondary,
                       fontSize: 10,
                     ),
                   ),
@@ -494,7 +494,7 @@ class _CitySelectorSheet extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF16211F) : Colors.white,
+        color: isDark ? AppColors.nightSurface : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: Column(
@@ -522,8 +522,8 @@ class _CitySelectorSheet extends ConsumerWidget {
               fontFamily: 'Cairo',
               fontWeight: FontWeight.bold,
               color: isDark
-                  ? const Color(0xFFE8EFEC)
-                  : const Color(0xFF1B2A27),
+                  ? AppColors.nightTextPrimary
+                  : AppColors.dayTextPrimary,
             ),
           ),
           const SizedBox(height: 16),
@@ -534,11 +534,11 @@ class _CitySelectorSheet extends ConsumerWidget {
               borderRadius: BorderRadius.circular(16),
             ),
             tileColor: isDark
-                ? const Color(0xFF1D2B28)
+                ? AppColors.nightElevated
                 : const Color(0xFFF0F7F4),
-            leading: const Icon(
+            leading: Icon(
               Icons.my_location_rounded,
-              color: Color(0xFF5FB59B),
+              color: AppColors.nightPrimary,
             ),
             title: const Text(
               'تحديد الموقع التلقائي (GPS)',
@@ -569,9 +569,9 @@ class _CitySelectorSheet extends ConsumerWidget {
               borderRadius: BorderRadius.circular(16),
             ),
             tileColor: isDark
-                ? const Color(0xFF1D2B28)
+                ? AppColors.nightElevated
                 : const Color(0xFFF0F7F4),
-            leading: const Icon(Icons.public, color: Color(0xFF5FB59B)),
+            leading: Icon(Icons.public, color: AppColors.nightPrimary),
             title: const Text(
               'كل دول العالم ومحافظاتها',
               style: TextStyle(
@@ -598,8 +598,8 @@ class _CitySelectorSheet extends ConsumerWidget {
             style: theme.textTheme.bodySmall?.copyWith(
               fontFamily: 'Cairo',
               color: isDark
-                  ? const Color(0xFF9DB0AA)
-                  : const Color(0xFF607068),
+                  ? AppColors.nightTextSecondary
+                  : AppColors.dayTextSecondary,
             ),
           ),
           const SizedBox(height: 8),
@@ -619,7 +619,7 @@ class _CitySelectorSheet extends ConsumerWidget {
                   leading: Icon(
                     Icons.location_on_outlined,
                     color: isSelected
-                        ? const Color(0xFF5FB59B)
+                        ? AppColors.nightPrimary
                         : (isDark ? Colors.white54 : Colors.black45),
                   ),
                   title: Text(
@@ -630,8 +630,8 @@ class _CitySelectorSheet extends ConsumerWidget {
                           isSelected ? FontWeight.bold : FontWeight.normal,
                       color: isSelected
                           ? (isDark
-                              ? const Color(0xFF5FB59B)
-                              : const Color(0xFF2F7F69))
+                              ? AppColors.nightPrimary
+                              : AppColors.dayPrimary)
                           : null,
                     ),
                   ),
@@ -640,8 +640,8 @@ class _CitySelectorSheet extends ConsumerWidget {
                     style: const TextStyle(fontFamily: 'Cairo', fontSize: 11),
                   ),
                   trailing: isSelected
-                      ? const Icon(Icons.check_circle_rounded,
-                          color: Color(0xFF5FB59B))
+                      ? Icon(Icons.check_circle_rounded,
+                          color: AppColors.nightPrimary)
                       : null,
                   onTap: () async {
                     Navigator.pop(context);

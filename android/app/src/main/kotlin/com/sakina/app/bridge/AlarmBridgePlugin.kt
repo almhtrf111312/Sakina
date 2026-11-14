@@ -113,10 +113,10 @@ class AlarmBridgePlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamH
                 val vib = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
                 if (vib != null && vib.hasVibrator()) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        vib.vibrate(VibrationEffect.createOneShot(14, 110))
+                        vib.vibrate(VibrationEffect.createOneShot(10, 70))
                     } else {
                         @Suppress("DEPRECATION")
-                        vib.vibrate(14)
+                        vib.vibrate(10)
                     }
                 }
             }
@@ -135,13 +135,13 @@ class AlarmBridgePlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamH
                     pool.setOnLoadCompleteListener { sp, id, status ->
                         if (status == 0) {
                             tapLoaded = true
-                            sp.play(id, 0.7f, 0.7f, 1, 0, 1f)
+                            sp.play(id, 0.15f, 0.15f, 1, 0, 1f)
                         }
                     }
                     tapSoundId = pool.load(context, R.raw.tap_click, 1)
                     tapPool = pool
                 } else if (tapLoaded) {
-                    pool.play(tapSoundId, 0.7f, 0.7f, 1, 0, 1f)
+                    pool.play(tapSoundId, 0.15f, 0.15f, 1, 0, 1f)
                 }
             }
         } catch (e: Exception) {
@@ -191,7 +191,7 @@ class AlarmBridgePlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamH
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         when (call.method) {
             "testAdhan" -> {
-                val id = call.argument<String>("soundId") ?: "adhan_takbeer"
+                val id = call.argument<String>("soundId") ?: "adhan_5"
                 val vol = (call.argument<Double>("volume") ?: 1.0).toFloat()
                 result.success(playPreview(id, vol))
             }
