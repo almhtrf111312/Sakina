@@ -214,7 +214,11 @@ object AlarmScheduler {
      */
     private fun generateAlarmId(timestamp: Long, name: String): Int {
         val minutes = timestamp / 60_000L // minute-precision
-        val nameOffset = PRAYER_NAMES.indexOf(name).let { if (it < 0) 5 else it }
+        val nameOffset = when (name) {
+            "AzkarMorning" -> 6
+            "AzkarEvening" -> 7
+            else -> PRAYER_NAMES.indexOf(name).let { if (it < 0) 5 else it }
+        }
         return ((minutes * 10 + nameOffset) % MAX_ALARM_ID).toInt()
     }
 

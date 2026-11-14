@@ -73,6 +73,11 @@ class AdhanReceiver : BroadcastReceiver() {
         val isFajr      = prayerName.equals("Fajr", ignoreCase = true)
         val notificationId = alarmId + NOTIFICATION_ID_BASE
 
+        if (notifType == "azkar") {
+            postAzkarReminder(context, prayerName, notificationId)
+            return
+        }
+
         ensureNotificationChannel(context)
 
         // ── 1. Start foreground service to play adhan ─────────────────────
@@ -139,6 +144,44 @@ class AdhanReceiver : BroadcastReceiver() {
 
         nm.notify(notificationId, builder.build())
         Log.i(TAG, "Notification posted for $prayerName (id=$notificationId)")
+    }
+
+    // ── Morning / evening azkar reminder (silent-ish, no adhan service) ─────
+
+    private fun postAzkarReminder(context: Context, name: String, notificationId: Int) {
+        val morning = name == "AzkarMorning"
+        val channelId = "sakina_azkar_channel"
+        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            nm.getNotificationChannel(channelId) == null) {
+            nm.createNotificationChannel(
+                NotificationChannel(channelId, "تذكير الأذكار", NotificationManager.IMPORTANCE_DEFAULT)
+            )
+        }
+        val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("open_azkar", if (morning) "morning" else "evening")
+        }
+        val pi = launch?.let {
+            PendingIntent.getActivity(
+                context, notificationId, it,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        }
+        val title = if (morning) "أذكار الصباح" else "أذكار المساء"
+        val text = if (morning) "ابدأ يومك بذكر الله، حان وقت أذكار الصباح"
+                   else "حان وقت أذكار المساء، حصّن نفسك بذكر الله"
+        val n = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(R.drawable.ic_mosque)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true)
+            .setColor(0xFF5FB59B.toInt())
+            .apply { if (pi != null) setContentIntent(pi) }
+            .build()
+        nm.notify(notificationId, n)
     }
 
     // ── Action handlers ──────────────────────────────────────────────────────

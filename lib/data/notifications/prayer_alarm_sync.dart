@@ -56,6 +56,30 @@ final prayerAlarmSyncProvider = FutureProvider<void>((ref) async {
     }
   }
 
+  // Morning / evening azkar reminders: 20 min after Fajr and after Asr.
+  const reminderDelay = Duration(minutes: 20);
+  for (final day in schedule.take(8)) {
+    void addReminder(String key, String prayer) {
+      final base = day.times[prayer];
+      if (base == null) return;
+      final t = base.add(reminderDelay);
+      if (t.isBefore(nowUtc)) return;
+      payload.add({
+        'name': key,
+        'timestamp': t.millisecondsSinceEpoch,
+        'timeLabel': timeLabel.format(t.toLocal()),
+        'enabled': true,
+        'notificationType': 'azkar',
+        'soundId': '',
+        'volume': 0.0,
+        'gradualVolume': false,
+      });
+    }
+
+    if (settings.morningAzkarReminder) addReminder('AzkarMorning', 'Fajr');
+    if (settings.eveningAzkarReminder) addReminder('AzkarEvening', 'Asr');
+  }
+
   // Feed the lock-screen / AOD live wallpaper with the real schedule.
   try {
     const fiveKeys = {'Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'};
