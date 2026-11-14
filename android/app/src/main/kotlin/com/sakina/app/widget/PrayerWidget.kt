@@ -200,19 +200,23 @@ class PrayerWidget : AppWidgetProvider() {
         val now = System.currentTimeMillis()
         val nextMinute = (now / 60_000L + 1) * 60_000L
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC,
-                nextMinute,
-                pendingIntent
-            )
-        } else {
-            alarmManager.setExact(
-                AlarmManager.RTC,
-                nextMinute,
-                pendingIntent
-            )
-        }
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (alarmManager.canScheduleExactAlarms()) {
+                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC, nextMinute, pendingIntent)
+                } else {
+                    alarmManager.setAndAllowWhileIdle(AlarmManager.RTC, nextMinute, pendingIntent)
+                }
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC, nextMinute, pendingIntent)
+            } else {
+                alarmManager.set(AlarmManager.RTC, nextMinute, pendingIntent)
+            }
+        } catch (_: SecurityException) {
+            try {
+                alarmManager.set(AlarmManager.RTC, nextMinute, pendingIntent)
+            } catch (_: Exception) {}
+        } catch (_: Exception) {}
     }
 
     private fun prayerArabicName(name: String): String = when (name.lowercase()) {

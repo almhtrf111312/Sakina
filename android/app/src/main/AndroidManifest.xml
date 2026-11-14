@@ -111,7 +111,7 @@
         <!-- ======================================================= -->
         <activity
             android:name=".aod.AodActivity"
-            android:exported="true"
+            android:exported="false"
             android:launchMode="singleInstance"
             android:theme="@style/AodTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|uiMode"
@@ -119,13 +119,7 @@
             android:turnScreenOn="true"
             android:excludeFromRecents="true"
             android:noHistory="true"
-            android:screenOrientation="portrait">
-
-            <intent-filter>
-                <action android:name="com.sakina.app.ADHAN_ALERT" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
+            android:screenOrientation="portrait" />
 
         <!-- ======================================================= -->
         <!-- SAKINA LIVE WALLPAPER (AOD LOCK SCREEN WALLPAPER) -->
@@ -156,22 +150,12 @@
                 android:value="Prayer time adhan notification with audio playback" />
         </service>
 
-        <!-- WorkManager background task service -->
-        <service
-            android:name="androidx.work.impl.foreground.SystemForegroundService"
-            android:foregroundServiceType="specialUse"
-            tools:node="merge">
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Prayer schedule synchronization" />
-        </service>
-
         <!-- ======================================================= -->
         <!-- ALARM RECEIVER -->
         <!-- ======================================================= -->
         <receiver
             android:name=".alarm.AlarmReceiver"
-            android:exported="true">
+            android:exported="false">
             <intent-filter android:priority="999">
                 <action android:name="com.sakina.app.PRAYER_ALARM" />
                 <action android:name="com.sakina.app.ADHAN_STOP" />
@@ -214,7 +198,7 @@
         <!-- ======================================================= -->
         <receiver
             android:name=".alarm.AdhanReceiver"
-            android:exported="true">
+            android:exported="false">
             <intent-filter android:priority="1000">
                 <action android:name="com.sakina.app.ACTION_PRAYER_ALARM" />
                 <action android:name="com.sakina.app.ACTION_STOP_ADHAN" />

@@ -22,8 +22,11 @@
 -keep class androidx.work.** { *; }
 -keep class com.sakina.app.** { *; }
 
-# Geolocator
--keep class com.baseflow.geolocator.** { *; }
+# Flutter Local Notifications
+-keep class com.dexterous.flutterlocalnotifications.** { *; }
+
+# Baseflow (geolocator, permission_handler)
+-keep class com.baseflow.** { *; }
 
 # Keep enum classes
 -keepclassmembers enum * {
