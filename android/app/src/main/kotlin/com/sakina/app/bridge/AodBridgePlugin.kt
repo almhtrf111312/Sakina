@@ -55,7 +55,7 @@ class AodBridgePlugin : FlutterPlugin, MethodCallHandler {
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         when (call.method) {
             "showAodScreen" -> {
-                val prayerDataArg = call.argument<Any>("prayerData")
+                val prayerDataArg = call.argument<Any>("prayerData") ?: call.argument<Any>("data")
                 val prayerDataJson = when (prayerDataArg) {
                     is String -> prayerDataArg
                     is Map<*, *> -> JSONObject(prayerDataArg).toString()
@@ -92,7 +92,7 @@ class AodBridgePlugin : FlutterPlugin, MethodCallHandler {
             }
 
             "updateAodData" -> {
-                val prayerDataArg = call.argument<Any>("prayerData")
+                val prayerDataArg = call.argument<Any>("prayerData") ?: call.argument<Any>("data")
                 val prayerDataJson = when (prayerDataArg) {
                     is String -> prayerDataArg
                     is Map<*, *> -> JSONObject(prayerDataArg).toString()
@@ -166,7 +166,7 @@ class AodBridgePlugin : FlutterPlugin, MethodCallHandler {
                         editor.putBoolean(SakinaWallpaperService.KEY_USE_ARABIC_NUMERALS, it)
                     }
 
-                    val prayerDataArg = call.argument<Any>("prayerData")
+                    val prayerDataArg = call.argument<Any>("prayerData") ?: call.argument<Any>("data")
                     if (prayerDataArg != null) {
                         val prayerJsonStr = when (prayerDataArg) {
                             is String -> prayerDataArg
@@ -188,6 +188,21 @@ class AodBridgePlugin : FlutterPlugin, MethodCallHandler {
                     result.success(true)
                 } catch (e: Exception) {
                     result.error("SETTINGS_ERROR", e.message, null)
+                }
+            }
+
+            "requestDrawOverApps" -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    val intent = Intent(
+                        android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        android.net.Uri.parse("package:${context.packageName}")
+                    ).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    }
+                    context.startActivity(intent)
+                    result.success(true)
+                } else {
+                    result.success(true)
                 }
             }
 

@@ -7,11 +7,11 @@ enum CalculationMethod {
   mwl, // Muslim World League
   isna, // Islamic Society of North America
   egyptian, // Egyptian General Authority of Survey
-  makkah, // Umm al-Qura University, Makkah
+  ummAlQura, // Umm al-Qura University, Makkah
   karachi, // University of Islamic Sciences, Karachi
   tehran, // Institute of Geophysics, University of Tehran
   jafari, // Shia Ithna Ashari (Leveau)
-  turkey, // Diyanet İşleri Başkanlığı
+  diyanet, // Diyanet İşleri Başkanlığı
   dubai, // Dubai / UAE
   kuwait, // Kuwait Awqaf
   qatar, // Qatar
@@ -63,7 +63,7 @@ class PrayerTimeModel {
     required this.isha,
     this.midnight,
     this.qiyam,
-    this.method = CalculationMethod.makkah,
+    this.method = CalculationMethod.ummAlQura,
     this.madhab = Madhab.shafi,
     this.highLatitudeRule = HighLatitudeRule.angleBased,
     this.adjustments = const {},
@@ -187,7 +187,7 @@ class PrayerTimeModel {
           : null,
       method: CalculationMethod.values.firstWhere(
         (m) => m.name == json['method'],
-        orElse: () => CalculationMethod.makkah,
+        orElse: () => CalculationMethod.ummAlQura,
       ),
       madhab: Madhab.values.firstWhere(
         (m) => m.name == json['madhab'],

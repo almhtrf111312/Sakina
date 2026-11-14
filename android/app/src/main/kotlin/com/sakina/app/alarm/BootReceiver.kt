@@ -36,7 +36,16 @@ class BootReceiver : BroadcastReceiver() {
             Intent.ACTION_MY_PACKAGE_REPLACED,
             Intent.ACTION_TIME_CHANGED,
             Intent.ACTION_TIMEZONE_CHANGED -> {
-                handleReschedule(context, action)
+                val pendingResult = goAsync()
+                Thread {
+                    try {
+                        handleReschedule(context, action)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error in background reschedule: ${e.message}", e)
+                    } finally {
+                        pendingResult.finish()
+                    }
+                }.start()
             }
         }
     }

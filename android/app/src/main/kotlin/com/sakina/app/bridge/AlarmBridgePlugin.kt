@@ -123,8 +123,15 @@ class AlarmBridgePlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamH
             }
 
             "cancelAllAlarms" -> {
-                AlarmScheduler.cancelAllAlarms(context)
-                result.success(true)
+                val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
+                Thread {
+                    try {
+                        AlarmScheduler.cancelAllAlarms(context)
+                        mainHandler.post { result.success(true) }
+                    } catch (e: Exception) {
+                        mainHandler.post { result.success(false) }
+                    }
+                }.start()
             }
 
             "checkPermissions" -> {

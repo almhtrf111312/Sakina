@@ -20,17 +20,26 @@ class TimeChangeReceiver : BroadcastReceiver() {
         val action = intent.action ?: return
         Log.i(TAG, "Time change event received: $action")
 
-        // Reschedule alarms
-        AlarmScheduler.rescheduleFromStorage(context)
+        val pendingResult = goAsync()
+        Thread {
+            try {
+                // Reschedule alarms
+                AlarmScheduler.rescheduleFromStorage(context)
 
-        // Notify Flutter isolate
-        val rescheduleIntent = Intent(BootReceiver.ACTION_RESCHEDULE_NEEDED).apply {
-            setPackage(context.packageName)
-            putExtra("trigger", action)
-        }
-        context.sendBroadcast(rescheduleIntent)
+                // Notify Flutter isolate
+                val rescheduleIntent = Intent(BootReceiver.ACTION_RESCHEDULE_NEEDED).apply {
+                    setPackage(context.packageName)
+                    putExtra("trigger", action)
+                }
+                context.sendBroadcast(rescheduleIntent)
 
-        // Refresh home screen widget
-        PrayerWidget.updateAllWidgets(context)
+                // Refresh home screen widget
+                PrayerWidget.updateAllWidgets(context)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in time change handling: ${e.message}", e)
+            } finally {
+                pendingResult.finish()
+            }
+        }.start()
     }
 }

@@ -75,11 +75,18 @@ class PrayerRepository {
 
   // Bump the version prefix whenever the calculation logic changes so that
   // previously cached (wrong) times are discarded.
-  String _metaKey() =>
-      'v2_${_location.latitude.toStringAsFixed(4)}_'
-      '${_location.longitude.toStringAsFixed(4)}_'
-      '${_settings.calculationMethod.name}_'
-      '${_settings.madhab.name}';
+  String _metaKey() {
+    final adjStr = (_settings.prayerAdjustments.entries.toList()
+          ..sort((a, b) => a.key.compareTo(b.key)))
+        .map((e) => '${e.key}:${e.value}')
+        .join(',');
+    return 'v3_${_location.latitude.toStringAsFixed(4)}_'
+        '${_location.longitude.toStringAsFixed(4)}_'
+        '${_settings.calculationMethod.name}_'
+        '${_settings.madhab.name}_'
+        '${_settings.highLatitudeRule.name}_'
+        '$adjStr';
+  }
 
   Future<List<DayPrayerTimes>?> _loadFromCache() async {
     final meta = _prefs.getString(_cacheMetaKey);

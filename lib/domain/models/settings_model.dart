@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_constants.dart';
+import '../../data/settings/settings_repository.dart' show AppThemeMode;
 import 'prayer_time_model.dart';
 
-/// Supported application theme modes.
-enum AppThemeMode {
-  night, // Default dark green-black (#0E1514)
-  day, // Warm off-white (#F6F4EE)
-  amoled, // Pure black (#000000)
-}
+export '../../data/settings/settings_repository.dart' show AppThemeMode;
 
 /// Supported application languages.
 enum AppLanguage {
@@ -113,6 +109,7 @@ class AodSettings {
 }
 
 /// Global settings state model for Sakina.
+@Deprecated('Use AppSettings and appSettingsProvider from settings_repository.dart')
 @immutable
 class SettingsModel {
   final AppThemeMode themeMode;
@@ -136,7 +133,7 @@ class SettingsModel {
   const SettingsModel({
     this.themeMode = AppThemeMode.night,
     this.language = AppLanguage.arabic,
-    this.calculationMethod = CalculationMethod.makkah,
+    this.calculationMethod = CalculationMethod.ummAlQura,
     this.madhab = Madhab.shafi,
     this.highLatitudeRule = HighLatitudeRule.angleBased,
     this.prayerAdjustments = const {
@@ -239,7 +236,7 @@ class SettingsModel {
       language: AppLanguage.fromCode(json['language'] as String? ?? 'ar'),
       calculationMethod: CalculationMethod.values.firstWhere(
         (m) => m.name == json['calculationMethod'],
-        orElse: () => CalculationMethod.makkah,
+        orElse: () => CalculationMethod.ummAlQura,
       ),
       madhab: Madhab.values.firstWhere(
         (m) => m.name == json['madhab'],
@@ -278,6 +275,7 @@ class SettingsModel {
 }
 
 /// StateNotifier controlling the application settings.
+@Deprecated('Use settingsNotifierProvider from settings_repository.dart')
 class SettingsNotifier extends StateNotifier<SettingsModel> {
   SettingsNotifier([SettingsModel? initial]) : super(initial ?? const SettingsModel());
 

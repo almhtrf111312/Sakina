@@ -25,7 +25,9 @@ class AzkarListScreen extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     final title = isFavoritesOnly ? 'أذكاري المفضلة' : category.titleAr;
-    final state = ref.watch(azkarListProvider(category.id));
+    final state = isFavoritesOnly
+        ? ref.watch(favoritesAzkarProvider)
+        : ref.watch(azkarListProvider(category.id));
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,

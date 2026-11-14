@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/utils/alarm_bridge.dart';
 import '../../data/prayer/prayer_repository.dart';
 import '../../data/settings/settings_repository.dart';
@@ -105,14 +107,71 @@ class AodSettings {
 
 final aodSettingsProvider =
     StateNotifierProvider<AodSettingsNotifier, AodSettings>(
-  (ref) => AodSettingsNotifier(),
+  (ref) {
+    final prefs = ref.watch(sharedPreferencesProvider);
+    return AodSettingsNotifier(prefs);
+  },
 );
 
 class AodSettingsNotifier extends StateNotifier<AodSettings> {
-  AodSettingsNotifier() : super(const AodSettings());
+  final SharedPreferences? _prefs;
+  static const _key = 'sakina_aod_ui_settings';
 
-  void update(AodSettings s) => state = s;
-  void toggle(bool v) => state = state.copyWith(enabled: v);
+  AodSettingsNotifier([this._prefs]) : super(_loadInitial(_prefs));
+
+  static AodSettings _loadInitial(SharedPreferences? prefs) {
+    if (prefs == null) return const AodSettings();
+    final raw = prefs.getString(_key);
+    if (raw == null) return const AodSettings();
+    try {
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      return AodSettings(
+        enabled: map['enabled'] as bool? ?? true,
+        clockStyle: map['clockStyle'] as int? ?? 0,
+        brightness: (map['brightness'] as num?)?.toDouble() ?? 0.4,
+        burnInProtection: map['burnInProtection'] as bool? ?? true,
+        showClock: map['showClock'] as bool? ?? true,
+        showHijriDate: map['showHijriDate'] as bool? ?? true,
+        showPrayersRow: map['showPrayersRow'] as bool? ?? true,
+        showBattery: map['showBattery'] as bool? ?? true,
+        autoOffSeconds: map['autoOffSeconds'] as int? ?? 60,
+        beforeAdhanMinutes: map['beforeAdhanMinutes'] as int? ?? 10,
+        afterAdhanMinutes: map['afterAdhanMinutes'] as int? ?? 15,
+      );
+    } catch (_) {
+      return const AodSettings();
+    }
+  }
+
+  void update(AodSettings s) {
+    state = s;
+    _persist(s);
+  }
+
+  void toggle(bool v) {
+    final s = state.copyWith(enabled: v);
+    state = s;
+    _persist(s);
+  }
+
+  void _persist(AodSettings s) {
+    _prefs?.setString(
+      _key,
+      jsonEncode({
+        'enabled': s.enabled,
+        'clockStyle': s.clockStyle,
+        'brightness': s.brightness,
+        'burnInProtection': s.burnInProtection,
+        'showClock': s.showClock,
+        'showHijriDate': s.showHijriDate,
+        'showPrayersRow': s.showPrayersRow,
+        'showBattery': s.showBattery,
+        'autoOffSeconds': s.autoOffSeconds,
+        'beforeAdhanMinutes': s.beforeAdhanMinutes,
+        'afterAdhanMinutes': s.afterAdhanMinutes,
+      }),
+    );
+  }
 }
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
@@ -712,6 +771,33 @@ class _AodSettingsScreenState extends ConsumerState<AodSettingsScreen> {
               fontSize: 13,
               color: Color(0xFF9DB0AA),
               height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0E1514),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFF2E3D39)),
+            ),
+            child: const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline, size: 18, color: Color(0xFF9DB0AA)),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'ملاحظة: وفق قيود أندرويد الأمنية، لا يُسمح للتطبيقات بالرسم داخل شاشة AOD الخاصة بالنظام؛ ويوفر تطبيق سكينة الحل المعتمد عبر خلفية حية لشاشة القفل بوضع AMOLED الموفر وبكسلات مطفأة.',
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 11,
+                      color: Color(0xFF9DB0AA),
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 16),
