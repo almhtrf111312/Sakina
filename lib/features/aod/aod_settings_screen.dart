@@ -714,6 +714,33 @@ class _AodSettingsScreenState extends ConsumerState<AodSettingsScreen> {
               height: 1.5,
             ),
           ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0E1514),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFF2E3D39)),
+            ),
+            child: const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline, size: 18, color: Color(0xFF9DB0AA)),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'ملاحظة: وفق قيود أندرويد الأمنية، لا يُسمح للتطبيقات بالرسم داخل شاشة AOD الخاصة بالنظام؛ ويوفر تطبيق سكينة الحل المعتمد عبر خلفية حية لشاشة القفل بوضع AMOLED الموفر وبكسلات مطفأة.',
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 11,
+                      color: Color(0xFF9DB0AA),
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 16),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
