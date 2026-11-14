@@ -1,7 +1,9 @@
+import java.util.Properties
+
 pluginManagement {
     val flutterSdkPath =
         run {
-            val properties = java.util.Properties()
+            val properties = Properties()
             val localPropertiesFile = file("local.properties")
             if (localPropertiesFile.exists()) {
                 localPropertiesFile.inputStream().use { properties.load(it) }
