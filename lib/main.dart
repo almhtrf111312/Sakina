@@ -8,6 +8,7 @@ import 'core/i18n/app_localizations.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
 import 'data/notifications/prayer_alarm_sync.dart';
+import 'data/notifications/notification_service.dart';
 import 'data/settings/settings_repository.dart';
 import 'features/home/home_screen.dart';
 import 'features/azkar/azkar_screen.dart';
@@ -46,6 +47,12 @@ void main() async {
   ));
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+  try {
+    await NotificationService().init();
+  } catch (e) {
+    debugPrint('NotificationService init error: $e');
+  }
 
   runApp(
     ProviderScope(
@@ -122,8 +129,7 @@ class SakinaShell extends ConsumerStatefulWidget {
   ConsumerState<SakinaShell> createState() => _SakinaShellState();
 }
 
-class _SakinaShellState extends ConsumerState<SakinaShell>
-    with TickerProviderStateMixin {
+class _SakinaShellState extends ConsumerState<SakinaShell> {
   late final PageController _pageController;
 
   static const List<Widget> _screens = [

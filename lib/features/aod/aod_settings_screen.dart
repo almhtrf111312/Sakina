@@ -105,14 +105,71 @@ class AodSettings {
 
 final aodSettingsProvider =
     StateNotifierProvider<AodSettingsNotifier, AodSettings>(
-  (ref) => AodSettingsNotifier(),
+  (ref) {
+    final prefs = ref.watch(sharedPreferencesProvider);
+    return AodSettingsNotifier(prefs);
+  },
 );
 
 class AodSettingsNotifier extends StateNotifier<AodSettings> {
-  AodSettingsNotifier() : super(const AodSettings());
+  final SharedPreferences? _prefs;
+  static const _key = 'sakina_aod_ui_settings';
 
-  void update(AodSettings s) => state = s;
-  void toggle(bool v) => state = state.copyWith(enabled: v);
+  AodSettingsNotifier([this._prefs]) : super(_loadInitial(_prefs));
+
+  static AodSettings _loadInitial(SharedPreferences? prefs) {
+    if (prefs == null) return const AodSettings();
+    final raw = prefs.getString(_key);
+    if (raw == null) return const AodSettings();
+    try {
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      return AodSettings(
+        enabled: map['enabled'] as bool? ?? true,
+        clockStyle: map['clockStyle'] as int? ?? 0,
+        brightness: (map['brightness'] as num?)?.toDouble() ?? 0.4,
+        burnInProtection: map['burnInProtection'] as bool? ?? true,
+        showClock: map['showClock'] as bool? ?? true,
+        showHijriDate: map['showHijriDate'] as bool? ?? true,
+        showPrayersRow: map['showPrayersRow'] as bool? ?? true,
+        showBattery: map['showBattery'] as bool? ?? true,
+        autoOffSeconds: map['autoOffSeconds'] as int? ?? 60,
+        beforeAdhanMinutes: map['beforeAdhanMinutes'] as int? ?? 10,
+        afterAdhanMinutes: map['afterAdhanMinutes'] as int? ?? 15,
+      );
+    } catch (_) {
+      return const AodSettings();
+    }
+  }
+
+  void update(AodSettings s) {
+    state = s;
+    _persist(s);
+  }
+
+  void toggle(bool v) {
+    final s = state.copyWith(enabled: v);
+    state = s;
+    _persist(s);
+  }
+
+  void _persist(AodSettings s) {
+    _prefs?.setString(
+      _key,
+      jsonEncode({
+        'enabled': s.enabled,
+        'clockStyle': s.clockStyle,
+        'brightness': s.brightness,
+        'burnInProtection': s.burnInProtection,
+        'showClock': s.showClock,
+        'showHijriDate': s.showHijriDate,
+        'showPrayersRow': s.showPrayersRow,
+        'showBattery': s.showBattery,
+        'autoOffSeconds': s.autoOffSeconds,
+        'beforeAdhanMinutes': s.beforeAdhanMinutes,
+        'afterAdhanMinutes': s.afterAdhanMinutes,
+      }),
+    );
+  }
 }
 
 // ─── Screen ──────────────────────────────────────────────────────────────────

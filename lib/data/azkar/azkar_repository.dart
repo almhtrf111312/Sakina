@@ -226,6 +226,13 @@ final azkarListProvider = StateNotifierProvider.family<AzkarListNotifier,
   return AzkarListNotifier(repo, categoryId);
 });
 
+/// All favorite azkar across all categories
+final favoritesAzkarProvider =
+    FutureProvider<List<AzkarModel>>((ref) async {
+  final repo = ref.watch(azkarRepositoryProvider);
+  return repo.getFavorites();
+});
+
 /// Progress map for all categories: Map<category_id, double 0.0..1.0>
 final azkarCategoriesProgressProvider =
     FutureProvider<Map<String, double>>((ref) async {

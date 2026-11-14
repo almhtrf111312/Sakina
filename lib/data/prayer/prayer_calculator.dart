@@ -236,6 +236,7 @@ class PrayerCalculator {
     final latR = _toRad(latitude);
     final cosH = (cos(_toRad(90 + angle)) - sin(decl) * sin(latR)) /
         (cos(decl) * cos(latR));
+    if (cosH.isNaN) return null;
     if (cosH > 1.0) {
       if (cosH <= 1.00001) return 0.0;
       return null; // Sun never rises/sets
