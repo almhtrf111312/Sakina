@@ -32,6 +32,15 @@ class MainActivity : FlutterActivity() {
         requestNotificationPermissionIfNeeded()
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (com.sakina.app.aod.LockDisplayService.enabled(this) &&
+            android.provider.Settings.canDrawOverlays(this)) {
+            try { com.sakina.app.aod.LockDisplayService.start(this) }
+            catch (_: RuntimeException) { /* Settings screen reports service status. */ }
+        }
+    }
+
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 

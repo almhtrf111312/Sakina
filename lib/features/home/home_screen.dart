@@ -342,7 +342,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'خلفية شاشة القفل والشاشة الدائمة (AOD)',
+                                  'الشاشة الدائمة (AOD)',
                                   style: TextStyle(
                                     fontFamily: 'Cairo',
                                     fontWeight: FontWeight.bold,
@@ -354,7 +354,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'تثبيت كخلفية لقفل الشاشة مع تخصيص الساعة والمواقيت',
+                                  'عرض الساعة والمواقيت بعد إطفاء الشاشة، بدون تغيير الخلفية',
                                   style: TextStyle(
                                     fontFamily: 'Cairo',
                                     fontSize: 12,
