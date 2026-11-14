@@ -171,8 +171,7 @@
         <!-- ======================================================= -->
         <receiver
             android:name=".alarm.AlarmReceiver"
-            android:exported="true"
-            android:permission="android.permission.RECEIVE_BOOT_COMPLETED">
+            android:exported="true">
             <intent-filter android:priority="999">
                 <action android:name="com.sakina.app.PRAYER_ALARM" />
                 <action android:name="com.sakina.app.ADHAN_STOP" />
