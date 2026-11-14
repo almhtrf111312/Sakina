@@ -1,13 +1,16 @@
 import 'dart:convert';
+
 import 'package:flutter/services.dart';
 
 /// Flutter MethodChannel wrapper for calling Kotlin AlarmScheduler and AodActivity.
 class AlarmBridge {
-  static const MethodChannel _alarmChannel =
-      MethodChannel('com.sakina.app/alarm');
+  static const MethodChannel _alarmChannel = MethodChannel(
+    'com.sakina.app/alarm',
+  );
   static const MethodChannel _aodChannel = MethodChannel('com.sakina.app/aod');
-  static const EventChannel _alarmEventChannel =
-      EventChannel('com.sakina.app/alarm_events');
+  static const EventChannel _alarmEventChannel = EventChannel(
+    'com.sakina.app/alarm_events',
+  );
 
   // ─── Alarm / Scheduler Methods ───────────────────────────────────────────
 
@@ -15,10 +18,12 @@ class AlarmBridge {
   /// [prayers] is a list of maps with keys: name, timeMs, notificationType,
   /// soundId, volume, gradualVolume, preAdhanMinutes, iqamaMinutes.
   static Future<void> schedulePrayerAlarms(
-      List<Map<String, dynamic>> prayers) async {
+    List<Map<String, dynamic>> prayers,
+  ) async {
     try {
-      await _alarmChannel.invokeMethod(
-          'schedulePrayerAlarms', {'prayerTimes': jsonEncode(prayers)});
+      await _alarmChannel.invokeMethod('schedulePrayerAlarms', {
+        'prayerTimes': jsonEncode(prayers),
+      });
     } on PlatformException catch (e) {
       throw AlarmBridgeException('schedulePrayerAlarms failed: ${e.message}');
     }
@@ -36,8 +41,9 @@ class AlarmBridge {
   /// Cancel a specific alarm by prayer name.
   static Future<void> cancelAlarm(String prayerName) async {
     try {
-      await _alarmChannel
-          .invokeMethod('cancelAlarm', {'prayerName': prayerName});
+      await _alarmChannel.invokeMethod('cancelAlarm', {
+        'prayerName': prayerName,
+      });
     } on PlatformException catch (e) {
       throw AlarmBridgeException('cancelAlarm failed: ${e.message}');
     }
@@ -59,36 +65,46 @@ class AlarmBridge {
       await _alarmChannel.invokeMethod('requestExactAlarmPermission');
     } on PlatformException catch (e) {
       throw AlarmBridgeException(
-          'requestExactAlarmPermission failed: ${e.message}');
+        'requestExactAlarmPermission failed: ${e.message}',
+      );
     }
   }
 
   /// Request battery optimization exemption (opens system settings).
   static Future<void> requestBatteryOptimizationExemption() async {
     try {
-      await _alarmChannel
-          .invokeMethod('requestBatteryOptimizationExemption');
+      await _alarmChannel.invokeMethod('requestBatteryOptimizationExemption');
     } on PlatformException catch (e) {
       throw AlarmBridgeException(
-          'requestBatteryOptimizationExemption failed: ${e.message}');
+        'requestBatteryOptimizationExemption failed: ${e.message}',
+      );
     }
   }
 
   /// Play a test adhan sound.
   /// Short tap sound and/or vibration (played natively, independent of the
   /// system "touch sounds" setting).
-  static Future<void> tapFeedback({bool sound = true, bool haptic = true}) async {
+  static Future<void> tapFeedback({
+    bool sound = true,
+    bool haptic = true,
+  }) async {
     try {
-      await _alarmChannel
-          .invokeMethod('tapFeedback', {'sound': sound, 'haptic': haptic});
+      await _alarmChannel.invokeMethod('tapFeedback', {
+        'sound': sound,
+        'haptic': haptic,
+      });
     } catch (_) {}
   }
 
-  static Future<void> testAdhan(
-      {required String soundId, required double volume}) async {
+  static Future<void> testAdhan({
+    required String soundId,
+    required double volume,
+  }) async {
     try {
-      await _alarmChannel
-          .invokeMethod('testAdhan', {'soundId': soundId, 'volume': volume});
+      await _alarmChannel.invokeMethod('testAdhan', {
+        'soundId': soundId,
+        'volume': volume,
+      });
     } catch (_) {
       // Preview is best-effort.
     }
@@ -113,13 +129,41 @@ class AlarmBridge {
     });
   }
 
+  static Future<Map<String, dynamic>> getLockDisplaySettings() async {
+    final result = await _aodChannel.invokeMapMethod<String, dynamic>(
+      'getLockDisplaySettings',
+    );
+    return result ?? <String, dynamic>{};
+  }
+
+  static Future<void> setLockDisplayEnabled(bool enabled) async {
+    await _aodChannel.invokeMethod('setLockDisplayEnabled', {
+      'enabled': enabled,
+    });
+  }
+
+  static Future<void> saveLockDisplaySettings(
+    Map<String, dynamic> settings,
+  ) async {
+    await _aodChannel.invokeMethod('saveLockDisplaySettings', settings);
+  }
+
+  static Future<void> previewLockDisplay() async {
+    await _aodChannel.invokeMethod('previewLockDisplay');
+  }
+
+  static Future<void> openAppSettings() async {
+    await _aodChannel.invokeMethod('openAppSettings');
+  }
+
   // ─── AOD Methods ─────────────────────────────────────────────────────────
 
   /// Show the native AOD screen (AodActivity), passing prayer data.
   static Future<void> showAodScreen(Map<String, dynamic> prayerData) async {
     try {
-      await _aodChannel
-          .invokeMethod('showAodScreen', {'data': jsonEncode(prayerData)});
+      await _aodChannel.invokeMethod('showAodScreen', {
+        'data': jsonEncode(prayerData),
+      });
     } on PlatformException catch (e) {
       throw AlarmBridgeException('showAodScreen failed: ${e.message}');
     }
@@ -147,8 +191,9 @@ class AlarmBridge {
   /// Push updated data (prayer times, settings) to the running AOD screen.
   static Future<void> updateAodData(Map<String, dynamic> data) async {
     try {
-      await _aodChannel
-          .invokeMethod('updateAodData', {'data': jsonEncode(data)});
+      await _aodChannel.invokeMethod('updateAodData', {
+        'data': jsonEncode(data),
+      });
     } on PlatformException catch (e) {
       throw AlarmBridgeException('updateAodData failed: ${e.message}');
     }
@@ -179,7 +224,9 @@ class AlarmBridge {
       final result = await _aodChannel.invokeMethod('setAsLockscreenWallpaper');
       return result == true;
     } on PlatformException catch (e) {
-      throw AlarmBridgeException('setAsLockscreenWallpaper failed: ${e.message}');
+      throw AlarmBridgeException(
+        'setAsLockscreenWallpaper failed: ${e.message}',
+      );
     }
   }
 
@@ -218,7 +265,9 @@ class AlarmBridge {
         if (prayerData != null) 'prayerData': prayerData,
       });
     } on PlatformException catch (e) {
-      throw AlarmBridgeException('updateWallpaperSettings failed: ${e.message}');
+      throw AlarmBridgeException(
+        'updateWallpaperSettings failed: ${e.message}',
+      );
     }
   }
 }
@@ -236,9 +285,5 @@ class AlarmEvent {
   final String? prayerName;
   final String? message;
 
-  const AlarmEvent({
-    required this.type,
-    this.prayerName,
-    this.message,
-  });
+  const AlarmEvent({required this.type, this.prayerName, this.message});
 }

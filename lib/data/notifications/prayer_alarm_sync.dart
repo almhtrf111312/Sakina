@@ -97,6 +97,8 @@ final prayerAlarmSyncProvider = FutureProvider<void>((ref) async {
         .toList();
     await AlarmBridge.updateWallpaperSettings(
       prayerData: {'schedule': wallpaperSchedule},
+      hijriOffset: settings.hijriOffset,
+      useArabicNumerals: settings.numeralType == NumeralType.arabic,
     );
   } catch (e) {
     debugPrint('wallpaper data sync failed: $e');
@@ -108,7 +110,7 @@ final prayerAlarmSyncProvider = FutureProvider<void>((ref) async {
     const five = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
     final items = <Map<String, dynamic>>[];
     final cutoff = DateTime.now().toUtc().subtract(const Duration(hours: 30));
-    for (final day in schedule.take(4)) {
+    for (final day in schedule.take(8)) {
       for (final k in five) {
         final t = day.times[k];
         if (t == null || t.isBefore(cutoff)) continue;

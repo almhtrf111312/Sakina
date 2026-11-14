@@ -9,6 +9,8 @@ import android.os.Build
 import androidx.annotation.NonNull
 import com.sakina.app.aod.AodActivity
 import com.sakina.app.aod.SakinaWallpaperService
+import com.sakina.app.aod.LockDisplayService
+import com.sakina.app.aod.LockDisplayActivity
 import android.app.Activity
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -69,6 +71,58 @@ class AodBridgePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         when (call.method) {
+            "getLockDisplaySettings" -> {
+                val prefs = LockDisplayService.prefs(context)
+                result.success(mapOf(
+                    "enabled" to LockDisplayService.enabled(context),
+                    "running" to LockDisplayService.running,
+                    "permission" to android.provider.Settings.canDrawOverlays(context),
+                    "brightness" to prefs.getFloat("brightness", 0.1f).toDouble(),
+                    "color" to prefs.getInt("color", 0xFF5FB59B.toInt()).toLong().and(0xFFFFFFFFL),
+                    "showHijri" to prefs.getBoolean("showHijri", true),
+                    "showPrayers" to prefs.getBoolean("showPrayers", true)
+                ))
+            }
+            "setLockDisplayEnabled" -> {
+                val enabled = call.argument<Boolean>("enabled") == true
+                if (enabled && !android.provider.Settings.canDrawOverlays(context)) {
+                    result.error("OVERLAY_PERMISSION", "اسمح بالظهور فوق التطبيقات أولاً", null)
+                    return
+                }
+                if (enabled) {
+                    try {
+                        LockDisplayService.prefs(context).edit().putBoolean("enabled", true).apply()
+                        LockDisplayService.start(context)
+                        result.success(true)
+                    } catch (e: RuntimeException) {
+                        LockDisplayService.disable(context)
+                        result.error("AOD_START_FAILED", "تعذّر تشغيل الشاشة الدائمة. راجع أذونات الجهاز.", null)
+                    }
+                } else {
+                    LockDisplayService.disable(context)
+                    result.success(false)
+                }
+            }
+            "saveLockDisplaySettings" -> {
+                val edit = LockDisplayService.prefs(context).edit()
+                call.argument<Number>("brightness")?.let { edit.putFloat("brightness", it.toFloat().coerceIn(0.02f, 0.3f)) }
+                call.argument<Number>("color")?.let { edit.putInt("color", it.toInt()) }
+                call.argument<Boolean>("showHijri")?.let { edit.putBoolean("showHijri", it) }
+                call.argument<Boolean>("showPrayers")?.let { edit.putBoolean("showPrayers", it) }
+                edit.apply()
+                result.success(true)
+            }
+            "previewLockDisplay" -> {
+                launch(Intent(context, LockDisplayActivity::class.java).putExtra(LockDisplayActivity.PREVIEW, true))
+                result.success(true)
+            }
+            "openAppSettings" -> {
+                try {
+                    launch(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        android.net.Uri.parse("package:${context.packageName}")))
+                    result.success(true)
+                } catch (e: RuntimeException) { result.error("SETTINGS_FAILED", e.message, null) }
+            }
             "showAodScreen" -> {
                 val prayerDataArg = call.argument<Any>("prayerData")
                 val prayerDataJson = when (prayerDataArg) {

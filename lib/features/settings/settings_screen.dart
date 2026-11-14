@@ -1438,13 +1438,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: (settings.aodEnabled ? primary : Colors.grey)
+                    color: primary
                         .withOpacity(0.18),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.phone_android,
-                    color: settings.aodEnabled ? primary : Colors.grey,
+                    color: primary,
                   ),
                 ),
                 title: const Text(
@@ -1454,18 +1454,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       fontSize: 15,
                       fontWeight: FontWeight.bold),
                 ),
-                subtitle: Text(
-                  settings.aodEnabled
-                      ? 'مفعلة (${settings.aodWhenToShow == 'adhan' ? 'حول وقت الأذان' : 'دائماً'})'
-                      : 'معطلة - اضغط للضبط والمعاينة',
-                  style: TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: 12,
-                      color: settings.aodEnabled
-                          ? primary
-                          : (isDark
-                              ? AppColors.nightTextSecondary
-                              : AppColors.dayTextSecondary)),
+                subtitle: const Text(
+                  'العرض بعد إطفاء الشاشة • التفعيل والمعاينة',
+                  style: TextStyle(fontFamily: 'Cairo', fontSize: 12),
                 ),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                 onTap: () {
