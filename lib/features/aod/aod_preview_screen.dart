@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../data/prayer/prayer_repository.dart';
 import 'aod_settings_screen.dart';
 
 // ─── Color helpers ────────────────────────────────────────────────────────────
@@ -42,24 +43,70 @@ class _AodPreviewScreenState extends ConsumerState<AodPreviewScreen> {
   Timer? _timer;
   DateTime _now = DateTime.now();
 
-  // Demo prayer data (in production these come from a provider)
-  final List<_PrayerEntry> _prayers = const [
-    _PrayerEntry('الفجر', 'فجر', '05:12', true),
-    _PrayerEntry('الظهر', 'ظهر', '12:30', true),
-    _PrayerEntry('العصر', 'عصر', '15:45', true),
-    _PrayerEntry('المغرب', 'مغرب', '18:22', true),
-    _PrayerEntry('العشاء', 'عشاء', '21:30', false),
-  ];
+  static const _names = {
+    'Fajr': ['الفجر', 'فجر'],
+    'Dhuhr': ['الظهر', 'ظهر'],
+    'Asr': ['العصر', 'عصر'],
+    'Maghrib': ['المغرب', 'مغرب'],
+    'Isha': ['العشاء', 'عشاء'],
+  };
 
+  List<_PrayerEntry> _prayers = const [];
+  DateTime? _nextAt;
+
+  String _hm(DateTime d) =>
+      '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+
+  /// Builds today's five prayers from real data; the next one may be tomorrow's Fajr.
+  void _loadPrayers(List<DayPrayerTimes> days) {
+    final now = DateTime.now();
+    DayPrayerTimes? today;
+    DayPrayerTimes? tomorrow;
+    for (final d in days) {
+      final l = d.date.toLocal();
+      if (l.year == now.year && l.month == now.month && l.day == now.day) {
+        today = d;
+      } else if (today != null && tomorrow == null) {
+        tomorrow = d;
+      }
+    }
+    today ??= days.isNotEmpty ? days.first : null;
+    if (today == null) return;
+    final list = <_PrayerEntry>[];
+    DateTime? next;
+    var nextIdx = -1;
+    var i = 0;
+    for (final key in _names.keys) {
+      final t = today.times[key]?.toLocal();
+      if (t == null) continue;
+      final passed = t.isBefore(now);
+      if (!passed && next == null) {
+        next = t;
+        nextIdx = i;
+      }
+      list.add(_PrayerEntry(_names[key]![0], _names[key]![1], _hm(t), passed));
+      i++;
+    }
+    if (next == null && tomorrow != null) {
+      final f = tomorrow.times['Fajr']?.toLocal();
+      if (f != null) {
+        next = f;
+        nextIdx = 0;
+      }
+    }
+    _prayers = list;
+    _nextAt = next;
+    _nextIdx = nextIdx < 0 ? 0 : nextIdx;
+  }
+
+  int _nextIdx = 0;
   int get _nextPrayerIndex =>
-      _prayers.indexWhere((p) => !p.passed).clamp(0, 4);
+      _prayers.isEmpty ? 0 : _nextIdx.clamp(0, _prayers.length - 1);
 
   Duration get _countdownToNext {
-    final next = _prayers[_nextPrayerIndex];
-    final parts = next.time.split(':');
-    final target = DateTime(_now.year, _now.month, _now.day,
-        int.parse(parts[0]), int.parse(parts[1]));
-    final diff = target.difference(_now);
+    final t = _nextAt;
+    if (t == null) return Duration.zero;
+    final diff = t.difference(_now);
     return diff.isNegative ? Duration.zero : diff;
   }
 
@@ -84,7 +131,7 @@ class _AodPreviewScreenState extends ConsumerState<AodPreviewScreen> {
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    _timer = Timer.periodic(const Duration(seconds: 30), (_) {
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() => _now = DateTime.now());
     });
   }
@@ -101,6 +148,19 @@ class _AodPreviewScreenState extends ConsumerState<AodPreviewScreen> {
     final settings = ref.watch(aodSettingsProvider);
     final color = _aodColorValue(settings.color);
     final dimColor = color.withOpacity(0.45);
+    final days = ref.watch(prayerTimesProvider).valueOrNull;
+    if (days != null) _loadPrayers(days);
+    if (_prayers.isEmpty) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: const Center(
+            child: CircularProgressIndicator(color: Color(0xFF5FB59B)),
+          ),
+        ),
+      );
+    }
     final countdown = _countdownToNext;
     final nextPrayer = _prayers[_nextPrayerIndex];
 

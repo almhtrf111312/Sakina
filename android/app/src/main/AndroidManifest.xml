@@ -52,6 +52,7 @@
     <!-- ============================================================ -->
     <!-- SENSORS (compass/accelerometer for Qibla) -->
     <!-- ============================================================ -->
+    <uses-feature android:name="android.software.live_wallpaper" android:required="false" />
     <uses-feature android:name="android.hardware.sensor.compass" android:required="false" />
     <uses-feature android:name="android.hardware.sensor.accelerometer" android:required="false" />
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />

@@ -823,6 +823,15 @@ class _AodSettingsScreenState extends ConsumerState<AodSettingsScreen> {
 
     try {
       final success = await AlarmBridge.setAsLockscreenWallpaper();
+      if (mounted && !success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'تعذّر فتح معاينة الخلفية على هذا الجهاز. افتح: الإعدادات ← الخلفية ← الخلفيات الحية ← سكينة.',
+                style: TextStyle(fontFamily: 'Cairo')),
+          ),
+        );
+      }
       if (mounted && success) {
         showDialog(
           context: context,
@@ -842,7 +851,7 @@ class _AodSettingsScreenState extends ConsumerState<AodSettingsScreen> {
               ],
             ),
             content: const Text(
-              'تم فتح نافذة نظام أندرويد لمعاينة الخلفية.\n\nاضغط على "تعيين كخلفية" (Set Wallpaper) ثم حدد "شاشة القفل" أو "شاشة القفل والشاشة الرئيسية" لتعمل خلفية سكينة الدائمة (AOD) بشكل مستمر ومباشر.',
+              'فُتحت معاينة نظام أندرويد للخلفية الحية.\n\nاضغط "تعيين كخلفية" ثم اختر "شاشة القفل" (أو القفل والرئيسية). ستظهر الصلاة القادمة ووقتها على شاشة القفل.\n\nملاحظة: أندرويد لا يسمح لتطبيق خارجي بالرسم داخل وضع AOD الخاص بالنظام نفسه، لذلك تظهر خلفية سكينة السوداء (مع إزاحة بكسلات لحماية الشاشة) على شاشة القفل، وإشعار الأذان يظهر والجهاز مقفل.',
               style: TextStyle(
                   fontFamily: 'Cairo',
                   color: Color(0xFFE8EFEC),
@@ -876,43 +885,11 @@ class _AodSettingsScreenState extends ConsumerState<AodSettingsScreen> {
   }
 
   Future<void> _previewAod() async {
-    final settings = ref.read(aodSettingsProvider);
-    final prayerData = {
-      'nextPrayer': 'العشاء',
-      'nextPrayerTime': '21:30',
-      'countdown': '01:45',
-      'currentTime': '19:45',
-      'hijriDate': '١٤ جمادى الأولى ١٤٤٨',
-      'prayers': [
-        {'name': 'الفجر', 'time': '05:12', 'passed': true},
-        {'name': 'الظهر', 'time': '12:30', 'passed': true},
-        {'name': 'العصر', 'time': '15:45', 'passed': true},
-        {'name': 'المغرب', 'time': '18:22', 'passed': true},
-        {'name': 'العشاء', 'time': '21:30', 'passed': false},
-      ],
-      'batteryPct': 85,
-      'color': settings.color.name,
-      'brightness': settings.brightness,
-      'showClock': settings.showClock,
-      'showHijriDate': settings.showHijriDate,
-      'showPrayersRow': settings.showPrayersRow,
-      'showBattery': settings.showBattery,
-      'pattern': settings.pattern.name,
-      'clockStyle': settings.clockStyle,
-    };
-
-    try {
-      await AlarmBridge.showAodScreen(prayerData);
-    } catch (_) {
-      if (mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const AodPreviewScreen(),
-          ),
-        );
-      }
-    }
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AodPreviewScreen()),
+    );
   }
 
   Widget _buildNotSupported(ThemeData theme) {

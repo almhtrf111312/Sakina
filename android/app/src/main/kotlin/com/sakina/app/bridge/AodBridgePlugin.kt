@@ -9,7 +9,10 @@ import android.os.Build
 import androidx.annotation.NonNull
 import com.sakina.app.aod.AodActivity
 import com.sakina.app.aod.SakinaWallpaperService
+import android.app.Activity
 import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
@@ -30,7 +33,7 @@ import org.json.JSONObject
  *   - updateWallpaperSettings(settings: Map) -> Boolean
  *   - isWallpaperSupported() -> Boolean
  */
-class AodBridgePlugin : FlutterPlugin, MethodCallHandler {
+class AodBridgePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     companion object {
         const val CHANNEL_NAME = "com.sakina.app/aod"
@@ -39,6 +42,18 @@ class AodBridgePlugin : FlutterPlugin, MethodCallHandler {
 
     private lateinit var context: Context
     private var methodChannel: MethodChannel? = null
+    private var activity: Activity? = null
+
+    override fun onAttachedToActivity(binding: ActivityPluginBinding) { activity = binding.activity }
+    override fun onDetachedFromActivityForConfigChanges() { activity = null }
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) { activity = binding.activity }
+    override fun onDetachedFromActivity() { activity = null }
+
+    private fun launch(intent: Intent) {
+        val a = activity
+        if (a != null) a.startActivity(intent)
+        else context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }
 
     override fun onAttachedToEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
         context = binding.applicationContext
@@ -110,27 +125,23 @@ class AodBridgePlugin : FlutterPlugin, MethodCallHandler {
             }
 
             "setAsLockscreenWallpaper" -> {
-                try {
-                    val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER).apply {
-                        putExtra(
-                            WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
-                            ComponentName(context, SakinaWallpaperService::class.java)
-                        )
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                    }
-                    context.startActivity(intent)
-                    result.success(true)
-                } catch (e: Exception) {
+                val component = ComponentName(context, SakinaWallpaperService::class.java)
+                val attempts = listOf(
+                    Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER).apply {
+                        putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT, component)
+                    },
+                    Intent(WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER),
+                    Intent(android.provider.Settings.ACTION_DISPLAY_SETTINGS)
+                )
+                var ok = false
+                for (i in attempts) {
                     try {
-                        val chooserIntent = Intent(WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER).apply {
-                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                        }
-                        context.startActivity(chooserIntent)
-                        result.success(true)
-                    } catch (e2: Exception) {
-                        result.error("WALLPAPER_ERROR", e2.message, null)
-                    }
+                        launch(i)
+                        ok = true
+                        break
+                    } catch (_: Exception) {}
                 }
+                result.success(ok)
             }
 
             "requestDrawOverApps" -> {
