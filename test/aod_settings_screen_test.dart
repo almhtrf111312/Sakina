@@ -24,26 +24,27 @@ void main() {
     rejectStart = false;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async {
-          calls.add(call);
-          switch (call.method) {
-            case 'getLockDisplaySettings':
-              return stored;
-            case 'setLockDisplayEnabled':
-              if (rejectStart)
-                throw PlatformException(
-                  code: 'START_FAILED',
-                  message: 'تعذّر التشغيل',
-                );
-              stored['enabled'] = call.arguments['enabled'];
-              stored['running'] = stored['enabled'];
-              return stored['enabled'];
-            case 'saveLockDisplaySettings':
-              stored.addAll(Map<String, dynamic>.from(call.arguments as Map));
-              return true;
-            default:
-              return true;
+      calls.add(call);
+      switch (call.method) {
+        case 'getLockDisplaySettings':
+          return stored;
+        case 'setLockDisplayEnabled':
+          if (rejectStart) {
+            throw PlatformException(
+              code: 'START_FAILED',
+              message: 'تعذّر التشغيل',
+            );
           }
-        });
+          stored['enabled'] = call.arguments['enabled'];
+          stored['running'] = stored['enabled'];
+          return stored['enabled'];
+        case 'saveLockDisplaySettings':
+          stored.addAll(Map<String, dynamic>.from(call.arguments as Map));
+          return true;
+        default:
+          return true;
+      }
+    });
   });
   tearDown(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

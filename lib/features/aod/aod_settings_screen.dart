@@ -43,16 +43,18 @@ class _AodSettingsScreenState extends State<AodSettingsScreen>
   Future<void> _load() async {
     try {
       final settings = await AlarmBridge.getLockDisplaySettings();
-      if (mounted)
+      if (mounted) {
         setState(() {
           _settings = settings;
           _error = null;
         });
+      }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(
           () => _error = 'تعذّر قراءة حالة الشاشة الدائمة. حاول مجدداً.',
         );
+      }
     }
   }
 
@@ -75,12 +77,12 @@ class _AodSettingsScreenState extends State<AodSettingsScreen>
   }
 
   Future<void> _toggle(bool enabled) => _run(() async {
-    if (enabled && _settings?['permission'] != true) {
-      await AlarmBridge.requestDrawOverApps();
-      return;
-    }
-    await AlarmBridge.setLockDisplayEnabled(enabled);
-  });
+        if (enabled && _settings?['permission'] != true) {
+          await AlarmBridge.requestDrawOverApps();
+          return;
+        }
+        await AlarmBridge.setLockDisplayEnabled(enabled);
+      });
 
   Future<void> _save(String key, dynamic value) =>
       _run(() => AlarmBridge.saveLockDisplaySettings({key: value}));
@@ -123,10 +125,10 @@ class _AodSettingsScreenState extends State<AodSettingsScreen>
                       !permission
                           ? 'اسمح بالظهور فوق التطبيقات ثم فعّل الخيار'
                           : enabled && s['running'] != true
-                          ? 'الخدمة متوقفة؛ أوقف الخيار وأعد تفعيله'
-                          : enabled
-                          ? 'مفعّلة؛ أطفئ الشاشة للتجربة'
-                          : 'متوقفة',
+                              ? 'الخدمة متوقفة؛ أوقف الخيار وأعد تفعيله'
+                              : enabled
+                                  ? 'مفعّلة؛ أطفئ الشاشة للتجربة'
+                                  : 'متوقفة',
                     ),
                     value: enabled,
                     onChanged: _busy ? null : _toggle,
@@ -156,9 +158,8 @@ class _AodSettingsScreenState extends State<AodSettingsScreen>
                             radius: 8,
                           ),
                           selected: s['color'] == entry.key,
-                          onSelected: _busy
-                              ? null
-                              : (_) => _save('color', entry.key),
+                          onSelected:
+                              _busy ? null : (_) => _save('color', entry.key),
                         ),
                       )
                       .toList(),
@@ -174,8 +175,8 @@ class _AodSettingsScreenState extends State<AodSettingsScreen>
                     onChanged: _busy
                         ? null
                         : (value) => setState(
-                            () => _settings = {...s, 'brightness': value},
-                          ),
+                              () => _settings = {...s, 'brightness': value},
+                            ),
                     onChangeEnd: (value) => _save('brightness', value),
                   ),
                 ),
@@ -194,9 +195,8 @@ class _AodSettingsScreenState extends State<AodSettingsScreen>
                 ),
                 const SizedBox(height: 16),
                 FilledButton.icon(
-                  onPressed: _busy
-                      ? null
-                      : () => _run(AlarmBridge.previewLockDisplay),
+                  onPressed:
+                      _busy ? null : () => _run(AlarmBridge.previewLockDisplay),
                   icon: const Icon(Icons.preview),
                   label: const Text('معاينة الشاشة الفعلية'),
                 ),
@@ -209,9 +209,8 @@ class _AodSettingsScreenState extends State<AodSettingsScreen>
                   'في شاومي وبعض الأجهزة: من إعدادات سكينة اسمح بالعرض على شاشة القفل والنوافذ المنبثقة في الخلفية إن وُجدت، واختر عدم تقييد البطارية. تختلف أسماء الخيارات حسب الجهاز. بعد إعادة تشغيل الهاتف أو إيقاف التطبيق إجبارياً، افتح سكينة لاستئناف الخدمة.',
                 ),
                 OutlinedButton(
-                  onPressed: _busy
-                      ? null
-                      : () => _run(AlarmBridge.openAppSettings),
+                  onPressed:
+                      _busy ? null : () => _run(AlarmBridge.openAppSettings),
                   child: const Text('فتح إعدادات سكينة في النظام'),
                 ),
                 const SizedBox(height: 8),
