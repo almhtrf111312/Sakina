@@ -133,7 +133,7 @@ class SettingsModel {
   const SettingsModel({
     this.themeMode = AppThemeMode.night,
     this.language = AppLanguage.arabic,
-    this.calculationMethod = CalculationMethod.makkah,
+    this.calculationMethod = CalculationMethod.ummAlQura,
     this.madhab = Madhab.shafi,
     this.highLatitudeRule = HighLatitudeRule.angleBased,
     this.prayerAdjustments = const {
@@ -236,7 +236,7 @@ class SettingsModel {
       language: AppLanguage.fromCode(json['language'] as String? ?? 'ar'),
       calculationMethod: CalculationMethod.values.firstWhere(
         (m) => m.name == json['calculationMethod'],
-        orElse: () => CalculationMethod.makkah,
+        orElse: () => CalculationMethod.ummAlQura,
       ),
       madhab: Madhab.values.firstWhere(
         (m) => m.name == json['madhab'],

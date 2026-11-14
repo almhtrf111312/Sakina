@@ -63,7 +63,7 @@ class PrayerTimeModel {
     required this.isha,
     this.midnight,
     this.qiyam,
-    this.method = CalculationMethod.makkah,
+    this.method = CalculationMethod.ummAlQura,
     this.madhab = Madhab.shafi,
     this.highLatitudeRule = HighLatitudeRule.angleBased,
     this.adjustments = const {},
@@ -187,7 +187,7 @@ class PrayerTimeModel {
           : null,
       method: CalculationMethod.values.firstWhere(
         (m) => m.name == json['method'],
-        orElse: () => CalculationMethod.makkah,
+        orElse: () => CalculationMethod.ummAlQura,
       ),
       madhab: Madhab.values.firstWhere(
         (m) => m.name == json['madhab'],
