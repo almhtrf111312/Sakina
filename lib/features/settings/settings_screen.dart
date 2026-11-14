@@ -112,13 +112,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Color _accentColorValue(AccentColor c) {
     switch (c) {
       case AccentColor.green:
-        return AppColors.nightPrimary;
+        return const Color(0xFF5FB59B);
       case AccentColor.gold:
-        return AppColors.nightSecondary;
+        return const Color(0xFFD9B46A);
       case AccentColor.white:
-        return Colors.white;
+        return const Color(0xFFE8EFEC);
       case AccentColor.blue:
-        return const Color(0xFF5B9BD5);
+        return const Color(0xFF6FA8DC);
     }
   }
 
@@ -1170,6 +1170,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     onChanged: (v) => notifier.update(
                         (s) => s.copyWith(showBackgroundDecoration: v)),
                   ),
+                  _divider(isDark),
+
+                  // Tap sound
+                  SwitchListTile(
+                    title: const Text('صوت النقر',
+                        style: TextStyle(fontFamily: 'Cairo', fontSize: 15)),
+                    subtitle: const Text(
+                      'صوت خفيف عند الضغط على الأزرار',
+                      style: TextStyle(fontFamily: 'Cairo', fontSize: 12),
+                    ),
+                    value: settings.tapSound,
+                    activeColor: primary,
+                    onChanged: (v) =>
+                        notifier.update((s) => s.copyWith(tapSound: v)),
+                  ),
+                  _divider(isDark),
+
+                  // Tap haptic
+                  SwitchListTile(
+                    title: const Text('الاهتزاز عند النقر',
+                        style: TextStyle(fontFamily: 'Cairo', fontSize: 15)),
+                    subtitle: const Text(
+                      'اهتزاز خفيف عند الضغط على الأزرار',
+                      style: TextStyle(fontFamily: 'Cairo', fontSize: 12),
+                    ),
+                    value: settings.tapHaptic,
+                    activeColor: primary,
+                    onChanged: (v) =>
+                        notifier.update((s) => s.copyWith(tapHaptic: v)),
+                  ),
                 ],
               ),
             ),
@@ -1730,7 +1760,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(width: 8),
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Cairo',
               fontSize: 14,
               fontWeight: FontWeight.bold,

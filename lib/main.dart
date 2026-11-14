@@ -5,11 +5,13 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/i18n/app_localizations.dart';
+import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
 import 'data/notifications/prayer_alarm_sync.dart';
-import 'data/settings/settings_repository.dart' show sharedPreferencesProvider;
-import 'domain/models/settings_model.dart';
+import 'core/utils/alarm_bridge.dart';
+import 'data/prayer/prayer_repository.dart';
+import 'data/settings/settings_repository.dart';
 import 'features/home/home_screen.dart';
 import 'features/azkar/azkar_screen.dart';
 import 'features/qibla/qibla_screen.dart';
@@ -19,10 +21,6 @@ import 'features/settings/settings_screen.dart';
 // ---------------------------------------------------------------------------
 // Providers
 // ---------------------------------------------------------------------------
-
-final settingsProvider = StateNotifierProvider<SettingsNotifier, SettingsModel>(
-  (ref) => SettingsNotifier(),
-);
 
 final currentTabProvider = StateProvider<int>((ref) => 0);
 
@@ -69,19 +67,49 @@ void main() async {
 class SakinaApp extends ConsumerWidget {
   const SakinaApp({super.key});
 
+  /// Day/night decision for the "follow sunrise/sunset" theme mode.
+  bool _isDaytime(WidgetRef ref) {
+    final now = DateTime.now();
+    final schedule = ref.watch(prayerTimesProvider).valueOrNull;
+    if (schedule != null && schedule.isNotEmpty) {
+      final times = schedule.first.times;
+      final sunrise = times['Sunrise']?.toLocal();
+      final maghrib = times['Maghrib']?.toLocal();
+      if (sunrise != null && maghrib != null) {
+        return now.isAfter(sunrise) && now.isBefore(maghrib);
+      }
+    }
+    return now.hour >= 6 && now.hour < 18;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(settingsProvider);
+    // Persisted settings (the same provider the Settings screen edits).
+    final settings = ref.watch(appSettingsProvider);
 
-    final themeMode = switch (settings.themeMode) {
-      AppThemeMode.night => ThemeMode.dark,
-      AppThemeMode.day => ThemeMode.light,
-      AppThemeMode.amoled => ThemeMode.dark,
-    };
+    // Palette switches must be set before the themes are built.
+    AppPalette.amoled = settings.themeMode == AppThemeMode.amoled;
+    AppPalette.accent = settings.accentColor.name;
 
-    final locale = Locale(settings.language.code);
+    final ThemeMode themeMode;
+    switch (settings.themeMode) {
+      case AppThemeMode.night:
+      case AppThemeMode.amoled:
+        themeMode = ThemeMode.dark;
+        break;
+      case AppThemeMode.day:
+        themeMode = ThemeMode.light;
+        break;
+      case AppThemeMode.systemAuto:
+        themeMode = ThemeMode.system;
+        break;
+      case AppThemeMode.sunriseAuto:
+        themeMode = _isDaytime(ref) ? ThemeMode.light : ThemeMode.dark;
+        break;
+    }
 
-    final isRtl = settings.language == AppLanguage.arabic;
+    final locale = Locale(settings.languageCode);
+    final isRtl = settings.languageCode == 'ar';
 
     return MaterialApp(
       title: AppConstants.appName,
@@ -104,12 +132,71 @@ class SakinaApp extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       builder: (context, child) {
-        return Directionality(
-          textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
-          child: child!,
+        final dark = Theme.of(context).brightness == Brightness.dark;
+        final iconBrightness = dark ? Brightness.light : Brightness.dark;
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: iconBrightness,
+            statusBarBrightness: dark ? Brightness.dark : Brightness.light,
+            systemNavigationBarColor: Colors.transparent,
+            systemNavigationBarIconBrightness: iconBrightness,
+          ),
+          child: _TapFeedback(
+            sound: settings.tapSound,
+            haptic: settings.tapHaptic,
+            child: Directionality(
+              textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
+              child: child!,
+            ),
+          ),
         );
       },
       home: const SakinaShell(),
+    );
+  }
+}
+
+/// Plays a short click and/or vibration on every genuine tap (not scrolls).
+class _TapFeedback extends StatefulWidget {
+  const _TapFeedback({
+    required this.child,
+    required this.sound,
+    required this.haptic,
+  });
+
+  final Widget child;
+  final bool sound;
+  final bool haptic;
+
+  @override
+  State<_TapFeedback> createState() => _TapFeedbackState();
+}
+
+class _TapFeedbackState extends State<_TapFeedback> {
+  Offset? _downPos;
+  int _downAt = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (e) {
+        _downPos = e.position;
+        _downAt = DateTime.now().millisecondsSinceEpoch;
+      },
+      onPointerUp: (e) {
+        final down = _downPos;
+        _downPos = null;
+        if (down == null || (!widget.sound && !widget.haptic)) return;
+        final moved = (e.position - down).distance;
+        final held = DateTime.now().millisecondsSinceEpoch - _downAt;
+        if (moved < 14 && held < 350) {
+          AlarmBridge.tapFeedback(sound: widget.sound, haptic: widget.haptic);
+        }
+      },
+      onPointerCancel: (_) => _downPos = null,
+      child: widget.child,
     );
   }
 }
@@ -161,7 +248,6 @@ class _SakinaShellState extends ConsumerState<SakinaShell>
   @override
   Widget build(BuildContext context) {
     final currentTab = ref.watch(currentTabProvider);
-    final settings = ref.watch(settingsProvider);
     // Keep native adhan alarms in sync with prayer times & settings.
     ref.watch(prayerAlarmSyncProvider);
     final l10n = AppLocalizations.of(context);

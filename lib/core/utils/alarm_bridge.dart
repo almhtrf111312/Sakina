@@ -75,6 +75,15 @@ class AlarmBridge {
   }
 
   /// Play a test adhan sound.
+  /// Short tap sound and/or vibration (played natively, independent of the
+  /// system "touch sounds" setting).
+  static Future<void> tapFeedback({bool sound = true, bool haptic = true}) async {
+    try {
+      await _alarmChannel
+          .invokeMethod('tapFeedback', {'sound': sound, 'haptic': haptic});
+    } catch (_) {}
+  }
+
   static Future<void> testAdhan(
       {required String soundId, required double volume}) async {
     try {

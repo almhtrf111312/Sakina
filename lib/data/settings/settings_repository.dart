@@ -52,6 +52,8 @@ class AppSettings {
   final NumeralType numeralType;
   final String languageCode; // 'ar', 'en', 'tr'
   final bool showBackgroundDecoration;
+  final bool tapSound;
+  final bool tapHaptic;
 
   // ── Azkar ─────────────────────────────────────────────────────────────
   final double azkarFontSize;
@@ -112,6 +114,8 @@ class AppSettings {
     this.numeralType = NumeralType.arabic,
     this.languageCode = 'ar',
     this.showBackgroundDecoration = true,
+    this.tapSound = true,
+    this.tapHaptic = true,
     this.azkarFontSize = 1.0,
     this.showTashkeel = true,
     this.showVirtueAndSource = true,
@@ -160,6 +164,8 @@ class AppSettings {
     NumeralType? numeralType,
     String? languageCode,
     bool? showBackgroundDecoration,
+    bool? tapSound,
+    bool? tapHaptic,
     double? azkarFontSize,
     bool? showTashkeel,
     bool? showVirtueAndSource,
@@ -208,6 +214,8 @@ class AppSettings {
       languageCode: languageCode ?? this.languageCode,
       showBackgroundDecoration:
           showBackgroundDecoration ?? this.showBackgroundDecoration,
+      tapSound: tapSound ?? this.tapSound,
+      tapHaptic: tapHaptic ?? this.tapHaptic,
       azkarFontSize: azkarFontSize ?? this.azkarFontSize,
       showTashkeel: showTashkeel ?? this.showTashkeel,
       showVirtueAndSource: showVirtueAndSource ?? this.showVirtueAndSource,
@@ -261,6 +269,8 @@ class AppSettings {
         'numeralType': numeralType.name,
         'languageCode': languageCode,
         'showBackgroundDecoration': showBackgroundDecoration,
+        'tapSound': tapSound,
+        'tapHaptic': tapHaptic,
         'azkarFontSize': azkarFontSize,
         'showTashkeel': showTashkeel,
         'showVirtueAndSource': showVirtueAndSource,
@@ -328,6 +338,8 @@ class AppSettings {
       languageCode: (j['languageCode'] as String?) ?? 'ar',
       showBackgroundDecoration:
           (j['showBackgroundDecoration'] as bool?) ?? true,
+      tapSound: (j['tapSound'] as bool?) ?? true,
+      tapHaptic: (j['tapHaptic'] as bool?) ?? true,
       azkarFontSize: (j['azkarFontSize'] as num?)?.toDouble() ?? 1.0,
       showTashkeel: (j['showTashkeel'] as bool?) ?? true,
       showVirtueAndSource: (j['showVirtueAndSource'] as bool?) ?? true,

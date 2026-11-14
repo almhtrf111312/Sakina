@@ -11,11 +11,11 @@ class AppTheme {
   // -------------------------------------------------------------------------
 
   static ThemeData nightTheme() {
-    const primary = AppColors.nightPrimary;
-    const secondary = AppColors.nightSecondary;
-    const background = AppColors.nightBackground;
-    const surface = AppColors.nightSurface;
-    const elevated = AppColors.nightElevated;
+    final primary = AppColors.nightPrimary;
+    final secondary = AppColors.nightSecondary;
+    final background = AppColors.nightBackground;
+    final surface = AppColors.nightSurface;
+    final elevated = AppColors.nightElevated;
     const textPrimary = AppColors.nightTextPrimary;
     const textSecondary = AppColors.nightTextSecondary;
 
@@ -111,7 +111,7 @@ class AppTheme {
         ),
       ),
       iconTheme: const IconThemeData(color: textPrimary),
-      primaryIconTheme: const IconThemeData(color: primary),
+      primaryIconTheme: IconThemeData(color: primary),
       textTheme: _buildTextTheme(textPrimary, textSecondary),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -174,7 +174,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         behavior: SnackBarBehavior.floating,
       ),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
+      progressIndicatorTheme: ProgressIndicatorThemeData(
         color: primary,
         circularTrackColor: Color(0x1F5FB59B),
       ),
@@ -200,8 +200,8 @@ class AppTheme {
   // -------------------------------------------------------------------------
 
   static ThemeData dayTheme() {
-    const primary = AppColors.dayPrimary;
-    const secondary = AppColors.daySecondary;
+    final primary = AppColors.dayPrimary;
+    final secondary = AppColors.daySecondary;
     const background = AppColors.dayBackground;
     const surface = AppColors.daySurface;
     const textPrimary = AppColors.dayTextPrimary;
@@ -295,7 +295,7 @@ class AppTheme {
         ),
       ),
       iconTheme: const IconThemeData(color: textPrimary),
-      primaryIconTheme: const IconThemeData(color: primary),
+      primaryIconTheme: IconThemeData(color: primary),
       textTheme: _buildTextTheme(textPrimary, textSecondary),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -358,7 +358,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         behavior: SnackBarBehavior.floating,
       ),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
+      progressIndicatorTheme: ProgressIndicatorThemeData(
         color: primary,
         circularTrackColor: Color(0x1F2F7F69),
       ),
@@ -384,8 +384,8 @@ class AppTheme {
   // -------------------------------------------------------------------------
 
   static ThemeData amoledTheme() {
-    const primary = AppColors.nightPrimary;
-    const secondary = AppColors.nightSecondary;
+    final primary = AppColors.nightPrimary;
+    final secondary = AppColors.nightSecondary;
     const background = AppColors.amoledBackground;
     const surface = AppColors.amoledSurface;
     const textPrimary = AppColors.nightTextPrimary;
@@ -479,7 +479,7 @@ class AppTheme {
         ),
       ),
       iconTheme: const IconThemeData(color: textPrimary),
-      primaryIconTheme: const IconThemeData(color: primary),
+      primaryIconTheme: IconThemeData(color: primary),
       textTheme: _buildTextTheme(textPrimary, textSecondary),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -542,7 +542,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         behavior: SnackBarBehavior.floating,
       ),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
+      progressIndicatorTheme: ProgressIndicatorThemeData(
         color: primary,
         circularTrackColor: Color(0x1F5FB59B),
       ),

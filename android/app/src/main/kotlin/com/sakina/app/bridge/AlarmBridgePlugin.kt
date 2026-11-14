@@ -7,7 +7,13 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
+import android.util.Log
+import android.media.AudioAttributes
+import android.media.SoundPool
 import android.os.PowerManager
+import android.os.VibrationEffect
+import android.os.Vibrator
+import com.sakina.app.R
 import androidx.annotation.NonNull
 import androidx.core.app.NotificationManagerCompat
 import com.sakina.app.alarm.AdhanReceiver
@@ -95,8 +101,62 @@ class AlarmBridgePlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamH
 
     // ── MethodCallHandler ───────────────────────────────────────────────────
 
+    // ── Tap feedback (sound + vibration), independent of system touch settings ──
+    private var tapPool: SoundPool? = null
+    private var tapSoundId = 0
+    private var tapLoaded = false
+
+    private fun tapFeedback(sound: Boolean, haptic: Boolean) {
+        try {
+            if (haptic) {
+                val vib = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+                if (vib != null && vib.hasVibrator()) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        vib.vibrate(VibrationEffect.createOneShot(14, 110))
+                    } else {
+                        @Suppress("DEPRECATION")
+                        vib.vibrate(14)
+                    }
+                }
+            }
+            if (sound) {
+                var pool = tapPool
+                if (pool == null) {
+                    pool = SoundPool.Builder()
+                        .setMaxStreams(2)
+                        .setAudioAttributes(
+                            AudioAttributes.Builder()
+                                .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                                .build()
+                        )
+                        .build()
+                    pool.setOnLoadCompleteListener { sp, id, status ->
+                        if (status == 0) {
+                            tapLoaded = true
+                            sp.play(id, 0.7f, 0.7f, 1, 0, 1f)
+                        }
+                    }
+                    tapSoundId = pool.load(context, R.raw.tap_click, 1)
+                    tapPool = pool
+                } else if (tapLoaded) {
+                    pool.play(tapSoundId, 0.7f, 0.7f, 1, 0, 1f)
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "tapFeedback failed: ${e.message}")
+        }
+    }
+
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         when (call.method) {
+            "tapFeedback" -> {
+                tapFeedback(
+                    call.argument<Boolean>("sound") ?: true,
+                    call.argument<Boolean>("haptic") ?: true
+                )
+                result.success(true)
+            }
             "schedulePrayerAlarms" -> {
                 val prayerTimesArg = call.argument<Any>("prayerTimes")
                 val prayerTimesJson = when (prayerTimesArg) {

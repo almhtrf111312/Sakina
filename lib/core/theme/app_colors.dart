@@ -11,19 +11,19 @@ abstract final class AppColors {
   // -------------------------------------------------------------------------
 
   /// Dark green-black background
-  static const Color nightBackground = Color(0xFF0E1514);
+  static Color get nightBackground => AppPalette.amoled ? const Color(0xFF000000) : const Color(0xFF0E1514);
 
   /// Slightly lighter surface / card background
-  static const Color nightSurface = Color(0xFF16211F);
+  static Color get nightSurface => AppPalette.amoled ? const Color(0xFF0A0D0C) : const Color(0xFF16211F);
 
   /// Elevated / dialog background
-  static const Color nightElevated = Color(0xFF1D2B28);
+  static Color get nightElevated => AppPalette.amoled ? const Color(0xFF131917) : const Color(0xFF1D2B28);
 
   /// Teal-green accent
-  static const Color nightPrimary = Color(0xFF5FB59B);
+  static Color get nightPrimary => AppPalette.primaryDark;
 
   /// Gold accent
-  static const Color nightSecondary = Color(0xFFC9A86A);
+  static Color get nightSecondary => AppPalette.secondaryDark;
 
   /// Primary text
   static const Color nightTextPrimary = Color(0xFFE8EFEC);
@@ -42,10 +42,10 @@ abstract final class AppColors {
   static const Color daySurface = Color(0xFFFFFFFF);
 
   /// Deeper teal primary
-  static const Color dayPrimary = Color(0xFF2F7F69);
+  static Color get dayPrimary => AppPalette.primaryLight;
 
   /// Warm gold secondary
-  static const Color daySecondary = Color(0xFFA9884A);
+  static Color get daySecondary => AppPalette.secondaryLight;
 
   /// Dark green-grey text
   static const Color dayTextPrimary = Color(0xFF1B2A27);
@@ -180,4 +180,48 @@ abstract final class AppColors {
   /// Semi-transparent white overlay.
   static Color overlayWhite(double opacity) =>
       Colors.white.withOpacity(opacity);
+}
+
+
+/// Runtime palette switches (AMOLED + accent colour). Set from the app root
+/// before the themes are built, so every `AppColors.night*` / `day*` read
+/// follows the user's choice.
+abstract final class AppPalette {
+  static bool amoled = false;
+
+  /// 'green' | 'gold' | 'white' | 'blue'
+  static String accent = 'green';
+
+  static Color get primaryDark {
+    switch (accent) {
+      case 'gold':
+        return const Color(0xFFD9B46A);
+      case 'white':
+        return const Color(0xFFE8EFEC);
+      case 'blue':
+        return const Color(0xFF6FA8DC);
+      default:
+        return const Color(0xFF5FB59B);
+    }
+  }
+
+  static Color get primaryLight {
+    switch (accent) {
+      case 'gold':
+        return const Color(0xFFA9843F);
+      case 'white':
+        return const Color(0xFF3B4A46);
+      case 'blue':
+        return const Color(0xFF3F78B5);
+      default:
+        return const Color(0xFF2F7F69);
+    }
+  }
+
+  // When the accent is gold, the former primary green takes the gold's place.
+  static Color get secondaryDark =>
+      accent == 'gold' ? const Color(0xFF5FB59B) : const Color(0xFFC9A86A);
+
+  static Color get secondaryLight =>
+      accent == 'gold' ? const Color(0xFF2F7F69) : const Color(0xFFA9884A);
 }
