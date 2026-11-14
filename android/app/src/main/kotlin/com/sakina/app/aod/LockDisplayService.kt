@@ -41,7 +41,8 @@ class LockDisplayService : Service() {
     private val handler = Handler(Looper.getMainLooper())
     private val launchDisplay = Runnable {
         val power = getSystemService(POWER_SERVICE) as PowerManager
-        if (enabled(this) && Settings.canDrawOverlays(this) && !power.isInteractive && powerAllowed(this)) {
+        if (enabled(this) && Settings.canDrawOverlays(this) && !power.isInteractive &&
+            SystemClock.elapsedRealtime() >= suppressUntil && powerAllowed(this)) {
             try {
                 startActivity(Intent(this, LockDisplayActivity::class.java)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP))

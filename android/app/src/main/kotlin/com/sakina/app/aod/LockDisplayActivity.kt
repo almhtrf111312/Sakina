@@ -64,7 +64,7 @@ class LockDisplayActivity : Activity() {
     private var registered = false
     override fun onResume() { super.onResume(); visible = !preview }
     override fun onPause() {
-        if (!preview && !(getSystemService(POWER_SERVICE) as PowerManager).isInteractive) {
+        if (!preview) {
             LockDisplayService.suppressUntil = SystemClock.elapsedRealtime() + 1500
         }
         visible = false
