@@ -7,7 +7,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/location/location_service.dart';
 import '../../data/prayer/prayer_repository.dart';
+import '../../domain/models/azkar_model.dart';
 import '../aod/aod_settings_screen.dart';
+import '../azkar/azkar_list_screen.dart';
 import 'providers/home_providers.dart';
 import 'widgets/daily_dhikr_card.dart';
 import 'widgets/hero_prayer_card.dart';
@@ -27,6 +29,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     await ref.read(prayerRepositoryProvider).invalidateCache();
     ref.invalidate(prayerTimesProvider);
     ref.invalidate(todayPrayerTimesProvider);
+  }
+
+  void _openAzkar(BuildContext context, AzkarCategory category) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AzkarListScreen(category: category),
+      ),
+    );
   }
 
   void _showCitySelector(BuildContext context) {
@@ -183,9 +193,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           subtitle: 'نور وبركة ليومك',
                           icon: Icons.wb_sunny_outlined,
                           accentColor: const Color(0xFFC9A86A),
-                          onTap: () {
-                            // Navigate to morning azkar
-                          },
+                          onTap: () => _openAzkar(context, AzkarCategory.morning),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -195,9 +203,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           subtitle: 'حفظ وسكينة لليلتك',
                           icon: Icons.nights_stay_outlined,
                           accentColor: const Color(0xFF5FB59B),
-                          onTap: () {
-                            // Navigate to evening azkar
-                          },
+                          onTap: () => _openAzkar(context, AzkarCategory.evening),
                         ),
                       ),
                     ],

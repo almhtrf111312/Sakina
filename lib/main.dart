@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/i18n/app_localizations.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
+import 'data/notifications/prayer_alarm_sync.dart';
 import 'data/settings/settings_repository.dart' show sharedPreferencesProvider;
 import 'domain/models/settings_model.dart';
 import 'features/home/home_screen.dart';
@@ -161,6 +162,8 @@ class _SakinaShellState extends ConsumerState<SakinaShell>
   Widget build(BuildContext context) {
     final currentTab = ref.watch(currentTabProvider);
     final settings = ref.watch(settingsProvider);
+    // Keep native adhan alarms in sync with prayer times & settings.
+    ref.watch(prayerAlarmSyncProvider);
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
 

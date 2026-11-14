@@ -18,7 +18,7 @@ class AlarmBridge {
       List<Map<String, dynamic>> prayers) async {
     try {
       await _alarmChannel.invokeMethod(
-          'schedulePrayerAlarms', {'prayers': jsonEncode(prayers)});
+          'schedulePrayerAlarms', {'prayerTimes': jsonEncode(prayers)});
     } on PlatformException catch (e) {
       throw AlarmBridgeException('schedulePrayerAlarms failed: ${e.message}');
     }

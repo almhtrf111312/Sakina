@@ -215,6 +215,11 @@ class LocationNotifier extends StateNotifier<AppLocation> {
 
   void _init() {
     final raw = _prefs.getString(_locationKey);
+    if (raw == null) {
+      // First launch: start from Mecca but in *automatic* mode so that the
+      // first GPS fix replaces it.
+      state = AppLocation.mecca.copyWith(isManual: false);
+    }
     if (raw != null) {
       try {
         state = AppLocation.fromJson(jsonDecode(raw) as Map<String, dynamic>);

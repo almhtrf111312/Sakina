@@ -177,13 +177,12 @@ class PrayerCalculator {
         day + b - 1524.5;
   }
 
-  /// Solar noon in JD (transit).
+  /// Solar noon (transit) as a JD. [jd] is the JD at 0h UTC of the date.
   static double _solarNoon(double jd, double longitude) {
-    final t = _julianCenturies(jd);
+    final t = _julianCenturies(jd + 0.5);
     final eot = _equationOfTime(t); // minutes
-    // Local apparent solar noon
-    return jd + (12.0 - longitude / 15.0 - eot / 60.0) / 24.0 - 12.0 / 24.0;
-    // Simpler: solar noon in JD = jd_start + (12 - longitude/15 - eot/60)/24
+    // UTC hour of local apparent noon = 12 - lon/15 - EoT/60
+    return jd + (12.0 - longitude / 15.0 - eot / 60.0) / 24.0;
   }
 
   /// Julian centuries since J2000.
@@ -316,17 +315,10 @@ class PrayerCalculator {
     }
   }
 
-  /// Convert Julian day to UTC DateTime anchored to [date].
+  /// Convert a Julian day to an absolute UTC DateTime (handles day wrap).
   static DateTime _jdToUtc(double jd, DateTime date) {
-    // JD fraction → hours UTC
-    final fractional = (jd + 0.5) % 1.0;
-    final hoursUtc = fractional * 24.0;
-    final hours = hoursUtc.floor();
-    final minutesFrac = (hoursUtc - hours) * 60.0;
-    final minutes = minutesFrac.floor();
-    final seconds = ((minutesFrac - minutes) * 60).round();
-
-    return DateTime.utc(date.year, date.month, date.day, hours, minutes, seconds);
+    final ms = ((jd - 2440587.5) * 86400000.0).round();
+    return DateTime.fromMillisecondsSinceEpoch(ms, isUtc: true);
   }
 
   static double _toRad(double deg) => deg * pi / 180.0;

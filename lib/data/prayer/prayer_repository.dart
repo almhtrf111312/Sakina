@@ -73,8 +73,10 @@ class PrayerRepository {
 
   // ── Cache helpers ──────────────────────────────────────────────────────
 
+  // Bump the version prefix whenever the calculation logic changes so that
+  // previously cached (wrong) times are discarded.
   String _metaKey() =>
-      '${_location.latitude.toStringAsFixed(4)}_'
+      'v2_${_location.latitude.toStringAsFixed(4)}_'
       '${_location.longitude.toStringAsFixed(4)}_'
       '${_settings.calculationMethod.name}_'
       '${_settings.madhab.name}';
