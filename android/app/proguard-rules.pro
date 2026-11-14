@@ -25,9 +25,6 @@
 # Geolocator
 -keep class com.baseflow.geolocator.** { *; }
 
-# just_audio
--keep class com.ryanheise.just_audio.** { *; }
-
 # Keep enum classes
 -keepclassmembers enum * {
     public static **[] values();
