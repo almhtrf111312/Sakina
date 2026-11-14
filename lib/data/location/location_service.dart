@@ -9,6 +9,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../settings/settings_repository.dart';
+import 'world_locations.dart';
 
 // ─────────────────────────── Models ─────────────────────────────────────────
 
@@ -229,8 +230,26 @@ class LocationNotifier extends StateNotifier<AppLocation> {
     }
     // Attempt automatic update if not manual
     if (!state.isManual) {
+      if (state.cityName == 'الموقع الحالي') _resolveSavedName();
       refreshLocationIfMoved();
     }
+  }
+
+  /// Name of the nearest province/country for a GPS fix (offline).
+  Future<(String, String)> _placeName(double lat, double lon) async {
+    try {
+      final world = await WorldLocations.load();
+      final n = world.nearest(lat, lon);
+      if (n != null) return (n.label, n.country.name);
+    } catch (_) {}
+    return ('الموقع الحالي', '');
+  }
+
+  Future<void> _resolveSavedName() async {
+    final place = await _placeName(state.latitude, state.longitude);
+    if (place.$2.isEmpty || state.isManual) return;
+    state = state.copyWith(cityName: place.$1, countryName: place.$2);
+    await _save();
   }
 
   Future<void> _save() async {
@@ -254,12 +273,13 @@ class LocationNotifier extends StateNotifier<AppLocation> {
       if (distance >= LocationService.movementThresholdMeters ||
           (state.latitude == AppLocation.mecca.latitude &&
               state.longitude == AppLocation.mecca.longitude)) {
+        final place = await _placeName(position.latitude, position.longitude);
         state = AppLocation(
           latitude: position.latitude,
           longitude: position.longitude,
           elevation: position.altitude,
-          cityName: 'الموقع الحالي', // Current Location
-          countryName: '',
+          cityName: place.$1,
+          countryName: place.$2,
           isManual: false,
         );
         await _save();
@@ -274,12 +294,13 @@ class LocationNotifier extends StateNotifier<AppLocation> {
     final position = await _locationService.getCurrentPosition();
     if (position == null) return false;
 
+    final place = await _placeName(position.latitude, position.longitude);
     state = AppLocation(
       latitude: position.latitude,
       longitude: position.longitude,
       elevation: position.altitude,
-      cityName: 'الموقع الحالي',
-      countryName: '',
+      cityName: place.$1,
+      countryName: place.$2,
       isManual: false,
     );
     await _save();

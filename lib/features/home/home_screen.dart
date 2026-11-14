@@ -10,6 +10,7 @@ import '../../data/prayer/prayer_repository.dart';
 import '../../domain/models/azkar_model.dart';
 import '../aod/aod_settings_screen.dart';
 import '../azkar/azkar_list_screen.dart';
+import '../location/location_picker_screen.dart';
 import 'providers/home_providers.dart';
 import 'widgets/daily_dhikr_card.dart';
 import 'widgets/hero_prayer_card.dart';
@@ -560,6 +561,33 @@ class _CitySelectorSheet extends ConsumerWidget {
                 ref.invalidate(prayerTimesProvider);
                 ref.invalidate(todayPrayerTimesProvider);
               }
+            },
+          ),
+          const SizedBox(height: 8),
+          ListTile(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            tileColor: isDark
+                ? const Color(0xFF1D2B28)
+                : const Color(0xFFF0F7F4),
+            leading: const Icon(Icons.public, color: Color(0xFF5FB59B)),
+            title: const Text(
+              'كل دول العالم ومحافظاتها',
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            subtitle: const Text(
+              'اختر الدولة ثم المحافظة أو الولاية',
+              style: TextStyle(fontFamily: 'Cairo', fontSize: 11),
+            ),
+            onTap: () {
+              final nav = Navigator.of(context);
+              nav.pop();
+              nav.push(MaterialPageRoute(
+                  builder: (_) => const LocationPickerScreen()));
             },
           ),
           const SizedBox(height: 16),
