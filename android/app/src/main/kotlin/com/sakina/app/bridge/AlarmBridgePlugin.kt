@@ -9,6 +9,7 @@ import android.content.IntentFilter
 import android.os.Build
 import android.util.Log
 import android.media.AudioAttributes
+import android.media.MediaPlayer
 import android.media.SoundPool
 import android.os.PowerManager
 import android.os.VibrationEffect
@@ -148,8 +149,61 @@ class AlarmBridgePlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamH
         }
     }
 
+    // ── Adhan preview (used by the sound picker) ──
+    private var previewPlayer: MediaPlayer? = null
+
+    private fun stopPreview() {
+        try {
+            previewPlayer?.stop()
+        } catch (_: Exception) {}
+        try {
+            previewPlayer?.release()
+        } catch (_: Exception) {}
+        previewPlayer = null
+    }
+
+    private fun playPreview(soundId: String, volume: Float): Boolean {
+        stopPreview()
+        val path = "flutter_assets/assets/audio/$soundId.mp3"
+        return try {
+            val afd = context.assets.openFd(path)
+            val mp = MediaPlayer()
+            mp.setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build()
+            )
+            mp.setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+            afd.close()
+            mp.setVolume(volume, volume)
+            mp.setOnCompletionListener { stopPreview() }
+            mp.prepare()
+            mp.start()
+            previewPlayer = mp
+            true
+        } catch (e: Exception) {
+            Log.w(TAG, "preview failed for $soundId: ${e.message}")
+            false
+        }
+    }
+
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         when (call.method) {
+            "testAdhan" -> {
+                val id = call.argument<String>("soundId") ?: "adhan_takbeer"
+                val vol = (call.argument<Double>("volume") ?: 1.0).toFloat()
+                result.success(playPreview(id, vol))
+            }
+            "stopTestAdhan" -> {
+                stopPreview()
+                result.success(true)
+            }
+            "cancelAlarm" -> {
+                // Alarms are rescheduled as a whole; cancel everything off the main thread.
+                Thread { AlarmScheduler.cancelAllAlarms(context) }.start()
+                result.success(true)
+            }
             "tapFeedback" -> {
                 tapFeedback(
                     call.argument<Boolean>("sound") ?: true,

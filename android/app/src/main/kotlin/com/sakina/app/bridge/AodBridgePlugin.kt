@@ -133,6 +133,19 @@ class AodBridgePlugin : FlutterPlugin, MethodCallHandler {
                 }
             }
 
+            "requestDrawOverApps" -> {
+                try {
+                    val intent = Intent(
+                        android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        android.net.Uri.parse("package:${context.packageName}")
+                    ).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }
+                    context.startActivity(intent)
+                    result.success(true)
+                } catch (e: Exception) {
+                    result.success(false)
+                }
+            }
+
             "updateWallpaperSettings" -> {
                 try {
                     val prefs = context.getSharedPreferences(

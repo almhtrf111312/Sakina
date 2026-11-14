@@ -89,8 +89,8 @@ class AlarmBridge {
     try {
       await _alarmChannel
           .invokeMethod('testAdhan', {'soundId': soundId, 'volume': volume});
-    } on PlatformException catch (e) {
-      throw AlarmBridgeException('testAdhan failed: ${e.message}');
+    } catch (_) {
+      // Preview is best-effort.
     }
   }
 
@@ -98,9 +98,7 @@ class AlarmBridge {
   static Future<void> stopTestAdhan() async {
     try {
       await _alarmChannel.invokeMethod('stopTestAdhan');
-    } on PlatformException catch (e) {
-      throw AlarmBridgeException('stopTestAdhan failed: ${e.message}');
-    }
+    } catch (_) {}
   }
 
   /// Stream of alarm events from native (e.g. alarm fired, error).

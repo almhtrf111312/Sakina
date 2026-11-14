@@ -58,7 +58,7 @@ class AdhanForegroundService : Service() {
         const val EXTRA_NOTIF_ID    = "notification_id"
 
         // Adhan asset filenames (placed in android/app/src/main/assets/audio/)
-        private const val ADHAN_ASSET_DEFAULT = "flutter_assets/assets/audio/adhan_mecca.mp3"
+        private const val ADHAN_ASSET_DEFAULT = "flutter_assets/assets/audio/adhan_takbeer.mp3"
         private const val ADHAN_ASSET_FAJR    = "flutter_assets/assets/audio/adhan_fajr.mp3"   // includes sobhi
 
         private const val DEFAULT_TIMEOUT_MS  = 3 * 60 * 1000L  // 3 min
@@ -137,6 +137,13 @@ class AdhanForegroundService : Service() {
 
     // ── Playback ─────────────────────────────────────────────────────────────
 
+    private fun assetExists(path: String): Boolean = try {
+        assets.openFd(path).close()
+        true
+    } catch (e: Exception) {
+        false
+    }
+
     private fun startPlayback() {
         if (notifType == "silent" || notifType == "off") return
         if (notifType == "vibrate") {
@@ -146,14 +153,16 @@ class AdhanForegroundService : Service() {
 
         requestAudioFocus()
 
-        val assetName = when {
-            notifType == "short" || notifType == "beep" ->
-                "flutter_assets/assets/audio/beep_short.mp3"
-            isFajr -> ADHAN_ASSET_FAJR
-            soundId.isNotEmpty() && soundId != "adhan_fajr" ->
-                "flutter_assets/assets/audio/$soundId.mp3"
-            else -> ADHAN_ASSET_DEFAULT
+        val base = "flutter_assets/assets/audio/"
+        val candidates = if (notifType == "short" || notifType == "beep") {
+            listOf(base + "beep_short.mp3")
+        } else {
+            listOf(
+                if (soundId.isNotEmpty()) "$base$soundId.mp3" else ADHAN_ASSET_DEFAULT,
+                ADHAN_ASSET_DEFAULT
+            )
         }
+        val assetName = candidates.firstOrNull { assetExists(it) } ?: ADHAN_ASSET_DEFAULT
 
         try {
             mediaPlayer = MediaPlayer().apply {

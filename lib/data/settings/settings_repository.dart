@@ -99,7 +99,7 @@ class AppSettings {
       'Maghrib': NotificationMode.fullAdhan,
       'Isha': NotificationMode.fullAdhan,
     },
-    this.selectedAdhanSound = 'adhan_mecca',
+    this.selectedAdhanSound = 'adhan_takbeer',
     this.adhanVolume = 1.0,
     this.gradualVolume = false,
     this.preAdhanReminderMinutes = 0,
@@ -319,7 +319,7 @@ class AppSettings {
                   en(NotificationMode.values, v as String?,
                       NotificationMode.fullAdhan))),
       selectedAdhanSound:
-          (j['selectedAdhanSound'] as String?) ?? 'adhan_mecca',
+          (j['selectedAdhanSound'] as String?) ?? 'adhan_takbeer',
       adhanVolume: (j['adhanVolume'] as num?)?.toDouble() ?? 1.0,
       gradualVolume: (j['gradualVolume'] as bool?) ?? false,
       preAdhanReminderMinutes: (j['preAdhanReminderMinutes'] as int?) ?? 0,

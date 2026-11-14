@@ -727,9 +727,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     title: const Text('صوت الأذان',
                         style: TextStyle(fontFamily: 'Cairo', fontSize: 15)),
                     subtitle: Text(
-                      settings.selectedAdhanSound == 'adhan_mecca'
-                          ? 'أذان الحرم المكي الشريف'
-                          : settings.selectedAdhanSound,
+                      adhanSoundName(settings.selectedAdhanSound),
                       style: TextStyle(
                           fontFamily: 'Cairo',
                           fontSize: 13,

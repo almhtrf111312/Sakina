@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/alarm_bridge.dart';
 
@@ -18,57 +19,71 @@ class AdhanSoundOption {
   });
 }
 
+/// Default sound: a short takbeer ("الله أكبر الله أكبر", ~5 seconds).
+const String kDefaultAdhanSound = 'adhan_takbeer';
+
+/// Known sounds. A sound only appears in the picker when its file
+/// `assets/audio/<id>.mp3` exists, so adding a file with one of these names
+/// (or any `adhan_*.mp3`) makes it show up automatically.
 const List<AdhanSoundOption> adhanSoundList = [
   AdhanSoundOption(
+    id: 'adhan_takbeer',
+    nameAr: 'تكبير فقط (الله أكبر الله أكبر)',
+    muadhinAr: 'الافتراضي',
+    durationText: '٥ ثوانٍ',
+    descriptionAr: 'تكبيرتان قصيرتان بصوت هادئ، وهو الصوت الافتراضي للأذان.',
+  ),
+  AdhanSoundOption(
     id: 'adhan_mecca',
-    nameAr: 'أذان الحرم المكي الشريف',
-    muadhinAr: 'الشيخ علي أحمد ملا',
-    durationText: '٣:٤٥ دقيقة',
-    descriptionAr: 'الأذان الحجازي الشهير المرفوع من منارات المسجد الحرام بمكة المكرمة.',
+    nameAr: 'أذان الحرم المكي',
+    muadhinAr: 'مكة المكرمة',
+    durationText: '',
+    descriptionAr: 'الأذان كاملاً.',
   ),
   AdhanSoundOption(
     id: 'adhan_madina',
-    nameAr: 'أذان المسجد النبوي الشريف',
-    muadhinAr: 'الشيخ عبدالمجيد السريحي',
-    durationText: '٣:٣٠ دقيقة',
-    descriptionAr: 'نداء الروح والسكينة من رحاب الروضة الشريفة والمسجد النبوي بالمدينة المنورة.',
+    nameAr: 'أذان المسجد النبوي',
+    muadhinAr: 'المدينة المنورة',
+    durationText: '',
+    descriptionAr: 'الأذان كاملاً.',
   ),
   AdhanSoundOption(
     id: 'adhan_aqsa',
-    nameAr: 'أذان المسجد الأقصى المبارك',
-    muadhinAr: 'مؤذنو القدس الشريف',
-    durationText: '٣:٥٠ دقيقة',
-    descriptionAr: 'صوت الحق الصادح من مسرى رسول الله ﷺ وأولى القبلتين.',
+    nameAr: 'أذان المسجد الأقصى',
+    muadhinAr: 'القدس',
+    durationText: '',
+    descriptionAr: 'الأذان كاملاً.',
   ),
   AdhanSoundOption(
     id: 'adhan_egypt',
-    nameAr: 'أذان صوت القاهرة التاريخي',
-    muadhinAr: 'الشيخ محمد رفعت',
-    durationText: '٣:٢٠ دقيقة',
-    descriptionAr: 'الصوت الخاشع العريق المرتبط بأصالة التلاوة والأجواء الروحانية.',
-  ),
-  AdhanSoundOption(
-    id: 'adhan_abdulbasit',
-    nameAr: 'أذان الشيخ عبدالباسط عبدالصمد',
-    muadhinAr: 'الشيخ عبدالباسط عبدالصمد',
-    durationText: '٣:١٥ دقيقة',
-    descriptionAr: 'تسجيل نادر بنبرة ترتيل فريدة وصوت ذهبي مؤثر.',
+    nameAr: 'أذان مصري',
+    muadhinAr: 'القاهرة',
+    durationText: '',
+    descriptionAr: 'الأذان كاملاً.',
   ),
   AdhanSoundOption(
     id: 'adhan_sham',
-    nameAr: 'أذان الجامع الأموي (الشام)',
-    muadhinAr: 'مؤذنو دمشق الفيحاء',
-    durationText: '٣:١٠ دقيقة',
-    descriptionAr: 'أذان الجماعة التراثي بالأنغام الشامية الرصينة من الجامع الأموي الكبير.',
+    nameAr: 'أذان شامي',
+    muadhinAr: 'دمشق',
+    durationText: '',
+    descriptionAr: 'الأذان كاملاً.',
   ),
   AdhanSoundOption(
-    id: 'adhan_short',
-    nameAr: 'التكبيرات فقط (تنبيه مختصر)',
-    muadhinAr: 'الله أكبر الله أكبر',
-    durationText: '٢٥ ثانية',
-    descriptionAr: 'تكبيرتان فقط مناسبان لبيئة العمل أو الأماكن التي تتطلب تنبيهاً سريعاً.',
+    id: 'adhan_fajr',
+    nameAr: 'أذان الفجر',
+    muadhinAr: '',
+    durationText: '',
+    descriptionAr: 'الأذان كاملاً مع "الصلاة خير من النوم".',
   ),
 ];
+
+/// Display name for a stored sound id.
+String adhanSoundName(String id) {
+  for (final o in adhanSoundList) {
+    if (o.id == id) return o.nameAr;
+  }
+  return id;
+}
 
 class SoundSelectorSheet extends StatefulWidget {
   final String selectedSoundId;
@@ -104,12 +119,45 @@ class _SoundSelectorSheetState extends State<SoundSelectorSheet> {
   late String _currentSelectedId;
   String? _currentlyPlayingId;
   late double _previewVolume;
+  List<AdhanSoundOption> _options = const [];
 
   @override
   void initState() {
     super.initState();
     _currentSelectedId = widget.selectedSoundId;
     _previewVolume = widget.initialVolume;
+    _loadAvailableSounds();
+  }
+
+  Future<void> _loadAvailableSounds() async {
+    try {
+      final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+      final assets = manifest.listAssets().toSet();
+      final result = <AdhanSoundOption>[];
+      final known = <String>{};
+      for (final o in adhanSoundList) {
+        known.add(o.id);
+        if (assets.contains('assets/audio/${o.id}.mp3')) result.add(o);
+      }
+      // Any extra adhan_*.mp3 file the user adds shows up automatically.
+      for (final a in assets) {
+        final m = RegExp(r'^assets/audio/(adhan_[A-Za-z0-9_]+)\.mp3$').firstMatch(a);
+        if (m != null && !known.contains(m.group(1))) {
+          final id = m.group(1)!;
+          result.add(AdhanSoundOption(
+            id: id,
+            nameAr: id.replaceFirst('adhan_', '').replaceAll('_', ' '),
+            muadhinAr: 'صوت مضاف',
+            durationText: '',
+            descriptionAr: '',
+          ));
+        }
+      }
+      if (result.isEmpty) result.addAll(adhanSoundList.take(1));
+      if (mounted) setState(() => _options = result);
+    } catch (_) {
+      if (mounted) setState(() => _options = adhanSoundList.take(1).toList());
+    }
   }
 
   @override
@@ -296,10 +344,10 @@ class _SoundSelectorSheetState extends State<SoundSelectorSheet> {
                     controller: scrollController,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 8),
-                    itemCount: adhanSoundList.length,
+                    itemCount: _options.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
-                      final item = adhanSoundList[index];
+                      final item = _options[index];
                       final isSelected = item.id == _currentSelectedId;
                       final isPlaying = item.id == _currentlyPlayingId;
 
