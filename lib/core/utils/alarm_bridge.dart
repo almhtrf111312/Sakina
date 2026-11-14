@@ -165,6 +165,14 @@ class AlarmBridge {
 
   // ─── Live Lockscreen Wallpaper Methods ─────────────────────────────────────
 
+  /// Push the prayer schedule to home-screen widgets and the persistent
+  /// "next prayer" notification.
+  static Future<void> updateWidgetData(String json) async {
+    try {
+      await _alarmChannel.invokeMethod('updateWidgetData', {'json': json});
+    } catch (_) {}
+  }
+
   /// Set Sakina as the Live Wallpaper (lock screen & home screen).
   static Future<bool> setAsLockscreenWallpaper() async {
     try {

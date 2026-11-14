@@ -199,6 +199,14 @@ class AlarmBridgePlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamH
                 stopPreview()
                 result.success(true)
             }
+            "updateWidgetData" -> {
+                val json = call.argument<String>("json")
+                if (json != null) {
+                    com.sakina.app.widget.WidgetData.save(context, json)
+                    com.sakina.app.widget.SakinaTick.refresh(context)
+                }
+                result.success(true)
+            }
             "cancelAlarm" -> {
                 // Alarms are rescheduled as a whole; cancel everything off the main thread.
                 Thread { AlarmScheduler.cancelAllAlarms(context) }.start()
@@ -248,8 +256,17 @@ class AlarmBridgePlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamH
 
             "requestExactAlarmPermission" -> {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    val intent = AlarmScheduler.getExactAlarmSettingsIntent(context)
-                    context.startActivity(intent)
+                    try {
+                        context.startActivity(AlarmScheduler.getExactAlarmSettingsIntent(context))
+                    } catch (e: Exception) {
+                        // Some ROMs (e.g. MIUI) lack this screen: open the app's own settings page.
+                        context.startActivity(
+                            Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                data = android.net.Uri.parse("package:${context.packageName}")
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
+                        )
+                    }
                     result.success(true)
                 } else {
                     result.success(true)

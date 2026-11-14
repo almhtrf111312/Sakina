@@ -1198,6 +1198,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     onChanged: (v) =>
                         notifier.update((s) => s.copyWith(tapHaptic: v)),
                   ),
+                  _divider(isDark),
+
+                  // Persistent next-prayer notification
+                  SwitchListTile(
+                    title: const Text('إشعار دائم للصلاة القادمة',
+                        style: TextStyle(fontFamily: 'Cairo', fontSize: 15)),
+                    subtitle: const Text(
+                      'يعرض الصلاة القادمة والوقت المتبقي مع شريط تقدّم',
+                      style: TextStyle(fontFamily: 'Cairo', fontSize: 12),
+                    ),
+                    value: settings.persistentNotification,
+                    activeColor: primary,
+                    onChanged: (v) => notifier
+                        .update((s) => s.copyWith(persistentNotification: v)),
+                  ),
                 ],
               ),
             ),

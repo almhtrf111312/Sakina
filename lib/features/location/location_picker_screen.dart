@@ -136,7 +136,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
       children: [
         if (_query.isEmpty)
           ListTile(
-            leading: const Icon(Icons.star_rounded, color: AppColors.nightPrimary),
+            leading: Icon(Icons.star_rounded, color: AppColors.nightPrimary),
             title: Text(
               c.capital.isNotEmpty ? 'العاصمة: ${c.capital}' : 'مركز ${c.name}',
               style: const TextStyle(fontFamily: 'Cairo'),

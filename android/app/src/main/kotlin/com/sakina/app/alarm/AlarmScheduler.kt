@@ -154,6 +154,7 @@ object AlarmScheduler {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                data = android.net.Uri.parse("package:${context.packageName}")
             }
         } else {
             Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {

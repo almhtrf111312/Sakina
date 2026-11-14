@@ -42,6 +42,7 @@ class BootReceiver : BroadcastReceiver() {
     }
 
     private fun handleReschedule(context: Context, triggerAction: String) {
+        com.sakina.app.widget.SakinaTick.refresh(context)
         // Try to reschedule from stored prayer times
         val success = AlarmScheduler.rescheduleFromStorage(context)
 

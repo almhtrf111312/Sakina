@@ -4,7 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import com.sakina.app.widget.PrayerWidget
+import com.sakina.app.widget.SakinaTick
 
 /**
  * TimeChangeReceiver — listens for system time or timezone changes and triggers
@@ -31,6 +31,6 @@ class TimeChangeReceiver : BroadcastReceiver() {
         context.sendBroadcast(rescheduleIntent)
 
         // Refresh home screen widget
-        PrayerWidget.updateAllWidgets(context)
+        SakinaTick.refresh(context)
     }
 }

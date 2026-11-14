@@ -1,6 +1,7 @@
 // lib/features/home/widgets/hero_prayer_card.dart
 // Hero prayer card with countdown, circular progress indicator, and next prayer details.
 
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,8 +40,8 @@ class HeroPrayerCard extends ConsumerWidget {
               end: Alignment.bottomRight,
               colors: isDark
                   ? [
-                      const Color(0xFF1D2B28),
-                      const Color(0xFF16211F),
+                      AppColors.nightElevated,
+                      AppColors.nightSurface,
                     ]
                   : [
                       const Color(0xFFE8F5F1),
@@ -51,20 +52,22 @@ class HeroPrayerCard extends ConsumerWidget {
               BoxShadow(
                 color: isDark
                     ? Colors.black.withOpacity(0.35)
-                    : const Color(0xFF2F7F69).withOpacity(0.08),
+                    : AppColors.dayPrimary.withOpacity(0.08),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
             ],
             border: Border.all(
               color: isDark
-                  ? const Color(0xFF5FB59B).withOpacity(0.15)
-                  : const Color(0xFF2F7F69).withOpacity(0.12),
+                  ? AppColors.nightPrimary.withOpacity(0.15)
+                  : AppColors.dayPrimary.withOpacity(0.12),
               width: 1.2,
             ),
           ),
           child: Column(
             children: [
+              const _LiveClock(),
+              const SizedBox(height: 14),
               // ── Header: Icon + Next Prayer Title ──
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -73,15 +76,15 @@ class HeroPrayerCard extends ConsumerWidget {
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: isDark
-                          ? const Color(0xFF5FB59B).withOpacity(0.15)
-                          : const Color(0xFF2F7F69).withOpacity(0.12),
+                          ? AppColors.nightPrimary.withOpacity(0.15)
+                          : AppColors.dayPrimary.withOpacity(0.12),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       PrayerIcons.getIcon(data.prayerName),
                       color: isDark
-                          ? const Color(0xFF5FB59B)
-                          : const Color(0xFF2F7F69),
+                          ? AppColors.nightPrimary
+                          : AppColors.dayPrimary,
                       size: 22,
                     ),
                   ),
@@ -128,7 +131,7 @@ class HeroPrayerCard extends ConsumerWidget {
                         strokeCap: StrokeCap.round,
                         valueColor: AlwaysStoppedAnimation<Color>(
                           isDark
-                              ? const Color(0xFF1D2B28).withOpacity(0.8)
+                              ? AppColors.nightElevated.withOpacity(0.8)
                               : const Color(0xFFE0ECE8),
                         ),
                       ),
@@ -143,8 +146,8 @@ class HeroPrayerCard extends ConsumerWidget {
                         strokeCap: StrokeCap.round,
                         valueColor: AlwaysStoppedAnimation<Color>(
                           isDark
-                              ? const Color(0xFF5FB59B)
-                              : const Color(0xFF2F7F69),
+                              ? AppColors.nightPrimary
+                              : AppColors.dayPrimary,
                         ),
                       ),
                     ),
@@ -160,8 +163,8 @@ class HeroPrayerCard extends ConsumerWidget {
                         boxShadow: [
                           BoxShadow(
                             color: isDark
-                                ? const Color(0xFF5FB59B).withOpacity(0.05)
-                                : const Color(0xFF2F7F69).withOpacity(0.05),
+                                ? AppColors.nightPrimary.withOpacity(0.05)
+                                : AppColors.dayPrimary.withOpacity(0.05),
                             blurRadius: 15,
                             spreadRadius: 2,
                           ),
@@ -237,7 +240,7 @@ class HeroPrayerCard extends ConsumerWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
-        color: isDark ? const Color(0xFF16211F) : Colors.white,
+        color: isDark ? AppColors.nightSurface : Colors.white,
       ),
       child: const Center(
         child: CircularProgressIndicator(
@@ -245,6 +248,77 @@ class HeroPrayerCard extends ConsumerWidget {
           valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF5FB59B)),
         ),
       ),
+    );
+  }
+}
+
+
+/// Large live clock + date shown at the top of the hero card.
+class _LiveClock extends StatefulWidget {
+  const _LiveClock();
+
+  @override
+  State<_LiveClock> createState() => _LiveClockState();
+}
+
+class _LiveClockState extends State<_LiveClock> {
+  late Timer _timer;
+  DateTime _now = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() => _now = DateTime.now());
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = isDark ? AppColors.nightPrimary : AppColors.dayPrimary;
+    final sub = isDark ? const Color(0xFF9DB0AA) : const Color(0xFF607068);
+    String two(int n) => n.toString().padLeft(2, '0');
+    final date = DateFormat('EEEE، d MMMM yyyy', 'ar').format(_now);
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          textDirection: TextDirection.ltr,
+          children: [
+            Text(
+              '${two(_now.hour)}:${two(_now.minute)}',
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 52,
+                height: 1.1,
+                fontWeight: FontWeight.w300,
+                color: primary,
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              two(_now.second),
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 20,
+                color: primary.withOpacity(0.55),
+              ),
+            ),
+          ],
+        ),
+        Text(date,
+            style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: sub)),
+      ],
     );
   }
 }

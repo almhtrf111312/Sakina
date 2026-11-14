@@ -2,11 +2,14 @@
 // Keeps the native AlarmManager schedule in sync with calculated prayer times
 // and the user's notification settings.
 
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/utils/alarm_bridge.dart';
+import '../location/location_service.dart';
 import '../prayer/prayer_repository.dart';
 import '../settings/settings_repository.dart';
 
@@ -97,6 +100,31 @@ final prayerAlarmSyncProvider = FutureProvider<void>((ref) async {
     );
   } catch (e) {
     debugPrint('wallpaper data sync failed: $e');
+  }
+
+  // Home-screen widgets + persistent notification data.
+  try {
+    final location = ref.watch(locationProvider);
+    const five = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+    final items = <Map<String, dynamic>>[];
+    final cutoff = DateTime.now().toUtc().subtract(const Duration(hours: 30));
+    for (final day in schedule.take(4)) {
+      for (final k in five) {
+        final t = day.times[k];
+        if (t == null || t.isBefore(cutoff)) continue;
+        items.add({'n': k, 'ts': t.millisecondsSinceEpoch});
+      }
+    }
+    final city = [location.cityName, location.countryName]
+        .where((e) => e.isNotEmpty)
+        .join('، ');
+    await AlarmBridge.updateWidgetData(jsonEncode({
+      'city': city,
+      'items': items,
+      'notif': settings.persistentNotification,
+    }));
+  } catch (e) {
+    debugPrint('widget data sync failed: $e');
   }
 
   try {

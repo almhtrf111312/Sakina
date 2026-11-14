@@ -54,6 +54,7 @@ class AppSettings {
   final bool showBackgroundDecoration;
   final bool tapSound;
   final bool tapHaptic;
+  final bool persistentNotification;
 
   // ── Azkar ─────────────────────────────────────────────────────────────
   final double azkarFontSize;
@@ -116,6 +117,7 @@ class AppSettings {
     this.showBackgroundDecoration = true,
     this.tapSound = true,
     this.tapHaptic = true,
+    this.persistentNotification = true,
     this.azkarFontSize = 1.0,
     this.showTashkeel = true,
     this.showVirtueAndSource = true,
@@ -166,6 +168,7 @@ class AppSettings {
     bool? showBackgroundDecoration,
     bool? tapSound,
     bool? tapHaptic,
+    bool? persistentNotification,
     double? azkarFontSize,
     bool? showTashkeel,
     bool? showVirtueAndSource,
@@ -216,6 +219,7 @@ class AppSettings {
           showBackgroundDecoration ?? this.showBackgroundDecoration,
       tapSound: tapSound ?? this.tapSound,
       tapHaptic: tapHaptic ?? this.tapHaptic,
+      persistentNotification: persistentNotification ?? this.persistentNotification,
       azkarFontSize: azkarFontSize ?? this.azkarFontSize,
       showTashkeel: showTashkeel ?? this.showTashkeel,
       showVirtueAndSource: showVirtueAndSource ?? this.showVirtueAndSource,
@@ -271,6 +275,7 @@ class AppSettings {
         'showBackgroundDecoration': showBackgroundDecoration,
         'tapSound': tapSound,
         'tapHaptic': tapHaptic,
+        'persistentNotification': persistentNotification,
         'azkarFontSize': azkarFontSize,
         'showTashkeel': showTashkeel,
         'showVirtueAndSource': showVirtueAndSource,
@@ -340,6 +345,7 @@ class AppSettings {
           (j['showBackgroundDecoration'] as bool?) ?? true,
       tapSound: (j['tapSound'] as bool?) ?? true,
       tapHaptic: (j['tapHaptic'] as bool?) ?? true,
+      persistentNotification: (j['persistentNotification'] as bool?) ?? true,
       azkarFontSize: (j['azkarFontSize'] as num?)?.toDouble() ?? 1.0,
       showTashkeel: (j['showTashkeel'] as bool?) ?? true,
       showVirtueAndSource: (j['showVirtueAndSource'] as bool?) ?? true,
