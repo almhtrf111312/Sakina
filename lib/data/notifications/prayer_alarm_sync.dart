@@ -56,6 +56,25 @@ final prayerAlarmSyncProvider = FutureProvider<void>((ref) async {
     }
   }
 
+  // Feed the lock-screen / AOD live wallpaper with the real schedule.
+  try {
+    const fiveKeys = {'Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'};
+    final wallpaperSchedule = payload
+        .where((p) => fiveKeys.contains(p['name']))
+        .take(15)
+        .map((p) => {
+              'name': p['name'],
+              'ts': p['timestamp'],
+              'label': p['timeLabel'],
+            })
+        .toList();
+    await AlarmBridge.updateWallpaperSettings(
+      prayerData: {'schedule': wallpaperSchedule},
+    );
+  } catch (e) {
+    debugPrint('wallpaper data sync failed: $e');
+  }
+
   try {
     await AlarmBridge.schedulePrayerAlarms(payload);
   } catch (e) {

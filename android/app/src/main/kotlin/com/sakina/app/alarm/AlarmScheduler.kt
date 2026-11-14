@@ -26,7 +26,8 @@ object AlarmScheduler {
     private const val TAG = "AlarmScheduler"
     private const val PREFS_NAME = "sakina_alarm_prefs"
     private const val PREFS_KEY_PRAYER_TIMES = "prayer_times_json"
-    private const val MAX_ALARM_ID = 10000
+    private const val PREFS_KEY_ALARM_IDS = "scheduled_alarm_ids"
+    private const val MAX_ALARM_ID = 1_000_000_000
 
     // Prayer index constants (matches AdhanReceiver expectations)
     val PRAYER_NAMES = listOf("Fajr", "Dhuhr", "Asr", "Maghrib", "Isha")
@@ -63,6 +64,7 @@ object AlarmScheduler {
 
             val prayerArray = JSONArray(prayerTimesJson)
             var scheduled = 0
+            val scheduledIds = HashSet<String>()
 
             for (i in 0 until prayerArray.length()) {
                 val prayer = prayerArray.getJSONObject(i)
@@ -79,10 +81,12 @@ object AlarmScheduler {
 
                 val alarmId = generateAlarmId(timestamp, name)
                 scheduleExactAlarm(context, alarmManager, alarmId, timestamp, prayer.toString())
+                scheduledIds.add(alarmId.toString())
                 scheduled++
                 Log.d(TAG, "Scheduled $name at $timestamp (id=$alarmId)")
             }
 
+            getPrefs(context).edit().putStringSet(PREFS_KEY_ALARM_IDS, scheduledIds).apply()
             Log.i(TAG, "Scheduled $scheduled prayer alarms")
             true
         } catch (e: Exception) {
@@ -97,7 +101,12 @@ object AlarmScheduler {
      */
     fun cancelAllAlarms(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        for (id in 0 until MAX_ALARM_ID) {
+        val prefs = getPrefs(context)
+        val ids = prefs.getStringSet(PREFS_KEY_ALARM_IDS, emptySet()) ?: emptySet()
+        // Only cancel alarms we actually scheduled (previously this looped over
+        // 10,000 ids and froze the main thread).
+        for (idStr in ids) {
+            val id = idStr.toIntOrNull() ?: continue
             val intent = createAlarmIntent(context, id, null)
             val pi = PendingIntent.getBroadcast(
                 context,
@@ -110,7 +119,8 @@ object AlarmScheduler {
                 pi.cancel()
             }
         }
-        Log.i(TAG, "Cancelled all existing alarms")
+        prefs.edit().remove(PREFS_KEY_ALARM_IDS).apply()
+        Log.i(TAG, "Cancelled ${ids.size} existing alarms")
     }
 
     /**
@@ -203,9 +213,9 @@ object AlarmScheduler {
      * Keeps IDs within [0, MAX_ALARM_ID).
      */
     private fun generateAlarmId(timestamp: Long, name: String): Int {
-        val base = (timestamp / 60_000L).toInt() // minute-precision
-        val nameOffset = PRAYER_NAMES.indexOf(name).coerceAtLeast(0)
-        return Math.abs((base * 10 + nameOffset) % MAX_ALARM_ID)
+        val minutes = timestamp / 60_000L // minute-precision
+        val nameOffset = PRAYER_NAMES.indexOf(name).let { if (it < 0) 5 else it }
+        return ((minutes * 10 + nameOffset) % MAX_ALARM_ID).toInt()
     }
 
     private fun getPrefs(context: Context): SharedPreferences =

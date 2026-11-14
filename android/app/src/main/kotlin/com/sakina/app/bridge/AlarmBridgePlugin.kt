@@ -110,8 +110,16 @@ class AlarmBridgePlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamH
                     return
                 }
 
-                val success = AlarmScheduler.schedulePrayerAlarms(context, prayerTimesJson)
-                result.success(success)
+                // Run off the main thread so the UI never blocks on AlarmManager work.
+                val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
+                Thread {
+                    val success = try {
+                        AlarmScheduler.schedulePrayerAlarms(context, prayerTimesJson)
+                    } catch (e: Exception) {
+                        false
+                    }
+                    mainHandler.post { result.success(success) }
+                }.start()
             }
 
             "cancelAllAlarms" -> {

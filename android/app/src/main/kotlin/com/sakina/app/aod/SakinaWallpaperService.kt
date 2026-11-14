@@ -184,6 +184,37 @@ class SakinaWallpaperService : WallpaperService() {
                             prayerTimes.add(timesArray.optString(i))
                         }
                     }
+
+                    // Full multi-day schedule: lets the wallpaper pick the correct
+                    // "next prayer" by itself every minute without the app running.
+                    val schedule = json.optJSONArray("schedule")
+                    if (schedule != null && schedule.length() > 0) {
+                        val keys = listOf("Fajr", "Dhuhr", "Asr", "Maghrib", "Isha")
+                        val nowMs = System.currentTimeMillis()
+                        val today = Calendar.getInstance()
+                        val cal = Calendar.getInstance()
+                        var foundNext = false
+                        for (i in 0 until schedule.length()) {
+                            val o = schedule.optJSONObject(i) ?: continue
+                            val idx = keys.indexOf(o.optString("name"))
+                            if (idx < 0) continue
+                            val ts = o.optLong("ts")
+                            val label = o.optString("label")
+                            if (!foundNext && ts > nowMs) {
+                                nextPrayerNameAr = prayerNamesAr[idx]
+                                nextPrayerTime = label
+                                nextPrayerTimestamp = ts
+                                activePrayerIndex = idx
+                                foundNext = true
+                            }
+                            cal.timeInMillis = ts
+                            if (cal.get(Calendar.YEAR) == today.get(Calendar.YEAR) &&
+                                cal.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR) &&
+                                prayerTimes.size == 5) {
+                                prayerTimes[idx] = label
+                            }
+                        }
+                    }
                 }
 
                 val accentColor = prefs.getInt(KEY_ACCENT_COLOR, 0xFF5FB59B.toInt())
