@@ -314,18 +314,23 @@ class AppearanceSettingsPage extends ConsumerWidget {
                 ),
               settingsDivider(isDark),
 
-              // Persistent next-prayer notification
-              SwitchListTile(
-                title: const Text('إشعار دائم للصلاة القادمة',
+              ListTile(
+                title: const Text('خلفية ودجات الشاشة الرئيسية',
                     style: TextStyle(fontFamily: 'Cairo', fontSize: 15)),
-                subtitle: const Text(
-                  'يعرض الصلاة القادمة والوقت المتبقي مع شريط تقدّم',
-                  style: TextStyle(fontFamily: 'Cairo', fontSize: 12),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('الشفافية: ${(settings.widgetOpacity * 100).round()}%',
+                        style: const TextStyle(fontFamily: 'Cairo', fontSize: 12)),
+                    Slider(
+                      value: settings.widgetOpacity,
+                      min: 0,
+                      max: 1,
+                      divisions: 20,
+                      onChanged: (v) => notifier.update((s) => s.copyWith(widgetOpacity: v)),
+                    ),
+                  ],
                 ),
-                value: settings.persistentNotification,
-                activeColor: primary,
-                onChanged: (v) => notifier
-                    .update((s) => s.copyWith(persistentNotification: v)),
               ),
             ],
           ),

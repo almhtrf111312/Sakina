@@ -115,6 +115,17 @@ class _NotificationsSettingsPageState extends ConsumerState<NotificationsSetting
           isDark: isDark,
           child: Column(
             children: [
+              SwitchListTile(
+                title: const Text('إظهار الصلاة القادمة في شريط الإشعارات',
+                    style: TextStyle(fontFamily: 'Cairo', fontSize: 15)),
+                subtitle: const Text('الصلاة ووقتها والمتبقي ظاهرة مباشرة وتتحدث باستمرار',
+                    style: TextStyle(fontFamily: 'Cairo', fontSize: 12)),
+                value: settings.persistentNotification,
+                activeColor: primary,
+                onChanged: (v) => notifier.update(
+                    (s) => s.copyWith(persistentNotification: v)),
+              ),
+              settingsDivider(isDark),
               // Dedicated Permissions Screen entry
               ListTile(
                 leading: Container(
