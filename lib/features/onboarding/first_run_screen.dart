@@ -6,6 +6,7 @@ import '../../data/location/location_service.dart';
 import '../../data/settings/settings_repository.dart';
 import '../aod/always_on_screen.dart';
 import '../location/location_picker_screen.dart';
+import '../location/gps_location_button.dart';
 import '../settings/widgets/settings_common.dart';
 
 /// The walkthrough is shown only after a fresh install. Existing users keep
@@ -90,6 +91,10 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
               Text(!hasLocation ? 'اختر منطقة لحساب مواقيت الصلاة بدقة' :
                   '${location.cityName}، ${location.countryName}'),
               const SizedBox(height: 16),
+              GpsLocationButton(onLocated: () {
+                if (mounted) setState(() {});
+              }),
+              const SizedBox(height: 8),
               FilledButton.icon(
                 onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
                     builder: (_) => const LocationPickerScreen())),

@@ -8,7 +8,6 @@ import '../../core/theme/app_colors.dart';
 import '../aod/always_on_screen.dart';
 import 'pages/appearance_settings_page.dart';
 import 'pages/azkar_settings_page.dart';
-import 'pages/data_settings_page.dart';
 import 'pages/location_settings_page.dart';
 import 'pages/notifications_settings_page.dart';
 import 'pages/qibla_settings_page.dart';
@@ -179,16 +178,6 @@ class SettingsScreen extends ConsumerWidget {
               subtitleColor: aodEnabled ? primary : null,
               page: const AlwaysOnScreen(),
             ),
-            _entry(
-              context,
-              isDark: isDark,
-              primary: primary,
-              icon: Icons.save_outlined,
-              title: 'البيانات والنسخ الاحتياطي',
-              subtitle: 'تصدير الإعدادات واستعادتها وإعادة الضبط',
-              page: const DataSettingsPage(),
-            ),
-
             // ─── حول التطبيق ───────────────────────────────────────────────
             const SizedBox(height: 12),
             buildSettingsCard(
