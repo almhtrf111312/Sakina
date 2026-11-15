@@ -329,8 +329,8 @@ class AppSettings {
       };
 
   factory AppSettings.fromJson(Map<String, dynamic> j) {
-    T en<T>(List<T> values, String? name, T fallback) =>
-        values.firstWhere((v) => (v as dynamic).name == name,
+    T en<T extends Enum>(List<T> values, String? name, T fallback) =>
+        values.firstWhere((v) => v.name == name,
             orElse: () => fallback);
 
     return AppSettings(
