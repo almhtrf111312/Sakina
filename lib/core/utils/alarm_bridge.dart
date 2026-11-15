@@ -17,8 +17,11 @@ class AlarmBridge {
   static Future<void> schedulePrayerAlarms(
       List<Map<String, dynamic>> prayers) async {
     try {
-      await _alarmChannel.invokeMethod(
+      final scheduled = await _alarmChannel.invokeMethod<bool>(
           'schedulePrayerAlarms', {'prayerTimes': jsonEncode(prayers)});
+      if (scheduled != true) {
+        throw AlarmBridgeException('تعذرت جدولة الأذان؛ تحقق من إذن المنبه الدقيق');
+      }
     } on PlatformException catch (e) {
       throw AlarmBridgeException('schedulePrayerAlarms failed: ${e.message}');
     }
