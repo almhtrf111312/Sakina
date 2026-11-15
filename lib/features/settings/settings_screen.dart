@@ -7,7 +7,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/alarm_bridge.dart';
 import '../../data/prayer/prayer_calculator.dart';
 import '../../data/settings/settings_repository.dart';
-import '../aod/aod_settings_screen.dart';
+import '../aod/always_on_screen.dart';
 import 'widgets/calculation_method_selector.dart';
 import 'widgets/permission_check_screen.dart';
 import 'widgets/sound_selector_sheet.dart';
@@ -148,8 +148,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   String _notificationModeName(NotificationMode m) {
     switch (m) {
-      case NotificationMode.fullAdhan:
-        return 'أذان كامل';
       case NotificationMode.shortBeep:
         return 'تنبيه قصير';
       case NotificationMode.silent:
@@ -163,8 +161,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   IconData _notificationModeIcon(NotificationMode m) {
     switch (m) {
-      case NotificationMode.fullAdhan:
-        return Icons.volume_up_rounded;
       case NotificationMode.shortBeep:
         return Icons.notifications_active_outlined;
       case NotificationMode.silent:
@@ -698,7 +694,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ...['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha']
                       .map((pKey) {
                     final currentMode = settings.prayerNotifications[pKey] ??
-                        NotificationMode.fullAdhan;
+                        NotificationMode.shortBeep;
                     return ListTile(
                       dense: true,
                       leading: Icon(
@@ -723,7 +719,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         decoration: BoxDecoration(
                           color: isDark
                               ? AppColors.nightElevated
-                              : const Color(0xFFF0EFEA),
+                              : AppColors.dayChip,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -800,7 +796,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           activeColor: primary,
                           inactiveColor: isDark
                               ? AppColors.nightElevated
-                              : const Color(0xFFE2EBE7),
+                              : AppColors.dayChipStrong,
                           onChanged: (v) => notifier.setAdhanVolume(v),
                         ),
                       ],
@@ -1088,7 +1084,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           activeColor: primary,
                           inactiveColor: isDark
                               ? AppColors.nightElevated
-                              : const Color(0xFFE2EBE7),
+                              : AppColors.dayChipStrong,
                           onChanged: (v) =>
                               notifier.update((s) => s.copyWith(fontSize: v)),
                         ),
@@ -1278,7 +1274,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           activeColor: primary,
                           inactiveColor: isDark
                               ? AppColors.nightElevated
-                              : const Color(0xFFE2EBE7),
+                              : AppColors.dayChipStrong,
                           onChanged: (v) => notifier
                               .update((s) => s.copyWith(azkarFontSize: v)),
                         ),
@@ -1430,7 +1426,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
 
             // ─── قسم الشاشة الدائمة (AOD) ──────────────────────────────────
-            _buildSectionHeader('الشاشة الدائمة (AOD)', Icons.screen_lock_portrait_outlined),
+            _buildSectionHeader('الشاشة الدائمة', Icons.screen_lock_portrait_outlined),
 
             _buildCard(
               isDark: isDark,
@@ -1438,30 +1434,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: (settings.aodEnabled ? primary : Colors.grey)
+                    color: (ref.watch(alwaysOnProvider).enabled ? primary : Colors.grey)
                         .withOpacity(0.18),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.phone_android,
-                    color: settings.aodEnabled ? primary : Colors.grey,
+                    color: ref.watch(alwaysOnProvider).enabled ? primary : Colors.grey,
                   ),
                 ),
                 title: const Text(
-                  'إعدادات الشاشة الدائمة (Always-On Display)',
+                  'إعدادات الشاشة الدائمة',
                   style: TextStyle(
                       fontFamily: 'Cairo',
                       fontSize: 15,
                       fontWeight: FontWeight.bold),
                 ),
                 subtitle: Text(
-                  settings.aodEnabled
-                      ? 'مفعلة (${settings.aodWhenToShow == 'adhan' ? 'حول وقت الأذان' : 'دائماً'})'
+                  ref.watch(alwaysOnProvider).enabled
+                      ? 'مفعلة'
                       : 'معطلة - اضغط للضبط والمعاينة',
                   style: TextStyle(
                       fontFamily: 'Cairo',
                       fontSize: 12,
-                      color: settings.aodEnabled
+                      color: ref.watch(alwaysOnProvider).enabled
                           ? primary
                           : (isDark
                               ? AppColors.nightTextSecondary
@@ -1472,7 +1468,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const AodSettingsScreen(),
+                      builder: (_) => const AlwaysOnScreen(),
                     ),
                   );
                 },
@@ -1680,7 +1676,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   filled: true,
                   fillColor: isDark
                       ? AppColors.nightElevated
-                      : const Color(0xFFF0EFEA),
+                      : AppColors.dayChip,
                 ),
               ),
             ],

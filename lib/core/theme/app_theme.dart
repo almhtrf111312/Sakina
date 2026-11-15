@@ -16,8 +16,8 @@ class AppTheme {
     final background = AppColors.nightBackground;
     final surface = AppColors.nightSurface;
     final elevated = AppColors.nightElevated;
-    const textPrimary = AppColors.nightTextPrimary;
-    const textSecondary = AppColors.nightTextSecondary;
+    final textPrimary = AppColors.nightTextPrimary;
+    final textSecondary = AppColors.nightTextSecondary;
 
     return ThemeData(
       useMaterial3: true,
@@ -26,9 +26,9 @@ class AppTheme {
       colorScheme: ColorScheme.dark(
         primary: primary,
         surfaceTint: Colors.transparent,
-        onPrimary: const Color(0xFF0E1514),
+        onPrimary: AppColors.nightBackground,
         secondary: secondary,
-        onSecondary: const Color(0xFF0E1514),
+        onSecondary: AppColors.nightBackground,
         surface: surface,
         onSurface: textPrimary,
         background: background,
@@ -56,7 +56,7 @@ class AppTheme {
           fontWeight: FontWeight.w600,
           fontFamily: 'Cairo',
         ),
-        iconTheme: const IconThemeData(color: textPrimary),
+        iconTheme: IconThemeData(color: textPrimary),
         systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.light,
@@ -73,7 +73,7 @@ class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primary,
-          foregroundColor: const Color(0xFF0E1514),
+          foregroundColor: AppColors.nightBackground,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -111,7 +111,7 @@ class AppTheme {
           ),
         ),
       ),
-      iconTheme: const IconThemeData(color: textPrimary),
+      iconTheme: IconThemeData(color: textPrimary),
       primaryIconTheme: IconThemeData(color: primary),
       textTheme: _buildTextTheme(textPrimary, textSecondary),
       inputDecorationTheme: InputDecorationTheme(
@@ -203,10 +203,10 @@ class AppTheme {
   static ThemeData dayTheme() {
     final primary = AppColors.dayPrimary;
     final secondary = AppColors.daySecondary;
-    const background = AppColors.dayBackground;
-    const surface = AppColors.daySurface;
-    const textPrimary = AppColors.dayTextPrimary;
-    const textSecondary = AppColors.dayTextSecondary;
+    final background = AppColors.dayBackground;
+    final surface = AppColors.daySurface;
+    final textPrimary = AppColors.dayTextPrimary;
+    final textSecondary = AppColors.dayTextSecondary;
 
     return ThemeData(
       useMaterial3: true,
@@ -222,7 +222,7 @@ class AppTheme {
         onSurface: textPrimary,
         background: background,
         onBackground: textPrimary,
-        surfaceVariant: const Color(0xFFEBE9E3),
+        surfaceVariant: AppColors.dayChip,
         onSurfaceVariant: textSecondary,
         outline: textSecondary.withOpacity(0.4),
         outlineVariant: textSecondary.withOpacity(0.2),
@@ -245,7 +245,7 @@ class AppTheme {
           fontWeight: FontWeight.w600,
           fontFamily: 'Cairo',
         ),
-        iconTheme: const IconThemeData(color: textPrimary),
+        iconTheme: IconThemeData(color: textPrimary),
       ),
       cardTheme: CardThemeData(
         color: surface,
@@ -296,12 +296,12 @@ class AppTheme {
           ),
         ),
       ),
-      iconTheme: const IconThemeData(color: textPrimary),
+      iconTheme: IconThemeData(color: textPrimary),
       primaryIconTheme: IconThemeData(color: primary),
       textTheme: _buildTextTheme(textPrimary, textSecondary),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFFEBE9E3),
+        fillColor: AppColors.dayChip,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -365,7 +365,7 @@ class AppTheme {
         circularTrackColor: Color(0x1F2F7F69),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: const Color(0xFFEBE9E3),
+        backgroundColor: AppColors.dayChip,
         labelStyle: TextStyle(color: textPrimary, fontFamily: 'Cairo'),
         selectedColor: primary.withOpacity(0.15),
         checkmarkColor: primary,
@@ -388,10 +388,10 @@ class AppTheme {
   static ThemeData amoledTheme() {
     final primary = AppColors.nightPrimary;
     final secondary = AppColors.nightSecondary;
-    const background = AppColors.amoledBackground;
-    const surface = AppColors.amoledSurface;
-    const textPrimary = AppColors.nightTextPrimary;
-    const textSecondary = AppColors.nightTextSecondary;
+    final background = AppColors.amoledBackground;
+    final surface = AppColors.amoledSurface;
+    final textPrimary = AppColors.nightTextPrimary;
+    final textSecondary = AppColors.nightTextSecondary;
 
     return ThemeData(
       useMaterial3: true,
@@ -407,7 +407,7 @@ class AppTheme {
         onSurface: textPrimary,
         background: background,
         onBackground: textPrimary,
-        surfaceVariant: const Color(0xFF111918),
+        surfaceVariant: AppColors.nightElevated,
         onSurfaceVariant: textSecondary,
         outline: textSecondary.withOpacity(0.3),
         outlineVariant: textSecondary.withOpacity(0.1),
@@ -430,7 +430,7 @@ class AppTheme {
           fontWeight: FontWeight.w600,
           fontFamily: 'Cairo',
         ),
-        iconTheme: const IconThemeData(color: textPrimary),
+        iconTheme: IconThemeData(color: textPrimary),
       ),
       cardTheme: CardThemeData(
         color: surface,
@@ -481,7 +481,7 @@ class AppTheme {
           ),
         ),
       ),
-      iconTheme: const IconThemeData(color: textPrimary),
+      iconTheme: IconThemeData(color: textPrimary),
       primaryIconTheme: IconThemeData(color: primary),
       textTheme: _buildTextTheme(textPrimary, textSecondary),
       inputDecorationTheme: InputDecorationTheme(

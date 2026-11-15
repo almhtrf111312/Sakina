@@ -29,7 +29,7 @@ class PrayerListTile extends ConsumerWidget {
     final settings = ref.watch(appSettingsProvider);
 
     final notificationMode = settings.prayerNotifications[prayerName] ??
-        NotificationMode.fullAdhan;
+        NotificationMode.shortBeep;
 
     final arabicName = getPrayerArabicName(prayerName);
     final timeFormat = DateFormat('hh:mm a', 'ar');
@@ -39,10 +39,10 @@ class PrayerListTile extends ConsumerWidget {
     final cardBg = isNext
         ? (isDark
             ? AppColors.nightElevated
-            : const Color(0xFFE9F5F1))
+            : AppColors.dayChip)
         : (isDark
             ? AppColors.nightSurface
-            : Colors.white);
+            : AppColors.daySurface);
 
     final borderColor = isNext
         ? (isDark
@@ -175,16 +175,15 @@ class PrayerListTile extends ConsumerWidget {
     String tooltip;
 
     switch (mode) {
-      case NotificationMode.fullAdhan:
+      case NotificationMode.shortBeep:
         icon = Icons.notifications_active_rounded;
         iconColor = isDark
             ? AppColors.nightSecondary // Gold
             : AppColors.daySecondary;
-        tooltip = 'أذان كامل';
+        tooltip = 'تنبيه قصير';
         break;
       case NotificationMode.silent:
       case NotificationMode.vibrate:
-      case NotificationMode.shortBeep:
         icon = Icons.notifications_rounded;
         iconColor = isDark
             ? AppColors.nightPrimary // Primary teal
@@ -204,16 +203,15 @@ class PrayerListTile extends ConsumerWidget {
       icon: Icon(icon, color: iconColor, size: 22),
       tooltip: tooltip,
       onPressed: () {
-        // Cycle: fullAdhan -> silent -> off -> fullAdhan
+        // Cycle: short alert -> silent -> off -> short alert
         NotificationMode nextMode;
-        if (mode == NotificationMode.fullAdhan) {
+        if (mode == NotificationMode.shortBeep) {
           nextMode = NotificationMode.silent;
         } else if (mode == NotificationMode.silent ||
-            mode == NotificationMode.vibrate ||
-            mode == NotificationMode.shortBeep) {
+            mode == NotificationMode.vibrate) {
           nextMode = NotificationMode.off;
         } else {
-          nextMode = NotificationMode.fullAdhan;
+          nextMode = NotificationMode.shortBeep;
         }
 
         ref
@@ -237,8 +235,6 @@ class PrayerListTile extends ConsumerWidget {
 
   String _modeLabel(NotificationMode mode) {
     switch (mode) {
-      case NotificationMode.fullAdhan:
-        return 'أذان كامل';
       case NotificationMode.silent:
         return 'صامت';
       case NotificationMode.vibrate:

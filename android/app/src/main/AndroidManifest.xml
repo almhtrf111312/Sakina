@@ -127,6 +127,15 @@
             </intent-filter>
         </activity>
 
+        <service
+            android:name=".aod.AlwaysOnService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Always-on clock and next prayer while the screen is off" />
+        </service>
+
         <!-- ======================================================= -->
         <!-- SAKINA LIVE WALLPAPER (AOD LOCK SCREEN WALLPAPER) -->
         <!-- ======================================================= -->

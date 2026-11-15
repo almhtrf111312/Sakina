@@ -44,8 +44,8 @@ class HeroPrayerCard extends ConsumerWidget {
                       AppColors.nightSurface,
                     ]
                   : [
-                      const Color(0xFFE8F5F1),
-                      const Color(0xFFFFFFFF),
+                      AppColors.dayChip,
+                      AppColors.daySurface,
                     ],
             ),
             boxShadow: [
@@ -132,7 +132,7 @@ class HeroPrayerCard extends ConsumerWidget {
                         valueColor: AlwaysStoppedAnimation<Color>(
                           isDark
                               ? AppColors.nightElevated.withOpacity(0.8)
-                              : const Color(0xFFE0ECE8),
+                              : AppColors.dayChipStrong,
                         ),
                       ),
                     ),
@@ -159,7 +159,7 @@ class HeroPrayerCard extends ConsumerWidget {
                         shape: BoxShape.circle,
                         color: isDark
                             ? AppColors.nightBackground.withOpacity(0.6)
-                            : Colors.white,
+                            : AppColors.daySurface,
                         boxShadow: [
                           BoxShadow(
                             color: isDark

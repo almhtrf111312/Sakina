@@ -191,7 +191,7 @@ class _AodSettingsScreenState extends ConsumerState<AodSettingsScreen> {
   String _showWhenLabel(AodShowWhen w) {
     switch (w) {
       case AodShowWhen.alwaysLocked:
-        return 'دائماً أثناء القفل (خلفية AOD كاملة)';
+        return 'دائماً أثناء القفل (خلفية كاملة)';
       case AodShowWhen.aroundAdhan:
         return 'حول وقت الأذان فقط';
       case AodShowWhen.chargingOnly:
@@ -215,7 +215,7 @@ class _AodSettingsScreenState extends ConsumerState<AodSettingsScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF16211F),
         title: const Text(
-          'الشاشة الدائمة وخلفية القفل (AOD)',
+          'خلفية شاشة القفل الحيّة',
           style: TextStyle(
               fontFamily: 'Cairo',
               fontSize: 18,
@@ -241,7 +241,7 @@ class _AodSettingsScreenState extends ConsumerState<AodSettingsScreen> {
                 // ─── Enable Toggle ───
                 _buildCard(
                   child: SwitchListTile(
-                    title: const Text('تفعيل الشاشة الدائمة (AOD)',
+                    title: const Text('تفعيل الخلفية الحيّة',
                         style: TextStyle(
                             fontFamily: 'Cairo',
                             color: Color(0xFFE8EFEC),
@@ -682,7 +682,7 @@ class _AodSettingsScreenState extends ConsumerState<AodSettingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'خلفية شاشة القفل الدائمة (AOD)',
+                      'خلفية شاشة القفل الحيّة',
                       style: TextStyle(
                         fontFamily: 'Cairo',
                         fontSize: 16,
@@ -851,7 +851,7 @@ class _AodSettingsScreenState extends ConsumerState<AodSettingsScreen> {
               ],
             ),
             content: const Text(
-              'فُتحت معاينة نظام أندرويد للخلفية الحية.\n\nاضغط "تعيين كخلفية" ثم اختر "شاشة القفل" (أو القفل والرئيسية). ستظهر الصلاة القادمة ووقتها على شاشة القفل.\n\nملاحظة: أندرويد لا يسمح لتطبيق خارجي بالرسم داخل وضع AOD الخاص بالنظام نفسه، لذلك تظهر خلفية سكينة السوداء (مع إزاحة بكسلات لحماية الشاشة) على شاشة القفل، وإشعار الأذان يظهر والجهاز مقفل.',
+              'فُتحت معاينة نظام أندرويد للخلفية الحية.\n\nاضغط "تعيين كخلفية" ثم اختر "شاشة القفل" (أو القفل والرئيسية). ستظهر الصلاة القادمة ووقتها على شاشة القفل.\n\nملاحظة: أندرويد لا يسمح لتطبيق خارجي بالرسم داخل الشاشة الدائمة الخاصة بالنظام نفسه، لذلك تظهر خلفية سكينة السوداء (مع إزاحة بكسلات لحماية الشاشة) على شاشة القفل، وإشعار الأذان يظهر والجهاز مقفل.',
               style: TextStyle(
                   fontFamily: 'Cairo',
                   color: Color(0xFFE8EFEC),

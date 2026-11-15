@@ -8,7 +8,7 @@ import '../../core/theme/app_colors.dart';
 import '../../data/location/location_service.dart';
 import '../../data/prayer/prayer_repository.dart';
 import '../../domain/models/azkar_model.dart';
-import '../aod/aod_settings_screen.dart';
+import '../aod/always_on_screen.dart';
 import '../azkar/azkar_list_screen.dart';
 import '../location/location_picker_screen.dart';
 import 'providers/home_providers.dart';
@@ -71,7 +71,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               : AppColors.dayPrimary,
           backgroundColor: isDark
               ? AppColors.nightSurface
-              : Colors.white,
+              : AppColors.daySurface,
           onRefresh: _refreshData,
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(
@@ -122,7 +122,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           decoration: BoxDecoration(
                             color: isDark
                                 ? AppColors.nightSurface
-                                : Colors.white,
+                                : AppColors.daySurface,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: isDark
@@ -290,7 +290,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const AodSettingsScreen(),
+                          builder: (_) => const AlwaysOnScreen(),
                         ),
                       );
                     },
@@ -342,7 +342,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'خلفية شاشة القفل والشاشة الدائمة (AOD)',
+                                  'الشاشة الدائمة',
                                   style: TextStyle(
                                     fontFamily: 'Cairo',
                                     fontWeight: FontWeight.bold,
@@ -354,7 +354,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'تثبيت كخلفية لقفل الشاشة مع تخصيص الساعة والمواقيت',
+                                  'الساعة والتاريخ والصلاة القادمة عند قفل الجهاز',
                                   style: TextStyle(
                                     fontFamily: 'Cairo',
                                     fontSize: 12,
@@ -366,7 +366,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               ],
                             ),
                           ),
-                          const Icon(
+                          Icon(
                             Icons.arrow_forward_ios_rounded,
                             size: 16,
                             color: AppColors.nightTextSecondary,
@@ -535,7 +535,7 @@ class _CitySelectorSheet extends ConsumerWidget {
             ),
             tileColor: isDark
                 ? AppColors.nightElevated
-                : const Color(0xFFF0F7F4),
+                : AppColors.dayChip,
             leading: Icon(
               Icons.my_location_rounded,
               color: AppColors.nightPrimary,
@@ -570,7 +570,7 @@ class _CitySelectorSheet extends ConsumerWidget {
             ),
             tileColor: isDark
                 ? AppColors.nightElevated
-                : const Color(0xFFF0F7F4),
+                : AppColors.dayChip,
             leading: Icon(Icons.public, color: AppColors.nightPrimary),
             title: const Text(
               'كل دول العالم ومحافظاتها',

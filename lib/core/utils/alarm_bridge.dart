@@ -163,6 +163,36 @@ class AlarmBridge {
     }
   }
 
+  // ─── Always-on screen ──────────────────────────────────────────────────────
+
+  static Future<void> setAlwaysOn(Map<String, dynamic> cfg) async {
+    try {
+      await _aodChannel.invokeMethod('setAlwaysOn', cfg);
+    } catch (_) {}
+  }
+
+  static Future<Map<String, bool>> alwaysOnStatus() async {
+    try {
+      final r = await _aodChannel.invokeMethod('alwaysOnStatus');
+      if (r is Map) {
+        return r.map((k, v) => MapEntry(k.toString(), v == true));
+      }
+    } catch (_) {}
+    return const {};
+  }
+
+  static Future<void> openSetting(String method) async {
+    try {
+      await _aodChannel.invokeMethod(method);
+    } catch (_) {}
+  }
+
+  static Future<void> previewAlwaysOn() async {
+    try {
+      await _aodChannel.invokeMethod('showAodScreen', {});
+    } catch (_) {}
+  }
+
   // ─── Live Lockscreen Wallpaper Methods ─────────────────────────────────────
 
   /// Push the prayer schedule to home-screen widgets and the persistent

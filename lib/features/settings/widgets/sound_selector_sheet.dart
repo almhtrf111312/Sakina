@@ -296,7 +296,7 @@ class _SoundSelectorSheetState extends State<SoundSelectorSheet> {
                               : AppColors.daySecondary,
                           inactiveColor: isDark
                               ? AppColors.nightElevated
-                              : const Color(0xFFE2EBE7),
+                              : AppColors.dayChipStrong,
                           onChanged: (val) {
                             setState(() => _previewVolume = val);
                             if (_currentlyPlayingId != null) {
@@ -342,7 +342,7 @@ class _SoundSelectorSheetState extends State<SoundSelectorSheet> {
                               ? primary.withOpacity(isDark ? 0.16 : 0.12)
                               : (isDark
                                   ? AppColors.nightElevated
-                                  : const Color(0xFFF2F1EC)),
+                                  : AppColors.dayChip),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: isSelected ? primary : Colors.transparent,
@@ -365,8 +365,8 @@ class _SoundSelectorSheetState extends State<SoundSelectorSheet> {
                                           ? AppColors.nightSecondary
                                           : AppColors.daySecondary)
                                       : (isDark
-                                          ? const Color(0xFF263834)
-                                          : const Color(0xFFDFE7E4)),
+                                          ? AppColors.nightChipStrong
+                                          : AppColors.dayChipStrong),
                                   shape: const CircleBorder(),
                                   child: InkWell(
                                     customBorder: const CircleBorder(),
@@ -422,7 +422,7 @@ class _SoundSelectorSheetState extends State<SoundSelectorSheet> {
                                             decoration: BoxDecoration(
                                               color: isDark
                                                   ? Colors.black26
-                                                  : Colors.white,
+                                                  : AppColors.daySurface,
                                               borderRadius:
                                                   BorderRadius.circular(6),
                                             ),

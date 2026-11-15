@@ -155,7 +155,7 @@ class _CompassDialPainter extends CustomPainter {
 
     // Background circle
     final bgPaint = Paint()
-      ..color = isDark ? const Color(0xFF131C1A) : const Color(0xFFFBF9F5)
+      ..color = isDark ? AppColors.nightChip : AppColors.dayChip
       ..style = PaintingStyle.fill;
     canvas.drawCircle(center, radius - 2, bgPaint);
 

@@ -251,7 +251,7 @@ class CalculationMethodSelector {
                                     ? primary.withOpacity(isDark ? 0.16 : 0.12)
                                     : (isDark
                                         ? AppColors.nightElevated
-                                        : const Color(0xFFF0EFEA)),
+                                        : AppColors.dayChip),
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
                                   color: isSelected
@@ -326,8 +326,8 @@ class CalculationMethodSelector {
                                                   horizontal: 8, vertical: 2),
                                               decoration: BoxDecoration(
                                                 color: isDark
-                                                    ? const Color(0xFF142421)
-                                                    : const Color(0xFFE2EBE7),
+                                                    ? AppColors.nightChip
+                                                    : AppColors.dayChipStrong,
                                                 borderRadius:
                                                     BorderRadius.circular(8),
                                               ),

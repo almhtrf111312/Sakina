@@ -107,7 +107,7 @@ class DailyDhikrCard extends ConsumerWidget {
             decoration: BoxDecoration(
               color: isDark
                   ? AppColors.nightBackground.withOpacity(0.6)
-                  : const Color(0xFFF9F8F5),
+                  : AppColors.dayChip,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Text(

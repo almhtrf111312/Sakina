@@ -10,61 +10,68 @@ abstract final class AppColors {
   // Night theme
   // -------------------------------------------------------------------------
 
-  /// Dark green-black background
-  static Color get nightBackground => AppPalette.amoled ? const Color(0xFF000000) : const Color(0xFF0E1514);
+  /// Tinted dark background (pure black in AMOLED mode)
+  static Color get nightBackground => AppPalette.tone('bg', dark: true);
 
-  /// Slightly lighter surface / card background
-  static Color get nightSurface => AppPalette.amoled ? const Color(0xFF0A0D0C) : const Color(0xFF16211F);
+  /// Card / surface
+  static Color get nightSurface => AppPalette.tone('surface', dark: true);
 
   /// Elevated / dialog background
-  static Color get nightElevated => AppPalette.amoled ? const Color(0xFF131917) : const Color(0xFF1D2B28);
+  static Color get nightElevated => AppPalette.tone('elevated', dark: true);
 
-  /// Teal-green accent
+  /// Chips, inputs, subtle fills
+  static Color get nightChip => AppPalette.tone('chip', dark: true);
+
+  /// Stronger fills / dividers
+  static Color get nightChipStrong => AppPalette.tone('chipStrong', dark: true);
+
+  /// Accent
   static Color get nightPrimary => AppPalette.primaryDark;
 
-  /// Gold accent
+  /// Secondary accent
   static Color get nightSecondary => AppPalette.secondaryDark;
 
   /// Primary text
-  static const Color nightTextPrimary = Color(0xFFE8EFEC);
+  static Color get nightTextPrimary => AppPalette.tone('text', dark: true);
 
   /// Secondary / muted text
-  static const Color nightTextSecondary = Color(0xFF9DB0AA);
+  static Color get nightTextSecondary => AppPalette.tone('textMuted', dark: true);
 
   // -------------------------------------------------------------------------
   // Day theme
   // -------------------------------------------------------------------------
 
-  /// Warm off-white background
-  static const Color dayBackground = Color(0xFFF6F4EE);
+  static Color get dayBackground => AppPalette.tone('bg', dark: false);
 
-  /// Pure white card/surface
-  static const Color daySurface = Color(0xFFFFFFFF);
+  /// Card / surface
+  static Color get daySurface => AppPalette.tone('surface', dark: false);
 
-  /// Deeper teal primary
+  static Color get dayChip => AppPalette.tone('chip', dark: false);
+
+  static Color get dayChipStrong => AppPalette.tone('chipStrong', dark: false);
+
+  /// Deeper primary
   static Color get dayPrimary => AppPalette.primaryLight;
 
-  /// Warm gold secondary
+  /// Secondary
   static Color get daySecondary => AppPalette.secondaryLight;
 
-  /// Dark green-grey text
-  static const Color dayTextPrimary = Color(0xFF1B2A27);
+  static Color get dayTextPrimary => AppPalette.tone('text', dark: false);
 
-  /// Muted warm grey secondary text
-  static const Color dayTextSecondary = Color(0xFF607068);
+  static Color get dayTextSecondary => AppPalette.tone('textMuted', dark: false);
 
   // -------------------------------------------------------------------------
   // AMOLED theme
   // -------------------------------------------------------------------------
 
   /// Pure black background
-  static const Color amoledBackground = Color(0xFF000000);
+  static Color get amoledBackground => const Color(0xFF000000);
 
   /// Very dark card surface
-  static const Color amoledSurface = Color(0xFF0A0F0E);
+  static Color get amoledSurface => AppPalette.tone('surface', dark: true, amoled: true);
 
   /// Slightly elevated (dialogs, sheets)
-  static const Color amoledElevated = Color(0xFF111918);
+  static Color get amoledElevated => AppPalette.tone('elevated', dark: true, amoled: true);
 
   // AMOLED re-uses night primary/secondary/text colours.
 
@@ -188,6 +195,84 @@ abstract final class AppColors {
 /// follows the user's choice.
 abstract final class AppPalette {
   static bool amoled = false;
+
+  static double get _hue {
+    switch (accent) {
+      case 'gold':
+        return 40;
+      case 'white':
+        return 200;
+      case 'blue':
+        return 212;
+      case 'teal':
+        return 178;
+      case 'purple':
+        return 262;
+      case 'rose':
+        return 335;
+      case 'orange':
+        return 28;
+      case 'red':
+        return 2;
+      case 'lime':
+        return 82;
+      default:
+        return 160;
+    }
+  }
+
+  /// Coherent surface/text tones derived from the accent hue.
+  static Color tone(String role, {required bool dark, bool? amoled}) {
+    final h = _hue;
+    final am = amoled ?? AppPalette.amoled;
+    // Neutral accent keeps the tint very low.
+    final k = accent == 'white' ? 0.35 : 1.0;
+    Color hsl(double s, double l) =>
+        HSLColor.fromAHSL(1, h, (s * k).clamp(0.0, 1.0), l).toColor();
+    if (dark) {
+      if (am) {
+        switch (role) {
+          case 'bg':
+            return const Color(0xFF000000);
+          case 'surface':
+            return hsl(0.22, 0.05);
+          case 'elevated':
+            return hsl(0.20, 0.08);
+          case 'chip':
+            return hsl(0.18, 0.11);
+          case 'chipStrong':
+            return hsl(0.16, 0.16);
+        }
+      } else {
+        switch (role) {
+          case 'bg':
+            return hsl(0.22, 0.075);
+          case 'surface':
+            return hsl(0.20, 0.115);
+          case 'elevated':
+            return hsl(0.19, 0.155);
+          case 'chip':
+            return hsl(0.18, 0.20);
+          case 'chipStrong':
+            return hsl(0.16, 0.26);
+        }
+      }
+      return role == 'text' ? hsl(0.25, 0.93) : hsl(0.14, 0.68);
+    }
+    switch (role) {
+      case 'bg':
+        return hsl(0.30, 0.955);
+      case 'surface':
+        return hsl(0.45, 0.99);
+      case 'chip':
+        return hsl(0.30, 0.925);
+      case 'chipStrong':
+        return hsl(0.26, 0.88);
+      case 'elevated':
+        return hsl(0.45, 0.99);
+    }
+    return role == 'text' ? hsl(0.40, 0.12) : hsl(0.14, 0.38);
+  }
 
   /// green | gold | white | blue | teal | purple | rose | orange | red | lime
   static String accent = 'green';

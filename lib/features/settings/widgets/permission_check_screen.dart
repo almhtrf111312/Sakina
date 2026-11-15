@@ -538,7 +538,7 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
   Widget _buildManufacturerGuide(bool isDark, Color primary) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.nightElevated : const Color(0xFFF0EFEA),
+        color: isDark ? AppColors.nightElevated : AppColors.dayChip,
         borderRadius: BorderRadius.circular(18),
       ),
       child: ExpansionTile(

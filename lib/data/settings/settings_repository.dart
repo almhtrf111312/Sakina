@@ -21,7 +21,7 @@ enum AppThemeMode { night, day, amoled, systemAuto, sunriseAuto }
 
 enum NumeralType { arabic, western }
 
-enum NotificationMode { fullAdhan, shortBeep, silent, vibrate, off }
+enum NotificationMode { shortBeep, silent, vibrate, off }
 
 enum AccentColor { green, gold, white, blue, teal, purple, rose, orange, red, lime }
 
@@ -93,12 +93,12 @@ class AppSettings {
     this.hijriOffset = 0,
     this.prayerAdjustments = const {},
     this.prayerNotifications = const {
-      'Fajr': NotificationMode.fullAdhan,
+      'Fajr': NotificationMode.shortBeep,
       'Sunrise': NotificationMode.off,
-      'Dhuhr': NotificationMode.fullAdhan,
-      'Asr': NotificationMode.fullAdhan,
-      'Maghrib': NotificationMode.fullAdhan,
-      'Isha': NotificationMode.fullAdhan,
+      'Dhuhr': NotificationMode.shortBeep,
+      'Asr': NotificationMode.shortBeep,
+      'Maghrib': NotificationMode.shortBeep,
+      'Isha': NotificationMode.shortBeep,
     },
     this.selectedAdhanSound = 'adhan_5',
     this.adhanVolume = 1.0,
@@ -322,7 +322,7 @@ class AppSettings {
               (k, v) => MapEntry(
                   k,
                   en(NotificationMode.values, v as String?,
-                      NotificationMode.fullAdhan))),
+                      NotificationMode.shortBeep))),
       selectedAdhanSound:
           (j['selectedAdhanSound'] as String?) ?? 'adhan_5',
       adhanVolume: (j['adhanVolume'] as num?)?.toDouble() ?? 1.0,

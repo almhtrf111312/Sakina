@@ -7,6 +7,8 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Build
 import androidx.annotation.NonNull
+import com.sakina.app.aod.AlwaysOnConfig
+import com.sakina.app.aod.AlwaysOnService
 import com.sakina.app.aod.AodActivity
 import com.sakina.app.aod.SakinaWallpaperService
 import android.app.Activity
@@ -70,58 +72,91 @@ class AodBridgePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         when (call.method) {
             "showAodScreen" -> {
-                val prayerDataArg = call.argument<Any>("prayerData")
-                val prayerDataJson = when (prayerDataArg) {
-                    is String -> prayerDataArg
-                    is Map<*, *> -> JSONObject(prayerDataArg).toString()
-                    else -> null
-                }
-
-                val intent = Intent(context, AodActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                            Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                            Intent.FLAG_ACTIVITY_SINGLE_TOP
-                    if (prayerDataJson != null) {
-                        putExtra(AodActivity.EXTRA_PRAYER_DATA, prayerDataJson)
-                        try {
-                            val obj = JSONObject(prayerDataJson)
-                            putExtra(AodActivity.EXTRA_PRAYER_NAME, obj.optString("prayerName", "Fajr"))
-                            putExtra(AodActivity.EXTRA_PRAYER_TIME, obj.optString("prayerTime", ""))
-                        } catch (_: Exception) {}
-                    }
-                }
-                context.startActivity(intent)
+                // Preview of the always-on screen (opened from the app, no permission needed).
+                launch(Intent(context, AodActivity::class.java).apply {
+                    putExtra(AodActivity.EXTRA_PREVIEW, true)
+                })
                 result.success(true)
             }
 
             "hideAodScreen" -> {
-                val closeIntent = Intent(AodActivity.ACTION_CLOSE_AOD).apply {
-                    setPackage(context.packageName)
-                }
-                context.sendBroadcast(closeIntent)
+                context.sendBroadcast(Intent(AodActivity.ACTION_CLOSE_AOD).setPackage(context.packageName))
                 result.success(true)
             }
 
-            "isAodSupported" -> {
+            "isAodSupported" -> result.success(true)
+
+            "updateAodData" -> result.success(true)
+
+            "setAlwaysOn" -> {
+                val m = call.arguments as? Map<*, *>
+                if (m != null) AlwaysOnConfig.save(context, m)
+                AlwaysOnService.syncWithConfig(context)
                 result.success(true)
             }
 
-            "updateAodData" -> {
-                val prayerDataArg = call.argument<Any>("prayerData")
-                val prayerDataJson = when (prayerDataArg) {
-                    is String -> prayerDataArg
-                    is Map<*, *> -> JSONObject(prayerDataArg).toString()
-                    else -> null
-                }
+            "alwaysOnStatus" -> {
+                val canOverlay = Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
+                    android.provider.Settings.canDrawOverlays(context)
+                val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+                val fsi = if (Build.VERSION.SDK_INT >= 34) nm.canUseFullScreenIntent() else true
+                val pm = context.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+                val battery = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+                    pm.isIgnoringBatteryOptimizations(context.packageName) else true
+                result.success(mapOf(
+                    "overlay" to canOverlay,
+                    "fullScreenIntent" to fsi,
+                    "battery" to battery,
+                    "miui" to (Build.MANUFACTURER.equals("xiaomi", true) ||
+                        Build.MANUFACTURER.equals("redmi", true) ||
+                        Build.MANUFACTURER.equals("poco", true))
+                ))
+            }
 
-                val updateIntent = Intent(context, AodActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                    if (prayerDataJson != null) {
-                        putExtra(AodActivity.EXTRA_PRAYER_DATA, prayerDataJson)
+            "openFullScreenIntentSettings" -> {
+                var ok = false
+                try {
+                    if (Build.VERSION.SDK_INT >= 34) {
+                        launch(Intent(android.provider.Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,
+                            android.net.Uri.parse("package:${context.packageName}")))
+                        ok = true
                     }
+                } catch (_: Exception) {}
+                result.success(ok)
+            }
+
+            "openBatterySettings" -> {
+                var ok = false
+                try {
+                    launch(Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                        android.net.Uri.parse("package:${context.packageName}")))
+                    ok = true
+                } catch (_: Exception) {
+                    try {
+                        launch(Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+                        ok = true
+                    } catch (_: Exception) {}
                 }
-                context.startActivity(updateIntent)
-                result.success(true)
+                result.success(ok)
+            }
+
+            "openMiuiPermissions" -> {
+                var ok = false
+                try {
+                    launch(Intent("miui.intent.action.APP_PERM_EDITOR").apply {
+                        setClassName("com.miui.securitycenter",
+                            "com.miui.permcenter.permissions.PermissionsEditorActivity")
+                        putExtra("extra_pkgname", context.packageName)
+                    })
+                    ok = true
+                } catch (_: Exception) {
+                    try {
+                        launch(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            android.net.Uri.parse("package:${context.packageName}")))
+                        ok = true
+                    } catch (_: Exception) {}
+                }
+                result.success(ok)
             }
 
             "setAsLockscreenWallpaper" -> {

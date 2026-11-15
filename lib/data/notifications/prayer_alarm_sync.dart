@@ -15,8 +15,6 @@ import '../settings/settings_repository.dart';
 
 String _typeFor(NotificationMode mode) {
   switch (mode) {
-    case NotificationMode.fullAdhan:
-      return 'adhan';
     case NotificationMode.shortBeep:
       return 'short';
     case NotificationMode.silent:
