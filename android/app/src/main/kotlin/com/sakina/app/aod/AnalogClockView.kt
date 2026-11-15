@@ -3,7 +3,7 @@ package com.sakina.app.aod
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
-import android.graphics.View
+import android.view.View
 import java.util.Calendar
 import kotlin.math.cos
 import kotlin.math.min
