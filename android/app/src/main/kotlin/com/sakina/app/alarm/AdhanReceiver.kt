@@ -78,9 +78,6 @@ class AdhanReceiver : BroadcastReceiver() {
             return
         }
 
-        ensureNotificationChannel(context)
-
-        // ── 1. Start foreground service to play adhan ─────────────────────
         val serviceIntent = Intent(context, AdhanForegroundService::class.java).apply {
             putExtra(EXTRA_PRAYER_NAME, prayerName)
             putExtra(EXTRA_PRAYER_TIME, prayerTime)
@@ -89,61 +86,12 @@ class AdhanReceiver : BroadcastReceiver() {
             putExtra("notif_type", notifType)
             putExtra(EXTRA_NOTIFICATION_ID, notificationId)
         }
+        // The service plays the adhan and owns the single notification.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             context.startForegroundService(serviceIntent)
         } else {
             context.startService(serviceIntent)
         }
-
-        // ── 2. Build notification ─────────────────────────────────────────
-        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        val stopIntent   = buildActionIntent(context, ACTION_STOP_ADHAN,  prayerJson, notificationId)
-        val delayIntent  = buildActionIntent(context, ACTION_DELAY_ADHAN, prayerJson, notificationId)
-        val prayedIntent = buildActionIntent(context, ACTION_PRAYED,       prayerJson, notificationId)
-
-        // Full-screen intent (AOD / lock screen) — Android 10+
-        val fullScreenPi = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val aodIntent = Intent(context, AodActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                        Intent.FLAG_ACTIVITY_SINGLE_TOP
-                putExtra(EXTRA_PRAYER_NAME, prayerName)
-                putExtra(EXTRA_PRAYER_TIME, prayerTime)
-                putExtra(EXTRA_PRAYER_JSON, prayerJson)
-            }
-            PendingIntent.getActivity(
-                context, notificationId + 500, aodIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-        } else null
-
-        val titleAr = prayerArabicName(prayerName)
-        val subtitle = if (prayerTime.isNotEmpty()) "وقت $titleAr – $prayerTime" else "حان وقت $titleAr"
-
-        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_mosque)        // must exist in res/drawable
-            .setContentTitle(titleAr)
-            .setContentText(subtitle)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(subtitle))
-            .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setAutoCancel(false)
-            .setOngoing(true)
-            .setColorized(true)
-            .setColor(0xFF5FB59B.toInt())
-            // Actions
-            .addAction(0, "⏹ إيقاف", stopIntent)
-            .addAction(0, "⏱ تأجيل ١٠د", delayIntent)
-            .addAction(0, "✔ صليت", prayedIntent)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            builder.setFullScreenIntent(fullScreenPi, true)
-        }
-
-        nm.notify(notificationId, builder.build())
-        Log.i(TAG, "Notification posted for $prayerName (id=$notificationId)")
     }
 
     // ── Morning / evening azkar reminder (silent-ish, no adhan service) ─────
@@ -279,6 +227,7 @@ class AdhanReceiver : BroadcastReceiver() {
     }
 
     private fun prayerArabicName(englishName: String): String = when (englishName.lowercase()) {
+        "test"    -> "تجربة الأذان"
         "fajr"    -> "الفجر"
         "dhuhr"   -> "الظهر"
         "asr"     -> "العصر"

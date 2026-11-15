@@ -164,6 +164,52 @@ object AlarmScheduler {
         }
     }
 
+    private const val TEST_ALARM_ID = 987_654_321
+
+    /** One-off adhan test fired [delayMs] from now through the real alarm path. */
+    fun scheduleTestAdhan(
+        context: Context, delayMs: Long, soundId: String, volume: Double, gradual: Boolean
+    ): Boolean {
+        return try {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val at = System.currentTimeMillis() + delayMs
+            val label = java.text.SimpleDateFormat("HH:mm", java.util.Locale.US).format(java.util.Date(at))
+            val json = JSONObject().apply {
+                put("name", "Test")
+                put("timestamp", at)
+                put("timeLabel", label)
+                put("enabled", true)
+                put("notificationType", "adhan")
+                put("soundId", soundId)
+                put("volume", volume)
+                put("gradualVolume", gradual)
+                put("isTest", true)
+            }
+            val pi = PendingIntent.getBroadcast(
+                context, TEST_ALARM_ID, createAlarmIntent(context, TEST_ALARM_ID, json.toString()),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            if (canScheduleExactAlarms(context, alarmManager)) {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi)
+            } else {
+                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi)
+            }
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "scheduleTestAdhan failed", e)
+            false
+        }
+    }
+
+    fun cancelTestAdhan(context: Context) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val pi = PendingIntent.getBroadcast(
+            context, TEST_ALARM_ID, createAlarmIntent(context, TEST_ALARM_ID, null),
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+        )
+        if (pi != null) { alarmManager.cancel(pi); pi.cancel() }
+    }
+
     // ── Private helpers ─────────────────────────────────────────────────────
 
     private fun scheduleExactAlarm(

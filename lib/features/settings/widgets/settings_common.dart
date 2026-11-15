@@ -127,7 +127,7 @@ Color accentColorValue(AccentColor c) {
 String notificationModeName(NotificationMode m) {
   switch (m) {
     case NotificationMode.shortBeep:
-      return 'تنبيه قصير';
+      return 'أذان';
     case NotificationMode.silent:
       return 'إشعار صامت';
     case NotificationMode.vibrate:

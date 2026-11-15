@@ -180,7 +180,7 @@ class PrayerListTile extends ConsumerWidget {
         iconColor = isDark
             ? AppColors.nightSecondary // Gold
             : AppColors.daySecondary;
-        tooltip = 'تنبيه قصير';
+        tooltip = 'أذان';
         break;
       case NotificationMode.silent:
       case NotificationMode.vibrate:
@@ -240,7 +240,7 @@ class PrayerListTile extends ConsumerWidget {
       case NotificationMode.vibrate:
         return 'اهتزاز';
       case NotificationMode.shortBeep:
-        return 'تنبيه قصير';
+        return 'أذان';
       case NotificationMode.off:
         return 'إيقاف';
     }

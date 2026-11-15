@@ -46,8 +46,8 @@ class AdhanForegroundService : Service() {
     companion object {
         private const val TAG = "AdhanForegroundService"
 
-        const val CHANNEL_ID   = "sakina_adhan_service_channel"
-        const val CHANNEL_NAME = "خدمة أذان سكينة"
+        const val CHANNEL_ID   = "sakina_adhan_v2"
+        const val CHANNEL_NAME = "الأذان"
         const val NOTIFICATION_ID = 1001
 
         const val EXTRA_PRAYER_NAME = "prayer_name"
@@ -77,6 +77,8 @@ class AdhanForegroundService : Service() {
     private var notifType   = "adhan"
     private var timeoutMs   = DEFAULT_TIMEOUT_MS
     private var gradualVol  = false
+    private var targetVolume = 1f
+    private var isTest = false
     private var notifId     = NOTIFICATION_ID
 
     private val stopReceiver = object : BroadcastReceiver() {
@@ -116,11 +118,28 @@ class AdhanForegroundService : Service() {
                 timeoutMs  = obj.optLong("timeoutMs", DEFAULT_TIMEOUT_MS)
                 gradualVol = obj.optBoolean("gradualVolume", false)
                 soundId    = obj.optString("soundId", "")
+                targetVolume = obj.optDouble("volume", 1.0).toFloat().coerceIn(0.05f, 1f)
+                isTest     = obj.optBoolean("isTest", false)
             } catch (_: Exception) {}
         }
 
-        startForeground(NOTIFICATION_ID, buildNotification())
+        val playsSound = notifType != "silent" && notifType != "off" && notifType != "vibrate"
+        val notif = buildNotification(playsSound)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(NOTIFICATION_ID, notif,
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
+        } else {
+            startForeground(NOTIFICATION_ID, notif)
+        }
         startPlayback()
+        if (!playsSound) {
+            // Silent / vibrate: leave a normal dismissible notification and stop.
+            handler.postDelayed({
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) stopForeground(STOP_FOREGROUND_DETACH)
+                stopSelf()
+            }, 1500)
+            return START_NOT_STICKY
+        }
         scheduleTimeout()
 
         return START_NOT_STICKY
@@ -154,7 +173,7 @@ class AdhanForegroundService : Service() {
         requestAudioFocus()
 
         val base = "flutter_assets/assets/audio/"
-        val candidates = if (notifType == "short" || notifType == "beep") {
+        val candidates = if (notifType == "beep") {
             listOf(base + "beep_short.mp3")
         } else {
             listOf(
@@ -178,9 +197,7 @@ class AdhanForegroundService : Service() {
                 afd.close()
 
                 isLooping = false
-                if (gradualVol) {
-                    setVolume(0f, 0f)
-                }
+                if (gradualVol) setVolume(0f, 0f) else setVolume(targetVolume, targetVolume)
                 prepare()
                 start()
             }
@@ -243,7 +260,7 @@ class AdhanForegroundService : Service() {
         val r = object : Runnable {
             override fun run() {
                 if (step >= GRADUAL_VOLUME_STEPS || mediaPlayer == null) return
-                val vol = stepVol * step
+                val vol = stepVol * step * targetVolume
                 mediaPlayer?.setVolume(vol, vol)
                 step++
                 handler.postDelayed(this, GRADUAL_VOLUME_STEP_MS)
@@ -293,35 +310,41 @@ class AdhanForegroundService : Service() {
 
     // ── Notification ─────────────────────────────────────────────────────────
 
-    private fun buildNotification(): Notification {
+    private fun buildNotification(playing: Boolean): Notification {
         val arabicName = prayerArabicName(prayerName)
-        val subtitle   = if (prayerTime.isNotEmpty()) "وقت $arabicName – $prayerTime" else "حان وقت $arabicName"
+        val title = if (isTest) "تجربة الأذان" else "حان وقت $arabicName"
+        val text = when {
+            isTest -> "هذا اختبار للأذان"
+            prayerTime.isNotEmpty() -> prayerTime
+            else -> arabicName
+        }
 
-        // Open AOD on tap
-        val tapIntent = Intent(this, AodActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        val openApp = Intent(this, com.sakina.app.MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         val tapPi = PendingIntent.getActivity(
-            this, 0, tapIntent, PendingIntent.FLAG_IMMUTABLE
+            this, 0, openApp, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val stopPi = makeBroadcastPi(AdhanReceiver.ACTION_STOP_ADHAN,  1)
-        val prayedPi = makeBroadcastPi(AdhanReceiver.ACTION_PRAYED,    2)
-
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        val b = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_mosque)
-            .setContentTitle(arabicName)
-            .setContentText(subtitle)
+            .setContentTitle(title)
+            .setContentText(text)
             .setContentIntent(tapPi)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setOngoing(true)
-            .setAutoCancel(false)
+            .setOnlyAlertOnce(true)
+            .setSilent(true)
+            .setOngoing(playing)
+            .setAutoCancel(!playing)
             .setColor(0xFF5FB59B.toInt())
-            .addAction(0, "⏹ إيقاف", stopPi)
-            .addAction(0, "✔ صليت", prayedPi)
-            .build()
+
+        if (playing) {
+            b.addAction(0, "إيقاف", makeBroadcastPi(AdhanReceiver.ACTION_STOP_ADHAN, 1))
+            b.addAction(0, "صليت", makeBroadcastPi(AdhanReceiver.ACTION_PRAYED, 2))
+        }
+        return b.build()
     }
 
     private fun makeBroadcastPi(action: String, reqCode: Int): PendingIntent {
@@ -340,10 +363,10 @@ class AdhanForegroundService : Service() {
         val channel = NotificationChannel(
             CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH
         ).apply {
-            description = "خدمة تشغيل صوت الأذان"
+            setSound(null, null)
             setShowBadge(false)
             lockscreenVisibility = Notification.VISIBILITY_PUBLIC
-            enableVibration(false) // MediaPlayer handles audio
+            enableVibration(false)
         }
         nm.createNotificationChannel(channel)
     }

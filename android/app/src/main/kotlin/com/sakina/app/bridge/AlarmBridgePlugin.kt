@@ -212,6 +212,18 @@ class AlarmBridgePlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamH
                 val vol = (call.argument<Double>("volume") ?: 1.0).toFloat()
                 result.success(playPreview(id, vol))
             }
+            "scheduleTestAdhan" -> {
+                val seconds = (call.argument<Int>("seconds") ?: 30).coerceIn(5, 24 * 3600)
+                val id = call.argument<String>("soundId") ?: "adhan_5"
+                val vol = call.argument<Double>("volume") ?: 1.0
+                val gradual = call.argument<Boolean>("gradual") ?: false
+                result.success(AlarmScheduler.scheduleTestAdhan(
+                    context, seconds * 1000L, id, vol, gradual))
+            }
+            "cancelTestAdhan" -> {
+                AlarmScheduler.cancelTestAdhan(context)
+                result.success(true)
+            }
             "stopTestAdhan" -> {
                 stopPreview()
                 result.success(true)

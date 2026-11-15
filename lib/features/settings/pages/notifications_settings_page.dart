@@ -17,9 +17,12 @@ class NotificationsSettingsPage extends ConsumerStatefulWidget {
 
 class _NotificationsSettingsPageState extends ConsumerState<NotificationsSettingsPage> {
   bool _isTestingAudio = false;
+  final TextEditingController _delayCtrl = TextEditingController(text: '30');
+  bool _delayInMinutes = false;
 
   @override
   void dispose() {
+    _delayCtrl.dispose();
     if (_isTestingAudio) {
       AlarmBridge.stopTestAdhan();
     }
@@ -118,8 +121,6 @@ class _NotificationsSettingsPageState extends ConsumerState<NotificationsSetting
               SwitchListTile(
                 title: const Text('إظهار الصلاة القادمة في شريط الإشعارات',
                     style: TextStyle(fontFamily: 'Cairo', fontSize: 15)),
-                subtitle: const Text('الصلاة ووقتها والمتبقي ظاهرة مباشرة وتتحدث باستمرار',
-                    style: TextStyle(fontFamily: 'Cairo', fontSize: 12)),
                 value: settings.persistentNotification,
                 activeColor: primary,
                 onChanged: (v) => notifier.update(
@@ -418,6 +419,92 @@ class _NotificationsSettingsPageState extends ConsumerState<NotificationsSetting
                     notifier.update((s) => s.copyWith(fastingReminder: v)),
               ),
               settingsDivider(isDark),
+
+              // Scheduled adhan test (fires through the real alarm path)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('تجربة الأذان بعد مدة',
+                        style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _delayCtrl,
+                            keyboardType: TextInputType.number,
+                            textAlign: TextAlign.center,
+                            decoration: const InputDecoration(
+                              isDense: true,
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        ChoiceChip(
+                          label: const Text('ثانية',
+                              style: TextStyle(fontFamily: 'Cairo')),
+                          selected: !_delayInMinutes,
+                          onSelected: (_) =>
+                              setState(() => _delayInMinutes = false),
+                        ),
+                        const SizedBox(width: 6),
+                        ChoiceChip(
+                          label: const Text('دقيقة',
+                              style: TextStyle(fontFamily: 'Cairo')),
+                          selected: _delayInMinutes,
+                          onSelected: (_) =>
+                              setState(() => _delayInMinutes = true),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(46),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: const Icon(Icons.alarm_add_rounded),
+                      label: const Text('جدولة تجربة الأذان',
+                          style: TextStyle(
+                              fontFamily: 'Cairo',
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold)),
+                      onPressed: () async {
+                        final n = int.tryParse(_delayCtrl.text.trim()) ?? 0;
+                        final seconds = _delayInMinutes ? n * 60 : n;
+                        final messenger = ScaffoldMessenger.of(context);
+                        if (seconds < 5) {
+                          messenger.showSnackBar(const SnackBar(
+                              content: Text('أدخل مدة لا تقل عن 5 ثوانٍ',
+                                  style: TextStyle(fontFamily: 'Cairo'))));
+                          return;
+                        }
+                        final ok = await AlarmBridge.scheduleTestAdhan(
+                          seconds: seconds,
+                          soundId: settings.selectedAdhanSound,
+                          volume: settings.adhanVolume,
+                          gradual: settings.gradualVolume,
+                        );
+                        messenger.showSnackBar(SnackBar(
+                          content: Text(
+                              ok
+                                  ? 'سيعمل الأذان بعد ${_delayInMinutes ? '$n دقيقة' : '$n ثانية'}، يمكنك إغلاق التطبيق أو قفل الجهاز'
+                                  : 'تعذرت جدولة التجربة',
+                              style: const TextStyle(fontFamily: 'Cairo')),
+                        ));
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 4),
 
               // Test audio button
               Padding(

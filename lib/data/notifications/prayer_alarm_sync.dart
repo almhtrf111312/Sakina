@@ -16,7 +16,7 @@ import '../settings/settings_repository.dart';
 String _typeFor(NotificationMode mode) {
   switch (mode) {
     case NotificationMode.shortBeep:
-      return 'short';
+      return 'adhan';
     case NotificationMode.silent:
       return 'silent';
     case NotificationMode.vibrate:

@@ -104,6 +104,32 @@ class AlarmBridge {
     }
   }
 
+  /// Schedules a real adhan (through the alarm path) after [seconds].
+  static Future<bool> scheduleTestAdhan({
+    required int seconds,
+    required String soundId,
+    required double volume,
+    required bool gradual,
+  }) async {
+    try {
+      final ok = await _alarmChannel.invokeMethod<bool>('scheduleTestAdhan', {
+        'seconds': seconds,
+        'soundId': soundId,
+        'volume': volume,
+        'gradual': gradual,
+      });
+      return ok == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<void> cancelTestAdhan() async {
+    try {
+      await _alarmChannel.invokeMethod('cancelTestAdhan');
+    } catch (_) {}
+  }
+
   /// Stop any currently playing adhan/test sound.
   static Future<void> stopTestAdhan() async {
     try {
