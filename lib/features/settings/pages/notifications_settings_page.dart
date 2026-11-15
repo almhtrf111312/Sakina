@@ -258,6 +258,24 @@ class _NotificationsSettingsPageState extends ConsumerState<NotificationsSetting
               ),
               settingsDivider(isDark),
 
+              ListTile(
+                title: const Text('صوت أذان الفجر',
+                    style: TextStyle(fontFamily: 'Cairo', fontSize: 15)),
+                subtitle: Text(adhanSoundName(settings.selectedFajrSound),
+                    style: TextStyle(fontFamily: 'Cairo', fontSize: 13,
+                        color: primary, fontWeight: FontWeight.w600)),
+                trailing: const Icon(Icons.music_note, size: 20),
+                onTap: () async {
+                  final selected = await SoundSelectorSheet.show(context,
+                      selectedSoundId: settings.selectedFajrSound,
+                      initialVolume: settings.adhanVolume, fajr: true);
+                  if (selected != null) {
+                    notifier.update((s) => s.copyWith(selectedFajrSound: selected));
+                  }
+                },
+              ),
+              settingsDivider(isDark),
+
               // Volume slider
               Padding(
                 padding:

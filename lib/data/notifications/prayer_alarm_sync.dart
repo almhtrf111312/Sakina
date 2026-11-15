@@ -38,6 +38,7 @@ final prayerAlarmSyncProvider = FutureProvider<void>((ref) async {
         Object.hashAll(s.prayerNotifications.entries
             .map((e) => Object.hash(e.key, e.value))),
         s.selectedAdhanSound,
+        s.selectedFajrSound,
         s.adhanVolume,
         s.gradualVolume,
         s.morningAzkarReminder,
@@ -63,7 +64,10 @@ final prayerAlarmSyncProvider = FutureProvider<void>((ref) async {
         'timeLabel': timeLabel.format(time.toLocal()),
         'enabled': mode != NotificationMode.off,
         'notificationType': _typeFor(mode),
-        'soundId': settings.selectedAdhanSound,
+        'soundId': name == 'Fajr'
+            ? settings.selectedFajrSound
+            : (settings.selectedAdhanSound == 'adhan_4'
+                ? 'adhan_5' : settings.selectedAdhanSound),
         'volume': settings.adhanVolume,
         'gradualVolume': settings.gradualVolume,
       });

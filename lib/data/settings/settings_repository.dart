@@ -37,6 +37,7 @@ class AppSettings {
   // ── Notifications ──────────────────────────────────────────────────────
   final Map<String, NotificationMode> prayerNotifications;
   final String selectedAdhanSound;
+  final String selectedFajrSound;
   final double adhanVolume; // 0.0 .. 1.0
   final bool gradualVolume;
   final int preAdhanReminderMinutes; // 0 = off
@@ -106,6 +107,7 @@ class AppSettings {
       'Isha': NotificationMode.shortBeep,
     },
     this.selectedAdhanSound = 'adhan_5',
+    this.selectedFajrSound = 'adhan_4',
     this.adhanVolume = 1.0,
     this.gradualVolume = false,
     this.preAdhanReminderMinutes = 0,
@@ -161,6 +163,7 @@ class AppSettings {
     Map<String, int>? prayerAdjustments,
     Map<String, NotificationMode>? prayerNotifications,
     String? selectedAdhanSound,
+    String? selectedFajrSound,
     double? adhanVolume,
     bool? gradualVolume,
     int? preAdhanReminderMinutes,
@@ -215,6 +218,7 @@ class AppSettings {
       prayerAdjustments: prayerAdjustments ?? this.prayerAdjustments,
       prayerNotifications: prayerNotifications ?? this.prayerNotifications,
       selectedAdhanSound: selectedAdhanSound ?? this.selectedAdhanSound,
+      selectedFajrSound: selectedFajrSound ?? this.selectedFajrSound,
       adhanVolume: adhanVolume ?? this.adhanVolume,
       gradualVolume: gradualVolume ?? this.gradualVolume,
       preAdhanReminderMinutes: preAdhanReminderMinutes ?? this.preAdhanReminderMinutes,
@@ -276,6 +280,7 @@ class AppSettings {
         'prayerNotifications':
             prayerNotifications.map((k, v) => MapEntry(k, v.name)),
         'selectedAdhanSound': selectedAdhanSound,
+        'selectedFajrSound': selectedFajrSound,
         'adhanVolume': adhanVolume,
         'gradualVolume': gradualVolume,
         'preAdhanReminderMinutes': preAdhanReminderMinutes,
@@ -344,8 +349,10 @@ class AppSettings {
                   k,
                   en(NotificationMode.values, v as String?,
                       NotificationMode.shortBeep))),
-      selectedAdhanSound:
-          (j['selectedAdhanSound'] as String?) ?? 'adhan_5',
+      selectedAdhanSound: (j['selectedAdhanSound'] as String?) == 'adhan_4'
+          ? 'adhan_5' : (j['selectedAdhanSound'] as String?) ?? 'adhan_5',
+      selectedFajrSound:
+          (j['selectedFajrSound'] as String?) ?? 'adhan_4',
       adhanVolume: (j['adhanVolume'] as num?)?.toDouble() ?? 1.0,
       gradualVolume: (j['gradualVolume'] as bool?) ?? false,
       preAdhanReminderMinutes: (j['preAdhanReminderMinutes'] as int?) ?? 0,

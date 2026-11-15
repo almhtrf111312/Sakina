@@ -6,6 +6,8 @@ import android.net.Uri
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.app.Activity
+import android.provider.OpenableColumns
 import androidx.annotation.NonNull
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -28,7 +30,9 @@ class MainActivity : FlutterActivity() {
 
     companion object {
         private const val PERMISSION_REQUEST_CODE_NOTIFICATIONS = 101
+        private const val REQUEST_CUSTOM_SOUND = 102
     }
+    private var pendingSoundResult: MethodChannel.Result? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +46,28 @@ class MainActivity : FlutterActivity() {
         flutterEngine.plugins.add(AlarmBridgePlugin())
         flutterEngine.plugins.add(AodBridgePlugin())
         flutterEngine.plugins.add(TiltBridgePlugin())
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
+            "com.sakina.app/custom_sound").setMethodCallHandler { call, result ->
+            if (call.method != "pickCustomSound") {
+                result.notImplemented()
+            } else if (pendingSoundResult != null) {
+                result.error("PICKER_BUSY", "Sound picker is already open", null)
+            } else {
+                try {
+                    pendingSoundResult = result
+                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                        type = "audio/*"
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                            Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+                    }
+                    startActivityForResult(intent, REQUEST_CUSTOM_SOUND)
+                } catch (e: Exception) {
+                    pendingSoundResult = null
+                    result.error("PICKER_FAILED", e.message, null)
+                }
+            }
+        }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
             "com.sakina.app/external_link").setMethodCallHandler { call, result ->
             if (call.method == "openTanzilSource") {
@@ -81,5 +107,29 @@ class MainActivity : FlutterActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != REQUEST_CUSTOM_SOUND) return
+        val pending = pendingSoundResult ?: return
+        pendingSoundResult = null
+        val uri = if (resultCode == Activity.RESULT_OK) data?.data else null
+        if (uri == null) {
+            pending.success(null)
+            return
+        }
+        try {
+            contentResolver.takePersistableUriPermission(uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            var name = uri.lastPathSegment ?: "نغمة شخصية"
+            contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME),
+                null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) name = cursor.getString(0) ?: name
+            }
+            pending.success(mapOf("uri" to uri.toString(), "name" to name))
+        } catch (e: Exception) {
+            pending.error("SOUND_ACCESS", e.message, null)
+        }
     }
 }

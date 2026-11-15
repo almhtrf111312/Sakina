@@ -61,7 +61,7 @@ class AdhanForegroundService : Service() {
 
         // Adhan asset filenames (placed in android/app/src/main/assets/audio/)
         private const val ADHAN_ASSET_DEFAULT = "flutter_assets/assets/audio/adhan_5.mp3"
-        private const val ADHAN_ASSET_FAJR    = "flutter_assets/assets/audio/adhan_fajr.mp3"   // includes sobhi
+        private const val ADHAN_ASSET_FAJR    = "flutter_assets/assets/audio/adhan_4.mp3"
 
         private const val DEFAULT_TIMEOUT_MS  = 3 * 60 * 1000L  // 3 min
         private const val GRADUAL_VOLUME_STEP_MS = 500L
@@ -202,15 +202,17 @@ class AdhanForegroundService : Service() {
         requestAudioFocus()
 
         val base = "flutter_assets/assets/audio/"
+        val fallback = if (isFajr) ADHAN_ASSET_FAJR else ADHAN_ASSET_DEFAULT
         val candidates = if (notifType == "beep") {
             listOf(base + "beep_short.mp3")
         } else {
             listOf(
-                if (soundId.isNotEmpty()) "$base$soundId.mp3" else ADHAN_ASSET_DEFAULT,
-                ADHAN_ASSET_DEFAULT
+                if (soundId.matches(Regex("adhan_[A-Za-z0-9_]+")))
+                    "$base$soundId.mp3" else fallback,
+                fallback
             )
         }
-        val assetName = candidates.firstOrNull { assetExists(it) } ?: ADHAN_ASSET_DEFAULT
+        val assetName = candidates.firstOrNull { assetExists(it) } ?: fallback
 
         try {
             mediaPlayer = MediaPlayer().apply {
@@ -221,9 +223,23 @@ class AdhanForegroundService : Service() {
                         .build()
                 )
                 // Try loading from assets
-                val afd = assets.openFd(assetName)
-                setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
-                afd.close()
+                val customUri = soundId.split('|').takeIf {
+                    it.size == 3 && it[0] == "custom"
+                }?.let { android.net.Uri.parse(android.net.Uri.decode(it[2])) }
+                if (notifType != "beep" && customUri?.scheme == "content") {
+                    try {
+                        setDataSource(applicationContext, customUri)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Custom sound unavailable; using bundled adhan", e)
+                        val afd = assets.openFd(fallback)
+                        setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+                        afd.close()
+                    }
+                } else {
+                    val afd = assets.openFd(assetName)
+                    setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+                    afd.close()
+                }
 
                 isLooping = false
                 if (gradualVol) setVolume(0f, 0f) else setVolume(targetVolume, targetVolume)

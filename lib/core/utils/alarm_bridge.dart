@@ -11,6 +11,18 @@ class AlarmBridge {
   static const MethodChannel _alarmChannel =
       MethodChannel('com.sakina.app/alarm');
   static const MethodChannel _aodChannel = MethodChannel('com.sakina.app/aod');
+  static const MethodChannel _customSoundChannel =
+      MethodChannel('com.sakina.app/custom_sound');
+
+  static Future<String?> pickCustomSound() async {
+    final result = await _customSoundChannel.invokeMapMethod<String, String>(
+        'pickCustomSound');
+    if (result == null) return null;
+    final name = result['name'];
+    final uri = result['uri'];
+    if (name == null || uri == null) return null;
+    return 'custom|${Uri.encodeComponent(name)}|${Uri.encodeComponent(uri)}';
+  }
   static const EventChannel _alarmEventChannel =
       EventChannel('com.sakina.app/alarm_events');
 
