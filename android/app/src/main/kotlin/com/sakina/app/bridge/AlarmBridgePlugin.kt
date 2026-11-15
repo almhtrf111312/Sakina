@@ -103,6 +103,7 @@ class AlarmBridgePlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamH
     // ── MethodCallHandler ───────────────────────────────────────────────────
 
     // ── Tap feedback (sound + vibration), independent of system touch settings ──
+    private val tapExecutor = java.util.concurrent.Executors.newSingleThreadExecutor()
     private var tapPool: SoundPool? = null
     private var tapSoundId = 0
     private var tapLoaded = false
@@ -213,10 +214,13 @@ class AlarmBridgePlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamH
                 result.success(true)
             }
             "tapFeedback" -> {
-                tapFeedback(
-                    call.argument<Boolean>("sound") ?: true,
-                    call.argument<Boolean>("haptic") ?: true
-                )
+                val sound = call.argument<Boolean>("sound") ?: true
+                val haptic = call.argument<Boolean>("haptic") ?: true
+                // Never touch SoundPool / audio HAL on the main thread: creating it
+                // on some devices (MIUI) blocks and made every tap freeze the app.
+                try {
+                    tapExecutor.execute { tapFeedback(sound, haptic) }
+                } catch (_: Exception) {}
                 result.success(true)
             }
             "schedulePrayerAlarms" -> {
