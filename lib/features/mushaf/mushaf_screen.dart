@@ -10,8 +10,9 @@ import '../../data/settings/settings_repository.dart';
 
 Map<String, dynamic> _parseMushaf(List<String> sources) {
   final index = jsonDecode(sources[0]) as Map<String, dynamic>;
+  final text = utf8.decode(gzip.decode(base64Decode(sources[1])));
   final verses = <String, String>{};
-  for (final line in const LineSplitter().convert(sources[1])) {
+  for (final line in const LineSplitter().convert(text)) {
     if (line.isEmpty || line.startsWith('#')) continue;
     final first = line.indexOf('|');
     final second = line.indexOf('|', first + 1);
@@ -28,6 +29,18 @@ Map<String, dynamic> _parseMushaf(List<String> sources) {
   }
   return index;
 }
+
+// Keep only the parsed data between tab visits; pages and controllers still
+// dispose normally. Decompression and parsing both run off the UI isolate.
+final mushafDataProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+  final index = await rootBundle.loadString('assets/data/mushaf_pages.json');
+  final parts = await Future.wait([
+    for (var i = 0; i < 16; i++)
+      rootBundle.loadString(
+          'assets/data/mushaf/part_${i.toString().padLeft(2, '0')}.txt'),
+  ]);
+  return compute(_parseMushaf, [index, parts.join()]);
+});
 
 class MushafScreen extends ConsumerStatefulWidget {
   const MushafScreen({super.key});
@@ -51,17 +64,7 @@ class _MushafScreenState extends ConsumerState<MushafScreen> {
     _bookmark = (prefs.getInt('mushaf_bookmark') ?? 1).clamp(1, 604);
     _fontSize = (prefs.getDouble('mushaf_font_size') ?? 23).clamp(17, 34);
     _controller = PageController(initialPage: _page - 1);
-    _data = _loadData();
-  }
-
-  Future<Map<String, dynamic>> _loadData() async {
-    final index = await rootBundle.loadString('assets/data/mushaf_pages.json');
-    final parts = await Future.wait([
-      for (var i = 0; i < 16; i++)
-        rootBundle.loadString('assets/data/mushaf/part_${i.toString().padLeft(2, '0')}.txt'),
-    ]);
-    final text = utf8.decode(gzip.decode(base64Decode(parts.join())));
-    return compute(_parseMushaf, [index, text]);
+    _data = ref.read(mushafDataProvider.future);
   }
 
   @override

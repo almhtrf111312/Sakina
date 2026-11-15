@@ -3,9 +3,23 @@ import 'dart:io' show gzip;
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sakina/features/mushaf/mushaf_screen.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('reader reuses fully decoded data across tab visits', () async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    final first = await container.read(mushafDataProvider.future);
+    final second = await container.read(mushafDataProvider.future);
+    expect(second, same(first));
+    final pages = first['pages'] as List<dynamic>;
+    expect(pages.length, 604);
+    expect((pages.first as List).first[2], contains('بِسْمِ'));
+    expect([for (final page in pages) ...(page as List)].length, 6236);
+  });
 
   test('offline mushaf contains every ayah exactly once in 604 pages', () async {
     final index = jsonDecode(await rootBundle.loadString(

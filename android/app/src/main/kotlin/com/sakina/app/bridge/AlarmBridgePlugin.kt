@@ -202,11 +202,20 @@ class AlarmBridgePlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamH
             }
             mp.setVolume(volume, volume)
             mp.setOnCompletionListener { stopPreview() }
-            mp.prepare()
-            mp.start()
             previewPlayer = mp
+            mp.setOnPreparedListener { player ->
+                if (previewPlayer === player) player.start()
+            }
+            mp.setOnErrorListener { player, _, _ ->
+                if (previewPlayer === player) stopPreview()
+                true
+            }
+            // Decoder setup can block for personal files. Never wait for it
+            // on Flutter's platform/UI thread.
+            mp.prepareAsync()
             true
         } catch (e: Exception) {
+            stopPreview()
             Log.w(TAG, "preview failed for $soundId: ${e.message}")
             false
         }
