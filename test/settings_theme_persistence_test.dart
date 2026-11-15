@@ -14,12 +14,14 @@ void main() {
     final writes = [
       notifier.update((s) => s.copyWith(themeMode: AppThemeMode.day)),
       notifier.update((s) => s.copyWith(accentColor: AccentColor.rose)),
-      notifier.update((s) => s.copyWith(themeMode: AppThemeMode.amoled)),
+      notifier.update((s) => s.copyWith(themeMode: AppThemeMode.amoled,
+          homeClockStyle: 2)),
     ];
     await Future.wait(writes);
     final restored = SettingsNotifier(prefs);
     expect(restored.debugState.themeMode, AppThemeMode.amoled);
     expect(restored.debugState.accentColor, AccentColor.rose);
+    expect(restored.debugState.homeClockStyle, 2);
     notifier.dispose();
     restored.dispose();
   });

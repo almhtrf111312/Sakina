@@ -2,7 +2,6 @@
 // Hero prayer card with countdown, circular progress indicator, and next prayer details.
 
 import 'dart:async';
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
@@ -11,7 +10,9 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/date_utils.dart';
 import '../../../core/utils/prayer_icons.dart';
 import '../../../data/settings/settings_repository.dart';
+import '../../../data/prayer/prayer_repository.dart';
 import '../providers/home_providers.dart';
+import 'home_clock_display.dart';
 
 class HeroPrayerCard extends ConsumerWidget {
   const HeroPrayerCard({super.key});
@@ -26,7 +27,8 @@ class HeroPrayerCard extends ConsumerWidget {
     return progressAsync.when(
       data: (data) {
         if (data == null) {
-          return _buildLoadingPlaceholder(context, isDark);
+          return _buildLoadingPlaceholder(context, isDark,
+              failed: ref.watch(prayerTimesProvider).hasError);
         }
 
         final formattedTime = AppDateUtils.formatPrayerTime(data.targetTime,
@@ -117,126 +119,18 @@ class HeroPrayerCard extends ConsumerWidget {
               ),
               const SizedBox(height: 24),
 
-              // ── Circular Progress & Countdown ──
-              SizedBox(
-                width: 190,
-                height: 190,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Background track
-                    SizedBox(
-                      width: 190,
-                      height: 190,
-                      child: CircularProgressIndicator(
-                        value: 1.0,
-                        strokeWidth: 8,
-                        strokeCap: StrokeCap.round,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          isDark
-                              ? AppColors.nightElevated.withOpacity(0.8)
-                              : AppColors.dayChipStrong,
-                        ),
-                      ),
-                    ),
-                    // Active animated progress track
-                    SizedBox(
-                      width: 190,
-                      height: 190,
-                      child: CircularProgressIndicator(
-                        value: data.progress,
-                        strokeWidth: 8,
-                        strokeCap: StrokeCap.round,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          isDark
-                              ? AppColors.nightPrimary
-                              : AppColors.dayPrimary,
-                        ),
-                      ),
-                    ),
-                    // Inner glow / decor
-                    Container(
-                      width: 154,
-                      height: 154,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isDark
-                            ? AppColors.nightBackground.withOpacity(0.6)
-                            : AppColors.daySurface,
-                        boxShadow: [
-                          BoxShadow(
-                            color: isDark
-                                ? AppColors.nightPrimary.withOpacity(0.05)
-                                : AppColors.dayPrimary.withOpacity(0.05),
-                            blurRadius: 15,
-                            spreadRadius: 2,
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'متبقي على الأذان',
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              fontFamily: 'Cairo',
-                              color: isDark
-                                  ? AppColors.nightTextSecondary
-                                  : AppColors.dayTextSecondary,
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            data.formattedCountdown,
-                            textDirection: TextDirection.ltr,
-                            style: theme.textTheme.headlineMedium?.copyWith(
-                              fontFamily: 'Cairo',
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 2.0,
-                              color: isDark
-                                  ? AppColors.nightTextPrimary
-                                  : AppColors.dayTextPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? AppColors.nightSecondary.withOpacity(0.18)
-                                  : AppColors.daySecondary.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              'سكينة وطمأنينة',
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: isDark
-                                    ? AppColors.nightSecondary
-                                    : AppColors.daySecondary,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Cairo',
-                                fontSize: 10,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              HomeClockDisplay(style: settings.homeClockStyle, data: data),
+
             ],
           ),
         );
       },
       loading: () => _buildLoadingPlaceholder(context, isDark),
-      error: (_, __) => _buildLoadingPlaceholder(context, isDark),
+      error: (_, __) => _buildLoadingPlaceholder(context, isDark, failed: true),
     );
   }
 
-  Widget _buildLoadingPlaceholder(BuildContext context, bool isDark) {
+  Widget _buildLoadingPlaceholder(BuildContext context, bool isDark, {bool failed = false}) {
     return Container(
       width: double.infinity,
       height: 280,
@@ -245,11 +139,13 @@ class HeroPrayerCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(28),
         color: isDark ? AppColors.nightSurface : Colors.white,
       ),
-      child: Center(
-        child: CircularProgressIndicator(
-          strokeWidth: 2.5,
-          valueColor: AlwaysStoppedAnimation<Color>(AppColors.nightPrimary),
-        ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const _LiveClock(),
+          const SizedBox(height: 16),
+          Text(failed ? 'تعذر تحميل مواقيت الصلاة' : 'جارٍ تجهيز مواقيت الصلاة'),
+        ],
       ),
     );
   }

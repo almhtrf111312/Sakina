@@ -51,6 +51,7 @@ class AppSettings {
   final AppThemeMode themeMode;
   final AccentColor accentColor;
   final double fontSize;
+  final int homeClockStyle;
   final NumeralType numeralType;
   final String languageCode; // 'ar', 'en', 'tr'
   final bool showBackgroundDecoration;
@@ -119,6 +120,7 @@ class AppSettings {
     this.themeMode = AppThemeMode.night,
     this.accentColor = AccentColor.green,
     this.fontSize = 1.0,
+    this.homeClockStyle = 0,
     this.numeralType = NumeralType.arabic,
     this.languageCode = 'ar',
     this.showBackgroundDecoration = true,
@@ -175,6 +177,7 @@ class AppSettings {
     AppThemeMode? themeMode,
     AccentColor? accentColor,
     double? fontSize,
+    int? homeClockStyle,
     NumeralType? numeralType,
     String? languageCode,
     bool? showBackgroundDecoration,
@@ -230,6 +233,7 @@ class AppSettings {
       themeMode: themeMode ?? this.themeMode,
       accentColor: accentColor ?? this.accentColor,
       fontSize: fontSize ?? this.fontSize,
+      homeClockStyle: homeClockStyle ?? this.homeClockStyle,
       numeralType: numeralType ?? this.numeralType,
       languageCode: languageCode ?? this.languageCode,
       showBackgroundDecoration:
@@ -292,6 +296,7 @@ class AppSettings {
         'themeMode': themeMode.name,
         'accentColor': accentColor.name,
         'fontSize': fontSize,
+        'homeClockStyle': homeClockStyle,
         'numeralType': numeralType.name,
         'languageCode': languageCode,
         'showBackgroundDecoration': showBackgroundDecoration,
@@ -366,6 +371,7 @@ class AppSettings {
       accentColor: en(
           AccentColor.values, j['accentColor'] as String?, AccentColor.green),
       fontSize: (j['fontSize'] as num?)?.toDouble() ?? 1.0,
+      homeClockStyle: ((j['homeClockStyle'] as num?)?.toInt() ?? 0).clamp(0, 2),
       numeralType: en(NumeralType.values, j['numeralType'] as String?,
           NumeralType.arabic),
       languageCode: (j['languageCode'] as String?) ?? 'ar',

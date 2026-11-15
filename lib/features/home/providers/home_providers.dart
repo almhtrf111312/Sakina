@@ -62,14 +62,13 @@ class NextPrayerProgress {
 }
 
 final nextPrayerProgressProvider = StreamProvider<NextPrayerProgress?>((ref) {
-  final prayerRepo = ref.watch(prayerRepositoryProvider);
   final scheduleAsync = ref.watch(prayerTimesProvider);
 
   return scheduleAsync.when(
     data: (schedule) {
       if (schedule.isEmpty) return Stream.value(null);
 
-      return Stream.periodic(const Duration(seconds: 1), (_) {
+      NextPrayerProgress? current() {
         final nowUtc = DateTime.now().toUtc();
         final orderedNames = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
 
@@ -121,10 +120,14 @@ final nextPrayerProgressProvider = StreamProvider<NextPrayerProgress?>((ref) {
           progress: progress,
           formattedCountdown: formattedCountdown,
         );
-      });
+      }
+      return (() async* {
+        yield current();
+        yield* Stream.periodic(const Duration(seconds: 1), (_) => current());
+      })();
     },
     loading: () => Stream.value(null),
-    error: (_, __) => Stream.value(null),
+    error: (error, stack) => Stream.error(error, stack),
   );
 });
 

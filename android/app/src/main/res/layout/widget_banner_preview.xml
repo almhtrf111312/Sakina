@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8'?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/widget_root" android:layout_width="match_parent" android:layout_height="match_parent">
+  <ImageView android:id="@+id/w_background" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitXY" android:contentDescription="" android:background="@drawable/widget_bg" />
+  <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center_vertical" android:padding="10dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+        <TextView android:id="@+id/w_clock" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="01:42 م" android:textColor="#FFFFFF" android:textSize="27sp" android:textStyle="bold" android:maxLines="1" />
+        <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="right" android:paddingLeft="8dp">
+            <TextView android:id="@+id/w_next" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="العصر" android:textColor="#5FB59B" android:textSize="13sp" android:textStyle="bold" android:maxLines="1" />
+            <TextView android:id="@+id/w_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="03:06 م" android:textColor="#FFFFFF" android:textSize="13sp" android:maxLines="1" />
+        </LinearLayout>
+        <TextView android:id="@+id/w_count" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="01:24" android:textColor="#B0C3BD" android:textSize="13sp" android:layout_marginLeft="8dp" />
+    </LinearLayout>
+    <ImageView android:id="@+id/w_bar" android:layout_width="match_parent" android:layout_height="6dp" android:layout_marginTop="5dp" android:scaleType="fitXY" android:contentDescription="تقدم الصلاة" />
+    <TextView android:id="@+id/w_date" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="الأحد 15 نوفمبر" android:textColor="#B0C3BD" android:textSize="10sp" android:maxLines="1" />
+  </LinearLayout>
+</FrameLayout>
