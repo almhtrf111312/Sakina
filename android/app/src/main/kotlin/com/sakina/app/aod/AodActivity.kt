@@ -55,6 +55,7 @@ class AodActivity : Activity() {
     private lateinit var root: FrameLayout
     private lateinit var block: LinearLayout
     private lateinit var tvTime: TextView
+    private var analogClock: AnalogClockView? = null
     private lateinit var tvDate: TextView
     private lateinit var tvHijri: TextView
     private lateinit var tvName: TextView
@@ -168,7 +169,15 @@ class AodActivity : Activity() {
             FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT,
             Gravity.CENTER))
 
-        val timeSize = when (cfg.clockStyle) { 1 -> 80f; 2 -> 74f; 3 -> 66f; else -> 86f }
+        if (cfg.clockStyle >= 6) {
+            analogClock = AnalogClockView(this, main, cfg.clockStyle == 6).also {
+                block.addView(it, lp(0))
+            }
+        }
+        val timeSize = when (cfg.clockStyle) {
+            1 -> 80f; 2 -> 74f; 3 -> 66f; 4 -> 68f; 5 -> 82f
+            6, 7 -> 28f; else -> 86f
+        }
         tvTime = label(timeSize, main, cfg.clockStyle != 2).also { block.addView(it, lp(0)) }
         styleClock(tvTime, d)
         tvDate = label(20f, soft).also { block.addView(it, lp(6)) }
@@ -210,6 +219,9 @@ class AodActivity : Activity() {
                 tv.setPadding(inset + (18 * d).toInt(), (14 * d).toInt(),
                     inset + (18 * d).toInt(), (14 * d).toInt())
             }
+            4 -> tv.typeface = Typeface.create("monospace", Typeface.NORMAL)
+            5 -> tv.typeface = Typeface.create("sans-serif-rounded", Typeface.BOLD)
+            6, 7 -> tv.typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
             else -> tv.typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
         }
     }
@@ -233,7 +245,16 @@ class AodActivity : Activity() {
 
     private fun hm(ts: Long): String {
         val c = Calendar.getInstance().apply { timeInMillis = ts }
-        return num(String.format(Locale.US, "%02d:%02d", c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE)))
+        return formattedTime(c)
+    }
+
+    private fun formattedTime(c: Calendar): String {
+        val h = c.get(Calendar.HOUR_OF_DAY)
+        val minute = c.get(Calendar.MINUTE)
+        if (cfg.use24HourTime) return num(String.format(Locale.US, "%02d:%02d", h, minute))
+        val h12 = if (h % 12 == 0) 12 else h % 12
+        return num(String.format(Locale.US, "%02d:%02d", h12, minute)) +
+            if (h < 12) " صباحاً" else " مساءً"
     }
 
     private val monthsAr = arrayOf("يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
@@ -244,7 +265,8 @@ class AodActivity : Activity() {
 
     private fun update() {
         val now = Calendar.getInstance()
-        tvTime.text = num(String.format(Locale.US, "%02d:%02d", now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE)))
+        tvTime.text = formattedTime(now)
+        analogClock?.invalidate()
         tvDate.text = num("${daysAr[now.get(Calendar.DAY_OF_WEEK) - 1]} ${now.get(Calendar.DAY_OF_MONTH)} " +
             "${monthsAr[now.get(Calendar.MONTH)]} ${now.get(Calendar.YEAR)}")
         tvHijri.text = hijri(now)

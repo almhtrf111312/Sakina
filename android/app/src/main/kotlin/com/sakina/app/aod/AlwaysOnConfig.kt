@@ -11,7 +11,8 @@ class AlwaysOnConfig(
     val showPrayers: Boolean,
     val timeoutMin: Int,         // 0 = until the phone is unlocked
     val color: Int,
-    val clockStyle: Int,         // 0 digital bold | 1 classic serif | 2 minimal light | 3 boxed
+    val clockStyle: Int,         // 0..5 digital, 6..7 analog
+    val use24HourTime: Boolean,
     val arabicNumerals: Boolean, // ٠١٢٣ instead of 0123
     val hijriOffset: Int,        // -2 .. +2 days, same as the app setting
     val showWhen: String,        // always | adhan | charging | schedule
@@ -33,6 +34,7 @@ class AlwaysOnConfig(
                 .putInt("timeoutMin", (m["timeoutMin"] as? Number)?.toInt() ?: 10)
                 .putInt("color", (m["color"] as? Number)?.toInt() ?: 0xFF5FB59B.toInt())
                 .putInt("clockStyle", (m["clockStyle"] as? Number)?.toInt() ?: 0)
+                .putBoolean("use24HourTime", m["use24HourTime"] as? Boolean ?: false)
                 .putBoolean("arabicNumerals", m["arabicNumerals"] as? Boolean ?: false)
                 .putInt("hijriOffset", (m["hijriOffset"] as? Number)?.toInt() ?: 0)
                 .putString("showWhen", m["showWhen"] as? String ?: "always")
@@ -53,7 +55,8 @@ class AlwaysOnConfig(
                 p.getBoolean("showPrayers", true),
                 p.getInt("timeoutMin", 10),
                 p.getInt("color", 0xFF5FB59B.toInt()),
-                p.getInt("clockStyle", 0).coerceIn(0, 3),
+                p.getInt("clockStyle", 0).coerceIn(0, 7),
+                p.getBoolean("use24HourTime", false),
                 p.getBoolean("arabicNumerals", false),
                 p.getInt("hijriOffset", 0).coerceIn(-2, 2),
                 p.getString("showWhen", "always") ?: "always",

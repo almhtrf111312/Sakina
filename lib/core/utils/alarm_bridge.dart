@@ -3,6 +3,11 @@ import 'package:flutter/services.dart';
 
 /// Flutter MethodChannel wrapper for calling Kotlin AlarmScheduler and AodActivity.
 class AlarmBridge {
+  static Future<void> refreshTimeDisplays() async {
+    try {
+      await _alarmChannel.invokeMethod('refreshTimeDisplays');
+    } catch (_) {}
+  }
   static const MethodChannel _alarmChannel =
       MethodChannel('com.sakina.app/alarm');
   static const MethodChannel _aodChannel = MethodChannel('com.sakina.app/aod');

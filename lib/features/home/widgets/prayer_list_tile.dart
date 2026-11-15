@@ -3,7 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
+import '../../../core/utils/date_utils.dart';
 
 import '../../../core/utils/prayer_icons.dart';
 import '../../../data/settings/settings_repository.dart';
@@ -32,8 +32,8 @@ class PrayerListTile extends ConsumerWidget {
         NotificationMode.shortBeep;
 
     final arabicName = getPrayerArabicName(prayerName);
-    final timeFormat = DateFormat('hh:mm a', 'ar');
-    final formattedTime = timeFormat.format(prayerTime.toLocal());
+    final formattedTime = AppDateUtils.formatPrayerTime(prayerTime.toLocal(),
+        is24Hour: settings.use24HourTime, languageCode: settings.languageCode);
 
     // Highlight styles if this prayer is the next upcoming prayer
     final cardBg = isNext

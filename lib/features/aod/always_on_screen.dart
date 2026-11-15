@@ -9,11 +9,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/date_utils.dart';
 import '../../core/utils/alarm_bridge.dart';
 import '../../data/settings/settings_repository.dart';
 
 /// Accent colours offered for the always-on screen.
-const alwaysOnColorKeys = ['green', 'gold', 'white', 'blue'];
+const alwaysOnColorKeys = [
+  'green', 'gold', 'white', 'blue', 'teal', 'cyan', 'violet', 'lavender',
+  'rose', 'coral', 'orange', 'amber', 'mint', 'ice', 'silver', 'lime',
+];
 
 Color alwaysOnColor(String key) {
   switch (key) {
@@ -23,6 +27,18 @@ Color alwaysOnColor(String key) {
       return const Color(0xFFFFFFFF);
     case 'blue':
       return const Color(0xFF5B9BD5);
+    case 'teal': return const Color(0xFF49B6AC);
+    case 'cyan': return const Color(0xFF5FC5DB);
+    case 'violet': return const Color(0xFFAA8ADD);
+    case 'lavender': return const Color(0xFFC0A9E8);
+    case 'rose': return const Color(0xFFE09CAC);
+    case 'coral': return const Color(0xFFE99380);
+    case 'orange': return const Color(0xFFDFA06F);
+    case 'amber': return const Color(0xFFE4C079);
+    case 'mint': return const Color(0xFF9BDBC4);
+    case 'ice': return const Color(0xFFB3D5EA);
+    case 'silver': return const Color(0xFFC4CBCD);
+    case 'lime': return const Color(0xFFB8CD83);
     default:
       return AppColors.nightPrimary;
   }
@@ -35,9 +51,9 @@ class AlwaysOnConfig {
   final double brightness; // 0.02 .. 0.30
   final bool showPrayers;
   final int timeoutMin; // 0 = until unlock
-  final int clockStyle; // 0 digital | 1 classic | 2 minimal | 3 boxed
+  final int clockStyle; // 0..5 digital | 6..7 analog
   final bool arabicNumerals;
-  final String colorKey; // green | gold | white | blue
+  final String colorKey;
   final String showWhen; // always | adhan | charging | schedule
   final int beforeAdhanMin;
   final int afterAdhanMin;
@@ -118,7 +134,7 @@ class AlwaysOnConfig {
         brightness: (j['brightness'] as num?)?.toDouble() ?? 0.08,
         showPrayers: j['showPrayers'] as bool? ?? true,
         timeoutMin: (j['timeoutMin'] as num?)?.toInt() ?? 10,
-        clockStyle: ((j['clockStyle'] as num?)?.toInt() ?? 0).clamp(0, 3).toInt(),
+        clockStyle: ((j['clockStyle'] as num?)?.toInt() ?? 0).clamp(0, 7).toInt(),
         arabicNumerals: j['arabicNumerals'] as bool? ?? false,
         colorKey: j['colorKey'] as String? ?? 'green',
         showWhen: j['showWhen'] as String? ?? 'always',
@@ -176,6 +192,7 @@ class AlwaysOnNotifier extends StateNotifier<AlwaysOnConfig> {
       ...state.toJson(),
       'color': alwaysOnColor(state.colorKey).value,
       'hijriOffset': _ref.read(appSettingsProvider).hijriOffset,
+      'use24HourTime': _ref.read(appSettingsProvider).use24HourTime,
     });
   }
 }
@@ -183,8 +200,8 @@ class AlwaysOnNotifier extends StateNotifier<AlwaysOnConfig> {
 final alwaysOnProvider =
     StateNotifierProvider<AlwaysOnNotifier, AlwaysOnConfig>((ref) {
   final notifier = AlwaysOnNotifier(ref);
-  ref.listen<int>(
-    appSettingsProvider.select((s) => s.hijriOffset),
+  ref.listen<(int, bool)>(
+    appSettingsProvider.select((s) => (s.hijriOffset, s.use24HourTime)),
     (_, __) => notifier.push(),
   );
   return notifier;
@@ -322,8 +339,12 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
 
   // ─── When to show ──────────────────────────────────────────────────────────
 
-  String _two(int v) => v.toString().padLeft(2, '0');
-  String _hm(int minutes) => '${_two(minutes ~/ 60)}:${_two(minutes % 60)}';
+  String _hm(int minutes) {
+    final s = ref.read(appSettingsProvider);
+    return AppDateUtils.formatPrayerTime(
+      DateTime(2020, 1, 1, minutes ~/ 60, minutes % 60),
+      is24Hour: s.use24HourTime, languageCode: s.languageCode);
+  }
 
   String _whenHint(String mode) {
     switch (mode) {
@@ -425,13 +446,17 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
     String label,
     TextStyle sample, {
     bool boxed = false,
+    bool analog = false,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primary = Theme.of(context).colorScheme.primary;
     final selected = cfg.clockStyle == index;
     final textColor = isDark ? Colors.white70 : Colors.black87;
 
-    Widget time = Text(
+    Widget time = analog
+        ? Icon(index == 6 ? Icons.watch_later_outlined : Icons.schedule_rounded,
+            size: 28, color: textColor)
+        : Text(
       cfg.arabicNumerals ? '١٢:٣٤' : '12:34',
       textDirection: TextDirection.ltr,
       style: sample.copyWith(fontSize: 18, color: textColor),
@@ -489,6 +514,14 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
     return _card(Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _title('نظام الوقت · ينطبق على التطبيق كله'),
+        _choices<bool>(
+          value: ref.watch(appSettingsProvider).use24HourTime,
+          items: const [(false, '12 ساعة · صباحاً/مساءً'), (true, '24 ساعة')],
+          onChanged: (v) => ref.read(settingsNotifierProvider.notifier)
+              .update((s) => s.copyWith(use24HourTime: v)),
+        ),
+        const SizedBox(height: 18),
         _title('شكل الساعة'),
         Row(children: [
           _clockTile(cfg, n, 0, 'رقمي عصري',
@@ -502,6 +535,15 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
                   fontFamily: 'monospace', fontWeight: FontWeight.bold),
               boxed: true),
         ]),
+        const SizedBox(height: 8),
+        Row(children: [
+          _clockTile(cfg, n, 4, 'رقمي رفيع',
+              const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w300)),
+          _clockTile(cfg, n, 5, 'رقمي مستدير',
+              const TextStyle(fontWeight: FontWeight.w600)),
+          _clockTile(cfg, n, 6, 'تناظري كلاسيكي', const TextStyle(), analog: true),
+          _clockTile(cfg, n, 7, 'تناظري بسيط', const TextStyle(), analog: true),
+        ]),
         const SizedBox(height: 18),
         _title('نوع الأرقام'),
         _choices<bool>(
@@ -511,10 +553,13 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
         ),
         const SizedBox(height: 18),
         _title('لون الإضاءة'),
-        Row(
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
           children: [
             for (final key in alwaysOnColorKeys)
-              GestureDetector(
+              Semantics(label: 'لون $key', selected: cfg.colorKey == key, button: true,
+                child: GestureDetector(
                 onTap: () => n.update((c) => c.copyWith(colorKey: key)),
                 child: Container(
                   margin: const EdgeInsetsDirectional.only(end: 12),
@@ -533,7 +578,7 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
                   child: cfg.colorKey == key
                       ? const Icon(Icons.check, size: 16, color: Colors.black)
                       : null,
-                ),
+                )),
               ),
           ],
         ),

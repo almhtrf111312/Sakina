@@ -8,7 +8,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/date_utils.dart';
 import '../../../core/utils/prayer_icons.dart';
+import '../../../data/settings/settings_repository.dart';
 import '../providers/home_providers.dart';
 
 class HeroPrayerCard extends ConsumerWidget {
@@ -16,6 +18,7 @@ class HeroPrayerCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(appSettingsProvider);
     final progressAsync = ref.watch(nextPrayerProgressProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -26,8 +29,8 @@ class HeroPrayerCard extends ConsumerWidget {
           return _buildLoadingPlaceholder(context, isDark);
         }
 
-        final timeFormat = DateFormat('hh:mm a', 'ar');
-        final formattedTime = timeFormat.format(data.targetTime);
+        final formattedTime = AppDateUtils.formatPrayerTime(data.targetTime,
+            is24Hour: settings.use24HourTime, languageCode: settings.languageCode);
 
         return Container(
           width: double.infinity,
@@ -254,14 +257,14 @@ class HeroPrayerCard extends ConsumerWidget {
 
 
 /// Large live clock + date shown at the top of the hero card.
-class _LiveClock extends StatefulWidget {
+class _LiveClock extends ConsumerStatefulWidget {
   const _LiveClock();
 
   @override
-  State<_LiveClock> createState() => _LiveClockState();
+  ConsumerState<_LiveClock> createState() => _LiveClockState();
 }
 
-class _LiveClockState extends State<_LiveClock> {
+class _LiveClockState extends ConsumerState<_LiveClock> {
   late Timer _timer;
   DateTime _now = DateTime.now();
 
@@ -281,6 +284,7 @@ class _LiveClockState extends State<_LiveClock> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = ref.watch(appSettingsProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primary = isDark ? AppColors.nightPrimary : AppColors.dayPrimary;
     final sub = isDark ? AppColors.nightTextSecondary : AppColors.dayTextSecondary;
@@ -295,10 +299,11 @@ class _LiveClockState extends State<_LiveClock> {
           textDirection: TextDirection.ltr,
           children: [
             Text(
-              '${two(_now.hour)}:${two(_now.minute)}',
+              AppDateUtils.formatPrayerTime(_now,
+                  is24Hour: settings.use24HourTime, languageCode: settings.languageCode),
               style: TextStyle(
                 fontFamily: 'Cairo',
-                fontSize: 52,
+                fontSize: settings.use24HourTime ? 52 : 40,
                 height: 1.1,
                 fontWeight: FontWeight.w300,
                 color: primary,

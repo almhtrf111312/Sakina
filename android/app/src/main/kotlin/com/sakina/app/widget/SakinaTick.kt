@@ -124,8 +124,8 @@ class SakinaTick : BroadcastReceiver() {
                 h > 0 -> "$h ساعة"
                 else -> "$m دقيقة"
             }
-            val nowStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
-            val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(n.ts))
+            val nowStr = AppTimeFormat.format(context, System.currentTimeMillis())
+            val timeStr = AppTimeFormat.format(context, n.ts)
 
             val open = PendingIntent.getActivity(
                 context, 0, Intent(context, MainActivity::class.java).apply {

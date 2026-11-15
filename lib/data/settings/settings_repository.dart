@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/prayer/prayer_calculator.dart';
+import '../../core/utils/alarm_bridge.dart';
 
 // ─────────────────────────── SharedPreferences provider ─────────────────────
 
@@ -54,6 +55,7 @@ class AppSettings {
   final bool showBackgroundDecoration;
   final bool tapSound;
   final bool tapHaptic;
+  final bool use24HourTime;
   final double tapVolume;
   final double tapHapticIntensity;
   final bool persistentNotification;
@@ -119,6 +121,7 @@ class AppSettings {
     this.showBackgroundDecoration = true,
     this.tapSound = true,
     this.tapHaptic = true,
+    this.use24HourTime = false,
     this.tapVolume = 0.35,
     this.tapHapticIntensity = 0.25,
     this.persistentNotification = true,
@@ -172,6 +175,7 @@ class AppSettings {
     bool? showBackgroundDecoration,
     bool? tapSound,
     bool? tapHaptic,
+    bool? use24HourTime,
     double? tapVolume,
     double? tapHapticIntensity,
     bool? persistentNotification,
@@ -225,6 +229,7 @@ class AppSettings {
           showBackgroundDecoration ?? this.showBackgroundDecoration,
       tapSound: tapSound ?? this.tapSound,
       tapHaptic: tapHaptic ?? this.tapHaptic,
+      use24HourTime: use24HourTime ?? this.use24HourTime,
       tapVolume: tapVolume ?? this.tapVolume,
       tapHapticIntensity: tapHapticIntensity ?? this.tapHapticIntensity,
       persistentNotification: persistentNotification ?? this.persistentNotification,
@@ -283,6 +288,7 @@ class AppSettings {
         'showBackgroundDecoration': showBackgroundDecoration,
         'tapSound': tapSound,
         'tapHaptic': tapHaptic,
+        'use24HourTime': use24HourTime,
         'tapVolume': tapVolume,
         'tapHapticIntensity': tapHapticIntensity,
         'persistentNotification': persistentNotification,
@@ -355,6 +361,7 @@ class AppSettings {
           (j['showBackgroundDecoration'] as bool?) ?? true,
       tapSound: (j['tapSound'] as bool?) ?? true,
       tapHaptic: (j['tapHaptic'] as bool?) ?? true,
+      use24HourTime: (j['use24HourTime'] as bool?) ?? false,
       tapVolume: ((j['tapVolume'] as num?)?.toDouble() ?? 0.35).clamp(0.0, 1.0),
       tapHapticIntensity: ((j['tapHapticIntensity'] as num?)?.toDouble() ?? 0.25).clamp(0.0, 1.0),
       persistentNotification: (j['persistentNotification'] as bool?) ?? true,
@@ -409,8 +416,12 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   }
 
   Future<void> update(AppSettings Function(AppSettings) updater) async {
+    final previousTimeFormat = state.use24HourTime;
     state = updater(state);
     await _save();
+    if (previousTimeFormat != state.use24HourTime) {
+      await AlarmBridge.refreshTimeDisplays();
+    }
   }
 
   // ── Convenience setters ───────────────────────────────────────────────

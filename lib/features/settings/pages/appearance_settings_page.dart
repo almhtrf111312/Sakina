@@ -58,6 +58,29 @@ class AppearanceSettingsPage extends ConsumerWidget {
               ),
               settingsDivider(isDark),
 
+              ListTile(
+                title: const Text('نظام عرض الوقت', style: TextStyle(fontFamily: 'Cairo', fontSize: 15)),
+                subtitle: const Text('ينطبق على التطبيق والشاشة الدائمة والودجات والإشعار',
+                    style: TextStyle(fontFamily: 'Cairo', fontSize: 12)),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(children: [
+                  Expanded(child: ChoiceChip(
+                    label: const Center(child: Text('12 ساعة · صباحاً/مساءً', style: TextStyle(fontFamily: 'Cairo', fontSize: 12))),
+                    selected: !settings.use24HourTime,
+                    onSelected: (_) => notifier.update((s) => s.copyWith(use24HourTime: false)),
+                  )),
+                  const SizedBox(width: 8),
+                  Expanded(child: ChoiceChip(
+                    label: const Center(child: Text('24 ساعة', style: TextStyle(fontFamily: 'Cairo', fontSize: 12))),
+                    selected: settings.use24HourTime,
+                    onSelected: (_) => notifier.update((s) => s.copyWith(use24HourTime: true)),
+                  )),
+                ]),
+              ),
+              settingsDivider(isDark),
+
               // Accent Color
               Padding(
                 padding:

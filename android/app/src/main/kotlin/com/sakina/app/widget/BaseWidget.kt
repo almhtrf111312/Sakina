@@ -54,7 +54,7 @@ abstract class BaseWidget : AppWidgetProvider() {
             .getAppWidgetIds(ComponentName(context, this::class.java)).isNotEmpty()
 
     companion object {
-        fun hm(ts: Long): String = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(ts))
+        fun hm(context: Context, ts: Long): String = AppTimeFormat.format(context, ts)
 
         /** Live countdown with no refresh needed (platform Chronometer). */
         fun countdown(v: RemoteViews, id: Int, targetTs: Long) {
@@ -74,7 +74,7 @@ class WidgetSmall : BaseWidget() {
             return
         }
         v.setTextViewText(R.id.w_name, n.nameAr)
-        v.setTextViewText(R.id.w_time, hm(n.ts))
+        v.setTextViewText(R.id.w_time, hm(context, n.ts))
         countdown(v, R.id.w_count, n.ts)
     }
 }
@@ -88,7 +88,7 @@ class WidgetClock : BaseWidget() {
             return
         }
         v.setTextViewText(R.id.w_name, "الصلاة القادمة: " + n.nameAr)
-        v.setTextViewText(R.id.w_time, hm(n.ts))
+        v.setTextViewText(R.id.w_time, hm(context, n.ts))
         countdown(v, R.id.w_count, n.ts)
     }
 }
@@ -104,7 +104,7 @@ class WidgetProgress : BaseWidget() {
             return
         }
         v.setTextViewText(R.id.w_name, n.nameAr)
-        v.setTextViewText(R.id.w_time, hm(n.ts))
+        v.setTextViewText(R.id.w_time, hm(context, n.ts))
         v.setProgressBar(R.id.w_progress, 100, d.progress, false)
         countdown(v, R.id.w_count, n.ts)
     }
@@ -121,7 +121,7 @@ class WidgetList : BaseWidget() {
         for (i in 0 until 5) {
             val p = list.getOrNull(i)
             v.setTextViewText(names[i], p?.nameAr ?: "")
-            v.setTextViewText(times[i], if (p != null) hm(p.ts) else "")
+            v.setTextViewText(times[i], if (p != null) hm(context, p.ts) else "")
             val isNext = p != null && next != null && p.ts == next.ts
             val color = if (isNext) 0xFF5FB59B.toInt() else 0xFFE8EFEC.toInt()
             v.setTextColor(names[i], color)
@@ -140,7 +140,7 @@ class WidgetStrip : BaseWidget() {
         for (i in 0 until 5) {
             val p = list.getOrNull(i)
             v.setTextViewText(names[i], p?.nameAr ?: "")
-            v.setTextViewText(times[i], if (p != null) hm(p.ts) else "")
+            v.setTextViewText(times[i], if (p != null) hm(context, p.ts) else "")
             val isNext = p != null && next != null && p.ts == next.ts
             v.setTextColor(names[i], if (isNext) 0xFF5FB59B.toInt() else 0xFF9DB0AA.toInt())
             v.setTextColor(times[i], if (isNext) 0xFF5FB59B.toInt() else 0xFFE8EFEC.toInt())

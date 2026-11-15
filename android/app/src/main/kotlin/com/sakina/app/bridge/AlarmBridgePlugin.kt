@@ -224,6 +224,10 @@ class AlarmBridgePlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamH
                 }
                 result.success(true)
             }
+            "refreshTimeDisplays" -> {
+                com.sakina.app.widget.SakinaTick.refresh(context)
+                result.success(true)
+            }
             "cancelAlarm" -> {
                 // Alarms are rescheduled as a whole; cancel everything off the main thread.
                 Thread { AlarmScheduler.cancelAllAlarms(context) }.start()
