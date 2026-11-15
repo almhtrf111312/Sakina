@@ -181,9 +181,7 @@ class AlarmBridgePlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamH
 
     private fun playPreview(soundId: String, volume: Float): Boolean {
         stopPreview()
-        val path = "flutter_assets/assets/audio/$soundId.mp3"
         return try {
-            val afd = context.assets.openFd(path)
             val mp = MediaPlayer()
             mp.setAudioAttributes(
                 AudioAttributes.Builder()
@@ -191,8 +189,17 @@ class AlarmBridgePlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamH
                     .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                     .build()
             )
-            mp.setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
-            afd.close()
+            val parts = soundId.split('|')
+            if (parts.size == 3 && parts[0] == "custom") {
+                val uri = android.net.Uri.parse(android.net.Uri.decode(parts[2]))
+                require(uri.scheme == "content")
+                mp.setDataSource(context, uri)
+            } else {
+                require(soundId.matches(Regex("adhan_[A-Za-z0-9_]+")))
+                val afd = context.assets.openFd("flutter_assets/assets/audio/$soundId.mp3")
+                mp.setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+                afd.close()
+            }
             mp.setVolume(volume, volume)
             mp.setOnCompletionListener { stopPreview() }
             mp.prepare()

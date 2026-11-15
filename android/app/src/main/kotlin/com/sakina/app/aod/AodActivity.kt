@@ -38,7 +38,7 @@ import kotlin.random.Random
  * slow drift of the whole block to protect AMOLED panels from burn-in.
  *
  * Shown over the lock screen (no unlock required). Closed on unlock, on
- * double tap, or after the configured timeout.
+ * or after the configured timeout.
  */
 class AodActivity : Activity() {
 
@@ -82,7 +82,6 @@ class AodActivity : Activity() {
         setupWindow()
         buildUi()
         detector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
-            override fun onDoubleTap(e: MotionEvent): Boolean { dismiss(); return true }
             override fun onFling(e1: MotionEvent?, e2: MotionEvent, vx: Float, vy: Float): Boolean {
                 if ((e1?.y ?: 0f) - e2.y > 200 && abs(vy) > 500) { openApp(); return true }
                 return false

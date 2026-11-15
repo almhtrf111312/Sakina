@@ -102,12 +102,6 @@ class AlwaysOnService : Service() {
                         handler.postDelayed({ showAod() }, 350)
                     }
                 }
-                Intent.ACTION_SCREEN_ON -> {
-                    val cfg = AlwaysOnConfig.load(context)
-                    val locked = (getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked
-                    if (cfg.enabled && cfg.doubleTapWake && locked && !suppressed &&
-                        shouldShowNow(context, cfg)) handler.postDelayed({ showAod() }, 120)
-                }
                 Intent.ACTION_USER_PRESENT -> {
                     suppressed = false
                     sendBroadcast(Intent(AodActivity.ACTION_CLOSE_AOD).setPackage(packageName))
@@ -125,7 +119,6 @@ class AlwaysOnService : Service() {
         (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).apply { cancel(7101); cancel(FSI_ID) }
         val f = IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_OFF)
-            addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_USER_PRESENT)
             addAction(ACTION_SUPPRESS)
         }
