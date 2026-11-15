@@ -35,7 +35,8 @@ class BootReceiver : BroadcastReceiver() {
             Intent.ACTION_BOOT_COMPLETED,
             Intent.ACTION_MY_PACKAGE_REPLACED,
             Intent.ACTION_TIME_CHANGED,
-            Intent.ACTION_TIMEZONE_CHANGED -> {
+            Intent.ACTION_TIMEZONE_CHANGED,
+            android.app.AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED -> {
                 handleReschedule(context, action)
             }
         }
@@ -45,6 +46,8 @@ class BootReceiver : BroadcastReceiver() {
         com.sakina.app.widget.SakinaTick.refresh(context)
         com.sakina.app.aod.AlwaysOnService.syncWithConfig(context)
         // Try to reschedule from stored prayer times
+        if (triggerAction == android.app.AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED &&
+            !AlarmScheduler.canScheduleExactAlarms(context)) return
         val success = AlarmScheduler.rescheduleFromStorage(context)
 
         if (success) {

@@ -154,7 +154,7 @@ class AdhanForegroundService : Service() {
         requestAudioFocus()
 
         val base = "flutter_assets/assets/audio/"
-        val candidates = if (notifType == "beep") {
+        val candidates = if (notifType == "short" || notifType == "beep") {
             listOf(base + "beep_short.mp3")
         } else {
             listOf(

@@ -124,10 +124,10 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
 
     try {
       final nativeMap = await AlarmBridge.checkPermissions();
-      exact = nativeMap['exact_alarms'] ?? false;
-      battery = nativeMap['battery_optimization'] ?? false;
+      exact = nativeMap['exactAlarm'] ?? false;
+      battery = nativeMap['batteryOptimizationIgnored'] ?? false;
       drawOver = nativeMap['draw_over_apps'] ?? false;
-      fullScreen = nativeMap['full_screen_intent'] ?? true;
+      fullScreen = nativeMap['fullScreenIntent'] ?? true;
     } catch (_) {}
 
     try {

@@ -1,6 +1,7 @@
 package com.sakina.app.widget
 
 import android.app.AlarmManager
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -27,8 +28,8 @@ class SakinaTick : BroadcastReceiver() {
     }
 
     companion object {
-        private const val CHANNEL = "sakina_next_prayer"
-        private const val NOTIF_ID = 7001
+        const val CHANNEL = "sakina_next_prayer"
+        const val NOTIF_ID = 7001
         private const val REQ = 7002
 
         private val widgets get() = listOf(
@@ -47,11 +48,16 @@ class SakinaTick : BroadcastReceiver() {
                 }
             }
 
-            if (data != null && data.notificationEnabled && data.next != null) {
+            if (data != null && (data.notificationEnabled || com.sakina.app.aod.AlwaysOnService.running) && data.next != null) {
                 postNotification(app, data)
                 needTick = true
             } else {
-                NotificationManagerCompat.from(app).cancel(NOTIF_ID)
+                if (com.sakina.app.aod.AlwaysOnService.running) {
+                    (app.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+                        .notify(NOTIF_ID, foregroundNotification(app))
+                } else {
+                    NotificationManagerCompat.from(app).cancel(NOTIF_ID)
+                }
             }
 
             if (needTick) arm(app) else disarm(app)
@@ -79,18 +85,37 @@ class SakinaTick : BroadcastReceiver() {
             pending(context, PendingIntent.FLAG_NO_CREATE)?.let { am.cancel(it) }
         }
 
-        private fun postNotification(context: Context, d: WidgetData) {
-            val n = d.next ?: return
-            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
-                nm.getNotificationChannel(CHANNEL) == null) {
-                nm.createNotificationChannel(
-                    NotificationChannel(CHANNEL, "الصلاة القادمة", NotificationManager.IMPORTANCE_LOW)
-                        .apply { setShowBadge(false) }
-                )
-            }
-            if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return
+        fun foregroundNotification(context: Context): Notification {
+            val d = WidgetData.load(context)
+            if (d?.next != null) return buildNotification(context, d)
+            ensureChannel(context)
+            return NotificationCompat.Builder(context, CHANNEL)
+                .setSmallIcon(R.drawable.ic_mosque)
+                .setContentTitle("سكينة • الشاشة الدائمة")
+                .setContentText("افتح سكينة لتحديث مواقيت الصلاة")
+                .setOngoing(true).setSilent(true).build()
+        }
 
+        private fun ensureChannel(context: Context) {
+            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && nm.getNotificationChannel(CHANNEL) == null) {
+                nm.createNotificationChannel(NotificationChannel(CHANNEL, "الصلاة القادمة", NotificationManager.IMPORTANCE_LOW)
+                    .apply { setShowBadge(false) })
+            }
+        }
+
+        private fun postNotification(context: Context, d: WidgetData) {
+            if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return
+            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            nm.notify(NOTIF_ID, buildNotification(context, d))
+        }
+
+        private fun buildNotification(context: Context, d: WidgetData): Notification {
+            val n = d.next ?: return NotificationCompat.Builder(context, CHANNEL)
+                .setSmallIcon(R.drawable.ic_mosque)
+                .setContentTitle("سكينة • الشاشة الدائمة")
+                .setOngoing(true).setSilent(true).build()
+            ensureChannel(context)
             val remainMin = ((n.ts - System.currentTimeMillis()) / 60_000L).coerceAtLeast(0)
             val h = remainMin / 60
             val m = remainMin % 60
@@ -109,24 +134,26 @@ class SakinaTick : BroadcastReceiver() {
             )
 
             val title = "الصلاة القادمة: ${n.nameAr} — $timeStr"
-            val text = "الساعة الآن $nowStr • متبقي $remain"
+            val text = "متبقي $remain • الساعة الآن $nowStr"
 
-            val notif = NotificationCompat.Builder(context, CHANNEL)
+            return NotificationCompat.Builder(context, CHANNEL)
                 .setSmallIcon(R.drawable.ic_mosque)
                 .setContentTitle(title)
                 .setContentText(text)
+                .setStyle(NotificationCompat.BigTextStyle().bigText("$title\n$text"))
                 .setSubText(d.city.ifEmpty { null })
                 .setProgress(100, d.progress, false)
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
-                .setShowWhen(false)
+                .setWhen(n.ts)
+                .setUsesChronometer(true)
+                .setChronometerCountDown(true)
                 .setSilent(true)
                 .setCategory(NotificationCompat.CATEGORY_STATUS)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setColor(0xFF5FB59B.toInt())
                 .setContentIntent(open)
                 .build()
-            nm.notify(NOTIF_ID, notif)
         }
     }
 }

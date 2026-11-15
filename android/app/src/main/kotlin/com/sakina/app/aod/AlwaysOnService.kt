@@ -20,6 +20,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.sakina.app.R
 import com.sakina.app.widget.WidgetData
+import com.sakina.app.widget.SakinaTick
 import java.util.Calendar
 
 /**
@@ -30,10 +31,10 @@ class AlwaysOnService : Service() {
 
     companion object {
         private const val TAG = "AlwaysOnService"
-        private const val CHANNEL = "sakina_always_on_channel"
         private const val FSI_CHANNEL = "sakina_always_on_fsi"
-        private const val NOTIF_ID = 7101
         private const val FSI_ID = 7102
+        @Volatile var running = false
+            private set
         const val ACTION_SUPPRESS = "com.sakina.app.ACTION_AOD_SUPPRESS"
 
         fun start(ctx: Context) {
@@ -112,6 +113,9 @@ class AlwaysOnService : Service() {
     override fun onCreate() {
         super.onCreate()
         startForegroundCompat()
+        running = true
+        // Clear the notification left by older versions of this service.
+        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).apply { cancel(7101); cancel(FSI_ID) }
         val f = IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_OFF)
             addAction(Intent.ACTION_USER_PRESENT)
@@ -126,29 +130,19 @@ class AlwaysOnService : Service() {
     override fun onDestroy() {
         try { unregisterReceiver(receiver) } catch (_: Exception) {}
         handler.removeCallbacksAndMessages(null)
+        running = false
         super.onDestroy()
+        SakinaTick.refresh(this)
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun startForegroundCompat() {
-        val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            nm.createNotificationChannel(
-                NotificationChannel(CHANNEL, "الشاشة الدائمة", NotificationManager.IMPORTANCE_MIN)
-            )
-        }
-        val n: Notification = NotificationCompat.Builder(this, CHANNEL)
-            .setSmallIcon(R.drawable.ic_mosque)
-            .setContentTitle("الشاشة الدائمة مفعّلة")
-            .setPriority(NotificationCompat.PRIORITY_MIN)
-            .setOngoing(true)
-            .setSilent(true)
-            .build()
+        val n = SakinaTick.foregroundNotification(this)
         if (Build.VERSION.SDK_INT >= 34) {
-            startForeground(NOTIF_ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+            startForeground(SakinaTick.NOTIF_ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
         } else {
-            startForeground(NOTIF_ID, n)
+            startForeground(SakinaTick.NOTIF_ID, n)
         }
     }
 
