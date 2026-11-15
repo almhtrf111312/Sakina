@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/widget_root" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="@drawable/widget_bg" android:padding="16dp" android:gravity="center_vertical">
+    <TextView android:id="@+id/w_city" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#9DB0AA" android:textSize="12sp" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+        <TextView android:id="@+id/w_name" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:textColor="#5FB59B" android:textSize="24sp" android:textStyle="bold" android:text="العصر" />
+        <TextView android:id="@+id/w_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#E8EFEC" android:textSize="24sp" android:textStyle="bold" android:text="03:06 م" />
+    </LinearLayout>
+    <ProgressBar android:id="@+id/w_progress" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="6dp" android:layout_marginTop="10dp" android:layout_marginBottom="8dp" android:max="100" android:progressDrawable="@drawable/widget_progress" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+        <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="المتبقي للأذان" android:textColor="#9DB0AA" android:textSize="13sp" />
+        <TextView android:id="@+id/w_count" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#C9A86A" android:textSize="16sp" android:textStyle="bold" android:text="01:24" />
+    </LinearLayout>
+</LinearLayout>

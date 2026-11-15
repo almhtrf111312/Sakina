@@ -23,6 +23,21 @@ class AppearanceSettingsPage extends ConsumerWidget {
           isDark: isDark,
           child: Column(
             children: [
+              ListTile(
+                title: const Text('شكل الساعة في الواجهة الرئيسية'),
+                trailing: DropdownButton<int>(
+                  value: settings.homeClockStyle,
+                  items: const [
+                    DropdownMenuItem(value: 0, child: Text('دائري')),
+                    DropdownMenuItem(value: 1, child: Text('رقمي بسيط')),
+                    DropdownMenuItem(value: 2, child: Text('تناظري')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) notifier.update(
+                        (s) => s.copyWith(homeClockStyle: value));
+                  },
+                ),
+              ),
               // Theme Mode
               ListTile(
                 title: const Text('السمة / المظهر',

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/widget_root" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="@drawable/widget_bg" android:padding="10dp" android:gravity="center">
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="الصلاة القادمة" android:textColor="#9DB0AA" android:textSize="11sp" />
+    <TextView android:id="@+id/w_name" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="العصر" android:gravity="center" android:textColor="#5FB59B" android:textSize="16sp" android:textStyle="bold" />
+    <TextView android:id="@+id/w_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#E8EFEC" android:textSize="18sp" android:textStyle="bold" android:text="03:06 م" />
+    <TextView android:id="@+id/w_count" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#C9A86A" android:textSize="13sp" android:text="01:24" />
+</LinearLayout>

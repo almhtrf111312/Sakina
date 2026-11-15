@@ -137,6 +137,13 @@ class PrayerRepository {
     return all.first;
   }
 
+  DayPrayerTimes previousDay() {
+    final today = _today();
+    final yesterday = DateTime(today.year, today.month, today.day - 1);
+    return DayPrayerTimes(date: yesterday,
+        times: _buildCalculator().calculate(yesterday));
+  }
+
   /// Invalidate cache (call after settings/location change).
   Future<void> invalidateCache() async {
     await _prefs.remove(_cacheKey);

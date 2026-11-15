@@ -129,10 +129,10 @@ class SakinaTick : BroadcastReceiver() {
         private fun postNotification(context: Context, d: WidgetData) {
             if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return
             val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            // Re-post only when what is shown actually changed: the countdown
-            // ticks by itself, so a re-post every minute only caused flicker.
+            // Refresh textual minutes silently; do not remove/recreate the notification.
             val n = d.next
-            val sig = "${n?.ts}|${d.progress / 4}|${AppTimeFormat.format(context, n?.ts ?: 0L)}"
+            val palette = WidgetAppearance.load(context)
+            val sig = "${n?.ts}|${System.currentTimeMillis() / 60_000L}|${palette.accent}|${palette.background}|${AppTimeFormat.is24Hour(context)}"
             val alive = try {
                 nm.activeNotifications.any { it.id == NOTIF_ID }
             } catch (_: Exception) { false }
@@ -149,7 +149,23 @@ class SakinaTick : BroadcastReceiver() {
                 .setSmallIcon(R.drawable.ic_mosque)
                 .setContentTitle("المؤذن • الشاشة الدائمة")
                 .setOngoing(true).setSilent(true).build()
-            val timeStr = AppTimeFormat.format(context, n.ts)
+            val now = System.currentTimeMillis()
+            val timeStr = AppTimeFormat.compact(context, n.ts)
+            val minutes = ((n.ts - now + 59_999L) / 60_000L).coerceAtLeast(0L)
+            val remaining = if (minutes >= 60) "${minutes / 60} س ${minutes % 60} د"
+                else "$minutes دقيقة"
+            val title = "${n.nameAr} • $timeStr"
+            val details = "باقي $remaining • الآن ${AppTimeFormat.compact(context, now)}"
+            val colors = WidgetAppearance.load(context)
+            val views = RemoteViews(context.packageName, R.layout.notification_next_prayer).apply {
+                setTextViewText(R.id.prayer_notification_title, title)
+                setTextViewText(R.id.prayer_notification_details, details)
+                setTextColor(R.id.prayer_notification_title, colors.accent)
+                setTextColor(R.id.prayer_notification_details, colors.foreground)
+                setInt(R.id.prayer_notification_root, "setBackgroundColor", colors.background or 0xFF000000.toInt())
+                setImageViewBitmap(R.id.prayer_notification_progress,
+                    WidgetArtwork.bar(600, d.progress, colors))
+            }
 
             val open = PendingIntent.getActivity(
                 context, 0, Intent(context, MainActivity::class.java).apply {
@@ -163,13 +179,13 @@ class SakinaTick : BroadcastReceiver() {
 
             return NotificationCompat.Builder(context, CHANNEL)
                 .setSmallIcon(R.drawable.ic_mosque)
-                .setContentTitle("${n.nameAr} • $timeStr")
-                .setContentText("المتبقي")
-                .setWhen(n.ts)
-                .setShowWhen(true)
-                .setUsesChronometer(true)
-                .setChronometerCountDown(true)
-                .setProgress(100, d.progress, false)
+                .setContentTitle(title)
+                .setContentText(details)
+                .setCustomContentView(views)
+                .setCustomBigContentView(views)
+                .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+                .setShowWhen(false)
+                .setColor(colors.accent)
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
                 .setSilent(true)
