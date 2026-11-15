@@ -9,9 +9,12 @@ import '../../domain/models/azkar_model.dart';
 /// Repository for Hisn Al Muslim Azkar database, reading from JSON,
 /// caching, and tracking daily progress with smart prayer-time based resets.
 class AzkarRepository {
-  AzkarRepository({SharedPreferences? prefs}) : _prefs = prefs;
+  AzkarRepository({SharedPreferences? prefs, DateTime Function()? now})
+      : _prefs = prefs,
+        _now = now ?? DateTime.now;
 
   SharedPreferences? _prefs;
+  final DateTime Function() _now;
   List<AzkarModel>? _cachedAzkar;
 
   static const String _keyPrefix = 'sakina_zikr_count_';
@@ -58,7 +61,7 @@ class AzkarRepository {
   /// Check and reset morning azkar after Fajr, and evening azkar after Asr
   Future<void> _checkAndPerformAutoResets() async {
     final prefs = await _getPrefs();
-    final now = DateTime.now();
+    final now = _now();
 
     // Morning reset threshold: around 4:00 AM (Fajr time)
     final morningResetThreshold = DateTime(now.year, now.month, now.day, 4, 0);
@@ -66,7 +69,7 @@ class AzkarRepository {
     final lastMorningReset = DateTime.fromMillisecondsSinceEpoch(lastMorningResetMs);
 
     if (now.isAfter(morningResetThreshold) && lastMorningReset.isBefore(morningResetThreshold)) {
-      await resetCategory(AzkarCategory.morning.id);
+      await _resetCachedCategory(AzkarCategory.morning.id);
       await prefs.setInt(_lastResetMorningKey, now.millisecondsSinceEpoch);
     }
 
@@ -76,7 +79,7 @@ class AzkarRepository {
     final lastEveningReset = DateTime.fromMillisecondsSinceEpoch(lastEveningResetMs);
 
     if (now.isAfter(eveningResetThreshold) && lastEveningReset.isBefore(eveningResetThreshold)) {
-      await resetCategory(AzkarCategory.evening.id);
+      await _resetCachedCategory(AzkarCategory.evening.id);
       await prefs.setInt(_lastResetEveningKey, now.millisecondsSinceEpoch);
     }
   }
@@ -126,6 +129,17 @@ class AzkarRepository {
   /// Reset all azkar in a category
   Future<void> resetCategory(String categoryId) async {
     final items = await getAzkarByCategory(categoryId);
+    await _removeCounts(items);
+  }
+
+  // During the daily reset, the asset is already cached. Calling getAllAzkar
+  // here would run the daily reset again before its marker has been saved.
+  Future<void> _resetCachedCategory(String categoryId) async {
+    final items = _cachedAzkar!.where((z) => z.categoryId == categoryId);
+    await _removeCounts(items);
+  }
+
+  Future<void> _removeCounts(Iterable<AzkarModel> items) async {
     final prefs = await _getPrefs();
     for (final item in items) {
       await prefs.remove('$_keyPrefix${item.id}');
