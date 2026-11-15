@@ -11,6 +11,8 @@ import android.util.Log
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.media.SoundPool
+import android.media.ToneGenerator
+import android.media.AudioManager
 import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -108,20 +110,34 @@ class AlarmBridgePlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamH
     private var tapSoundId = 0
     private var tapLoaded = false
 
-    private fun tapFeedback(sound: Boolean, haptic: Boolean) {
+    private fun tapFeedback(sound: Boolean, haptic: Boolean, volume: Float, intensity: Float, completion: Boolean) {
         try {
-            if (haptic) {
+            if (haptic && intensity > 0f) {
                 val vib = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
                 if (vib != null && vib.hasVibrator()) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        vib.vibrate(VibrationEffect.createOneShot(10, 70))
+                        val strength = (18 + intensity * 70).toInt().coerceIn(1, 100)
+                        if (completion) {
+                            vib.vibrate(VibrationEffect.createWaveform(
+                                longArrayOf(0, 22, 75, 36),
+                                intArrayOf(0, strength, 0, strength), -1))
+                        } else {
+                            vib.vibrate(VibrationEffect.createOneShot(8, strength))
+                        }
                     } else {
                         @Suppress("DEPRECATION")
-                        vib.vibrate(10)
+                        vib.vibrate(if (completion) 45L else 8L)
                     }
                 }
             }
-            if (sound) {
+            if (sound && volume > 0f && completion) {
+                // A separate confirmation tone, never the ordinary tap sample.
+                val tone = ToneGenerator(AudioManager.STREAM_MUSIC,
+                    (volume * 60).toInt().coerceIn(1, 60))
+                tone.startTone(ToneGenerator.TONE_PROP_ACK, 170)
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ tone.release() }, 280)
+            } else if (sound && volume > 0f) {
+                val level = (volume.coerceIn(0f, 1f) * 0.4f)
                 var pool = tapPool
                 if (pool == null) {
                     pool = SoundPool.Builder()
@@ -136,13 +152,13 @@ class AlarmBridgePlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamH
                     pool.setOnLoadCompleteListener { sp, id, status ->
                         if (status == 0) {
                             tapLoaded = true
-                            sp.play(id, 0.15f, 0.15f, 1, 0, 1f)
+                            sp.play(id, level, level, 1, 0, 1f)
                         }
                     }
                     tapSoundId = pool.load(context, R.raw.tap_click, 1)
                     tapPool = pool
                 } else if (tapLoaded) {
-                    pool.play(tapSoundId, 0.15f, 0.15f, 1, 0, 1f)
+                    pool.play(tapSoundId, level, level, 1, 0, 1f)
                 }
             }
         } catch (e: Exception) {
@@ -216,10 +232,13 @@ class AlarmBridgePlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamH
             "tapFeedback" -> {
                 val sound = call.argument<Boolean>("sound") ?: true
                 val haptic = call.argument<Boolean>("haptic") ?: true
+                val volume = (call.argument<Double>("volume") ?: 0.35).toFloat().coerceIn(0f, 1f)
+                val intensity = (call.argument<Double>("intensity") ?: 0.25).toFloat().coerceIn(0f, 1f)
+                val completion = call.argument<Boolean>("completion") ?: false
                 // Never touch SoundPool / audio HAL on the main thread: creating it
                 // on some devices (MIUI) blocks and made every tap freeze the app.
                 try {
-                    tapExecutor.execute { tapFeedback(sound, haptic) }
+                    tapExecutor.execute { tapFeedback(sound, haptic, volume, intensity, completion) }
                 } catch (_: Exception) {}
                 result.success(true)
             }

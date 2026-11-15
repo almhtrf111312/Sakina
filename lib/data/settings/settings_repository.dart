@@ -54,6 +54,8 @@ class AppSettings {
   final bool showBackgroundDecoration;
   final bool tapSound;
   final bool tapHaptic;
+  final double tapVolume;
+  final double tapHapticIntensity;
   final bool persistentNotification;
 
   // ── Azkar ─────────────────────────────────────────────────────────────
@@ -117,6 +119,8 @@ class AppSettings {
     this.showBackgroundDecoration = true,
     this.tapSound = true,
     this.tapHaptic = true,
+    this.tapVolume = 0.35,
+    this.tapHapticIntensity = 0.25,
     this.persistentNotification = true,
     this.azkarFontSize = 1.0,
     this.showTashkeel = true,
@@ -168,6 +172,8 @@ class AppSettings {
     bool? showBackgroundDecoration,
     bool? tapSound,
     bool? tapHaptic,
+    double? tapVolume,
+    double? tapHapticIntensity,
     bool? persistentNotification,
     double? azkarFontSize,
     bool? showTashkeel,
@@ -219,6 +225,8 @@ class AppSettings {
           showBackgroundDecoration ?? this.showBackgroundDecoration,
       tapSound: tapSound ?? this.tapSound,
       tapHaptic: tapHaptic ?? this.tapHaptic,
+      tapVolume: tapVolume ?? this.tapVolume,
+      tapHapticIntensity: tapHapticIntensity ?? this.tapHapticIntensity,
       persistentNotification: persistentNotification ?? this.persistentNotification,
       azkarFontSize: azkarFontSize ?? this.azkarFontSize,
       showTashkeel: showTashkeel ?? this.showTashkeel,
@@ -275,6 +283,8 @@ class AppSettings {
         'showBackgroundDecoration': showBackgroundDecoration,
         'tapSound': tapSound,
         'tapHaptic': tapHaptic,
+        'tapVolume': tapVolume,
+        'tapHapticIntensity': tapHapticIntensity,
         'persistentNotification': persistentNotification,
         'azkarFontSize': azkarFontSize,
         'showTashkeel': showTashkeel,
@@ -345,6 +355,8 @@ class AppSettings {
           (j['showBackgroundDecoration'] as bool?) ?? true,
       tapSound: (j['tapSound'] as bool?) ?? true,
       tapHaptic: (j['tapHaptic'] as bool?) ?? true,
+      tapVolume: ((j['tapVolume'] as num?)?.toDouble() ?? 0.35).clamp(0.0, 1.0),
+      tapHapticIntensity: ((j['tapHapticIntensity'] as num?)?.toDouble() ?? 0.25).clamp(0.0, 1.0),
       persistentNotification: (j['persistentNotification'] as bool?) ?? true,
       azkarFontSize: (j['azkarFontSize'] as num?)?.toDouble() ?? 1.0,
       showTashkeel: (j['showTashkeel'] as bool?) ?? true,

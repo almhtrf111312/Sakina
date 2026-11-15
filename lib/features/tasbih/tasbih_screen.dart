@@ -1,11 +1,12 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/alarm_bridge.dart';
+import '../../data/settings/settings_repository.dart';
 
 /// Suggested Azkar phrases for the electronic Tasbih
 class TasbihPhrase {
@@ -73,7 +74,6 @@ class _TasbihScreenState extends ConsumerState<TasbihScreen> with SingleTickerPr
   int _weeklyTotal = 0;
 
   int _selectedPhraseIndex = 0;
-  bool _hapticEnabled = true;
 
   late final AnimationController _pulseController;
   late final Animation<double> _pulseAnimation;
@@ -109,7 +109,6 @@ class _TasbihScreenState extends ConsumerState<TasbihScreen> with SingleTickerPr
       _dailyTotal = prefs.getInt(todayKey) ?? 0;
       _weeklyTotal = prefs.getInt(weekKey) ?? 0;
       _roundsCompleted = prefs.getInt('sakina_tasbih_rounds') ?? 0;
-      _hapticEnabled = prefs.getBool(AppConstants.keyTasbihHaptic) ?? true;
     });
   }
 
@@ -126,9 +125,15 @@ class _TasbihScreenState extends ConsumerState<TasbihScreen> with SingleTickerPr
   }
 
   void _increment() {
-    if (_hapticEnabled) {
-      HapticFeedback.lightImpact();
-    }
+    final settings = ref.read(appSettingsProvider);
+    final completed = _counter + 1 >= _targetGoal;
+    AlarmBridge.tapFeedback(
+      sound: settings.tapSound,
+      haptic: settings.tapHaptic,
+      volume: settings.tapVolume,
+      intensity: settings.tapHapticIntensity,
+      completion: completed,
+    );
 
     _pulseController.forward().then((_) => _pulseController.reverse());
 
@@ -140,10 +145,6 @@ class _TasbihScreenState extends ConsumerState<TasbihScreen> with SingleTickerPr
       if (_counter >= _targetGoal) {
         _roundsCompleted++;
         _counter = 0;
-        // Strong completion vibration
-        if (_hapticEnabled) {
-          HapticFeedback.heavyImpact();
-        }
         _showGoalCompletionCelebration();
       }
     });
@@ -246,6 +247,7 @@ class _TasbihScreenState extends ConsumerState<TasbihScreen> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
+    final feedbackSettings = ref.watch(appSettingsProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final currentPhrase = _suggestedPhrases[_selectedPhraseIndex];
@@ -267,19 +269,15 @@ class _TasbihScreenState extends ConsumerState<TasbihScreen> with SingleTickerPr
         actions: [
           IconButton(
             icon: Icon(
-              _hapticEnabled ? Icons.vibration_rounded : Icons.phone_android_rounded,
-              color: _hapticEnabled
+              feedbackSettings.tapHaptic ? Icons.vibration_rounded : Icons.phone_android_rounded,
+              color: feedbackSettings.tapHaptic
                   ? (isDark ? AppColors.nightPrimary : AppColors.dayPrimary)
                   : theme.disabledColor,
             ),
-            tooltip: _hapticEnabled ? 'الاهتزاز مفعل' : 'الاهتزاز معطل',
+            tooltip: feedbackSettings.tapHaptic ? 'إيقاف الاهتزاز' : 'تشغيل الاهتزاز',
             onPressed: () {
-              setState(() {
-                _hapticEnabled = !_hapticEnabled;
-              });
-              SharedPreferences.getInstance().then((prefs) {
-                prefs.setBool(AppConstants.keyTasbihHaptic, _hapticEnabled);
-              });
+              ref.read(settingsNotifierProvider.notifier).update(
+                  (s) => s.copyWith(tapHaptic: !s.tapHaptic));
             },
           ),
           IconButton(

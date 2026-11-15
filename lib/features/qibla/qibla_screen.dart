@@ -22,8 +22,11 @@ class QiblaScreen extends ConsumerStatefulWidget {
 }
 
 class _QiblaScreenState extends ConsumerState<QiblaScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   StreamSubscription<CompassEvent>? _compassSubscription;
+  StreamSubscription<dynamic>? _tiltSubscription;
+  static const _tiltChannel = EventChannel('com.sakina.app/device_tilt');
+  double? _tiltDegrees;
 
   double _deviceHeading = 0.0;
   double _qiblaBearing = 135.0; // Default calculated bearing
@@ -40,6 +43,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen>
   String _cityName = 'جاري تحديد الموقع...';
 
   late final AnimationController _calibController;
+  late final AnimationController _headingController;
 
   @override
   void initState() {
@@ -48,6 +52,13 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen>
       vsync: this,
       duration: const Duration(seconds: 3),
     );
+    _headingController = AnimationController.unbounded(vsync: this);
+    _tiltSubscription = _tiltChannel.receiveBroadcastStream().listen((angle) {
+      if (mounted && angle is num && (_tiltDegrees == null ||
+          (angle.toDouble() - _tiltDegrees!).abs() > 3)) {
+        setState(() => _tiltDegrees = angle.toDouble());
+      }
+    }, onError: (_) {});
 
     _initLocationAndCompass();
   }
@@ -55,7 +66,9 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen>
   @override
   void dispose() {
     _compassSubscription?.cancel();
+    _tiltSubscription?.cancel();
     _calibController.dispose();
+    _headingController.dispose();
     super.dispose();
   }
 
@@ -156,6 +169,11 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen>
       final delta = ((raw - _deviceHeading + 540) % 360) - 180;
       final normalizedHeading =
           delta.abs() > 90 ? raw : (_deviceHeading + delta * 0.35 + 360) % 360;
+      // Animate the shortest arc across 0° without forcing 60 page rebuilds/s.
+      final animatedHeading = _headingController.value;
+      final animatedDelta = ((normalizedHeading - animatedHeading + 540) % 360) - 180;
+      _headingController.animateTo(animatedHeading + animatedDelta,
+          duration: const Duration(milliseconds: 110), curve: Curves.easeOutCubic);
 
       final diff = ((_qiblaBearing - normalizedHeading + 180) % 360) - 180;
       final aligned = diff.abs() <= AppConstants.qiblaFacingThresholdDegrees;
@@ -322,14 +340,41 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen>
             else if (_lowAccuracy)
               _buildCalibrationGraphic(theme),
 
+            if (_tiltDegrees != null && _tiltDegrees! > 25)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                child: Semantics(
+                  label: 'ارفع الهاتف حتى يصبح عمودياً لاستخدام البوصلة بدقة',
+                  child: Card(
+                    color: theme.colorScheme.primaryContainer,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.screen_rotation_rounded, color: theme.colorScheme.onPrimaryContainer),
+                          const SizedBox(width: 8),
+                          Flexible(child: Text('ارفع الهاتف عمودياً ↑  (${_tiltDegrees!.round()}° ميل)',
+                            style: TextStyle(fontFamily: AppConstants.fontCairo,
+                              color: theme.colorScheme.onPrimaryContainer))),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
             // Main Compass View
             Expanded(
               child: Center(
-                child: CompassWidget(
-                  heading: _deviceHeading,
-                  qiblaBearing: _qiblaBearing,
-                  isAligned: _isAligned,
-                  size: 290.0,
+                child: AnimatedBuilder(
+                  animation: _headingController,
+                  builder: (context, _) => CompassWidget(
+                    heading: _headingController.value,
+                    qiblaBearing: _qiblaBearing,
+                    isAligned: _isAligned,
+                    size: 290.0,
+                  ),
                 ),
               ),
             ),

@@ -146,6 +146,10 @@ class SakinaApp extends ConsumerWidget {
           child: _TapFeedback(
             sound: settings.tapSound,
             haptic: settings.tapHaptic,
+            volume: settings.tapVolume,
+            intensity: settings.tapHapticIntensity,
+            // The tasbih counter emits its own cue, including a distinct goal cue.
+            skipCounter: () => ref.read(currentTabProvider) == 3,
             child: Directionality(
               textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
               child: child!,
@@ -164,11 +168,17 @@ class _TapFeedback extends StatefulWidget {
     required this.child,
     required this.sound,
     required this.haptic,
+    required this.volume,
+    required this.intensity,
+    required this.skipCounter,
   });
 
   final Widget child;
   final bool sound;
   final bool haptic;
+  final double volume;
+  final double intensity;
+  final bool Function() skipCounter;
 
   @override
   State<_TapFeedback> createState() => _TapFeedbackState();
@@ -189,11 +199,12 @@ class _TapFeedbackState extends State<_TapFeedback> {
       onPointerUp: (e) {
         final down = _downPos;
         _downPos = null;
-        if (down == null || (!widget.sound && !widget.haptic)) return;
+        if (down == null || widget.skipCounter() || (!widget.sound && !widget.haptic)) return;
         final moved = (e.position - down).distance;
         final held = DateTime.now().millisecondsSinceEpoch - _downAt;
         if (moved < 14 && held < 350) {
-          AlarmBridge.tapFeedback(sound: widget.sound, haptic: widget.haptic);
+          AlarmBridge.tapFeedback(sound: widget.sound, haptic: widget.haptic,
+              volume: widget.volume, intensity: widget.intensity);
         }
       },
       onPointerCancel: (_) => _downPos = null,

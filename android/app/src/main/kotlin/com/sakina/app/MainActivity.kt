@@ -10,6 +10,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.sakina.app.bridge.AlarmBridgePlugin
 import com.sakina.app.bridge.AodBridgePlugin
+import com.sakina.app.bridge.TiltBridgePlugin
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 
@@ -38,6 +39,7 @@ class MainActivity : FlutterActivity() {
         // Register native bridge plugins with Flutter engine
         flutterEngine.plugins.add(AlarmBridgePlugin())
         flutterEngine.plugins.add(AodBridgePlugin())
+        flutterEngine.plugins.add(TiltBridgePlugin())
     }
 
     private fun requestNotificationPermissionIfNeeded() {

@@ -225,13 +225,14 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
   }
 
   Widget _card(Widget child) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.nightSurface : AppColors.daySurface,
-        borderRadius: BorderRadius.circular(16),
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colors.outline.withOpacity(0.12)),
       ),
       child: child,
     );
@@ -254,17 +255,48 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
     required List<(T, String)> items,
     required ValueChanged<T> onChanged,
   }) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        for (final it in items)
-          ChoiceChip(
-            label: Text(it.$2, style: const TextStyle(fontFamily: 'Cairo')),
-            selected: value == it.$1,
-            onSelected: (_) => onChanged(it.$1),
-          ),
-      ],
+    final colors = Theme.of(context).colorScheme;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = 8.0;
+        final columns = items.length == 3 ? 3 : 2;
+        final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: [
+            for (final it in items)
+              SizedBox(
+                width: width,
+                child: Material(
+                  color: value == it.$1
+                      ? colors.primary.withOpacity(0.16)
+                      : colors.onSurface.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => onChanged(it.$1),
+                    child: Container(
+                      constraints: const BoxConstraints(minHeight: 54),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: value == it.$1
+                            ? colors.primary : colors.outline.withOpacity(0.18)),
+                      ),
+                      child: Center(
+                        child: Text(it.$2, textAlign: TextAlign.center,
+                          style: TextStyle(fontFamily: 'Cairo', fontSize: 13,
+                            fontWeight: value == it.$1 ? FontWeight.bold : FontWeight.normal,
+                            color: value == it.$1 ? colors.primary : colors.onSurface)),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 

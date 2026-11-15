@@ -250,6 +250,18 @@ class AppearanceSettingsPage extends ConsumerWidget {
                 onChanged: (v) =>
                     notifier.update((s) => s.copyWith(tapSound: v)),
               ),
+              if (settings.tapSound)
+                ListTile(
+                  title: const Text('مستوى صوت النقر', style: TextStyle(fontFamily: 'Cairo', fontSize: 14)),
+                  subtitle: Slider(
+                    value: settings.tapVolume,
+                    min: 0,
+                    max: 1,
+                    divisions: 10,
+                    label: '${(settings.tapVolume * 100).round()}%',
+                    onChanged: (v) => notifier.update((s) => s.copyWith(tapVolume: v)),
+                  ),
+                ),
               settingsDivider(isDark),
 
               // Tap haptic
@@ -265,6 +277,18 @@ class AppearanceSettingsPage extends ConsumerWidget {
                 onChanged: (v) =>
                     notifier.update((s) => s.copyWith(tapHaptic: v)),
               ),
+              if (settings.tapHaptic)
+                ListTile(
+                  title: const Text('قوة الاهتزاز', style: TextStyle(fontFamily: 'Cairo', fontSize: 14)),
+                  subtitle: Slider(
+                    value: settings.tapHapticIntensity,
+                    min: 0,
+                    max: 1,
+                    divisions: 10,
+                    label: '${(settings.tapHapticIntensity * 100).round()}%',
+                    onChanged: (v) => notifier.update((s) => s.copyWith(tapHapticIntensity: v)),
+                  ),
+                ),
               settingsDivider(isDark),
 
               // Persistent next-prayer notification
