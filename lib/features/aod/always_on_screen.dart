@@ -50,6 +50,7 @@ class AlwaysOnConfig {
   final double textScale; // 1.0 | 1.3 | 1.6
   final double brightness; // 0.02 .. 0.30
   final bool showPrayers;
+  final bool doubleTapWake;
   final int timeoutMin; // 0 = until unlock
   final int clockStyle; // 0..5 digital | 6..7 analog
   final bool arabicNumerals;
@@ -66,7 +67,8 @@ class AlwaysOnConfig {
     this.textScale = 1.3,
     this.brightness = 0.08,
     this.showPrayers = true,
-    this.timeoutMin = 10,
+    this.doubleTapWake = false,
+    this.timeoutMin = 5,
     this.clockStyle = 0,
     this.arabicNumerals = false,
     this.colorKey = 'green',
@@ -83,6 +85,7 @@ class AlwaysOnConfig {
     double? textScale,
     double? brightness,
     bool? showPrayers,
+    bool? doubleTapWake,
     int? timeoutMin,
     int? clockStyle,
     bool? arabicNumerals,
@@ -99,6 +102,7 @@ class AlwaysOnConfig {
         textScale: textScale ?? this.textScale,
         brightness: brightness ?? this.brightness,
         showPrayers: showPrayers ?? this.showPrayers,
+        doubleTapWake: doubleTapWake ?? this.doubleTapWake,
         timeoutMin: timeoutMin ?? this.timeoutMin,
         clockStyle: clockStyle ?? this.clockStyle,
         arabicNumerals: arabicNumerals ?? this.arabicNumerals,
@@ -116,6 +120,7 @@ class AlwaysOnConfig {
         'textScale': textScale,
         'brightness': brightness,
         'showPrayers': showPrayers,
+        'doubleTapWake': doubleTapWake,
         'timeoutMin': timeoutMin,
         'clockStyle': clockStyle,
         'arabicNumerals': arabicNumerals,
@@ -133,7 +138,8 @@ class AlwaysOnConfig {
         textScale: (j['textScale'] as num?)?.toDouble() ?? 1.3,
         brightness: (j['brightness'] as num?)?.toDouble() ?? 0.08,
         showPrayers: j['showPrayers'] as bool? ?? true,
-        timeoutMin: (j['timeoutMin'] as num?)?.toInt() ?? 10,
+        doubleTapWake: j['doubleTapWake'] as bool? ?? false,
+        timeoutMin: (j['timeoutMin'] as num?)?.toInt() ?? 5,
         clockStyle: ((j['clockStyle'] as num?)?.toInt() ?? 0).clamp(0, 7).toInt(),
         arabicNumerals: j['arabicNumerals'] as bool? ?? false,
         colorKey: j['colorKey'] as String? ?? 'green',
@@ -695,6 +701,13 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
                 value: cfg.timeoutMin,
                 items: const [(5, '5 دقائق'), (10, '10 دقائق'), (30, '30 دقيقة'), (0, 'حتى فتح القفل')],
                 onChanged: (v) => n.update((c) => c.copyWith(timeoutMin: v)),
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('النقر المزدوج لإظهار الشاشة الدائمة'),
+                subtitle: const Text('يتطلب تفعيل إيقاظ الشاشة بالنقر في إعدادات الهاتف. النقر المزدوج مجدداً يخفيها.'),
+                value: cfg.doubleTapWake,
+                onChanged: (v) => n.update((c) => c.copyWith(doubleTapWake: v)),
               ),
             ],
           )),

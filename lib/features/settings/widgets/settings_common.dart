@@ -77,7 +77,7 @@ String themeName(AppThemeMode m) {
 String accentName(AccentColor c) {
   switch (c) {
     case AccentColor.green:
-      return 'زمردي سكينة';
+      return 'زمردي';
     case AccentColor.gold:
       return 'ذهبي إسلامي';
     case AccentColor.white:

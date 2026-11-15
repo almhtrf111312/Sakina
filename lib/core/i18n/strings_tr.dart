@@ -2,7 +2,7 @@
 abstract final class StringsTr {
   static const Map<String, String> strings = {
     // ---- App & General ----
-    'appName': 'Sakina',
+    'appName': 'Müezzin',
     'ok': 'Tamam',
     'cancel': 'İptal',
     'save': 'Kaydet',

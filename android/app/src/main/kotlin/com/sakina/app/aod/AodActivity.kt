@@ -3,6 +3,7 @@ package com.sakina.app.aod
 import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.KeyguardManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -63,6 +64,8 @@ class AodActivity : Activity() {
     private lateinit var tvCountdown: TextView
     private lateinit var rowPrayers: LinearLayout
     private lateinit var detector: GestureDetector
+    private var cachedData: com.sakina.app.widget.WidgetData? = null
+    private var cachedMinute = -1L
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(c: Context, i: Intent) {
@@ -97,6 +100,11 @@ class AodActivity : Activity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (!preview && !(getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked) finish()
     }
 
     override fun onDestroy() {
@@ -185,6 +193,8 @@ class AodActivity : Activity() {
         block.addView(View(this), LinearLayout.LayoutParams(1, (28 * d).toInt()))
         tvName = label(44f, main, true).also { block.addView(it, lp(0)) }
         tvPrayerTime = label(38f, main).also { block.addView(it, lp(4)) }
+        // A single clock in the framed style; prayer name/countdown remain below it.
+        if (cfg.clockStyle == 3) tvPrayerTime.visibility = View.GONE
         tvCountdown = label(30f, soft).also { block.addView(it, lp(10)) }
 
         rowPrayers = LinearLayout(this).apply {
@@ -271,10 +281,15 @@ class AodActivity : Activity() {
             "${monthsAr[now.get(Calendar.MONTH)]} ${now.get(Calendar.YEAR)}")
         tvHijri.text = hijri(now)
 
-        val data = WidgetData.load(this)
+        val minute = System.currentTimeMillis() / 60_000L
+        if (minute != cachedMinute) {
+            cachedMinute = minute
+            cachedData = WidgetData.load(this)
+        }
+        val data = cachedData
         val next = data?.next
         if (next == null) {
-            tvName.text = "سكينة"; tvPrayerTime.text = ""; tvCountdown.text = ""
+            tvName.text = "المؤذن"; tvPrayerTime.text = ""; tvCountdown.text = ""
             return
         }
         tvName.text = "الصلاة القادمة: " + next.nameAr
@@ -342,6 +357,7 @@ class AodActivity : Activity() {
     }
 
     private fun openApp() {
+        if ((getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked) return
         packageManager.getLaunchIntentForPackage(packageName)?.let { startActivity(it) }
         dismiss()
     }
