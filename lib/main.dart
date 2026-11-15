@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,6 +25,10 @@ import 'features/settings/settings_screen.dart';
 // ---------------------------------------------------------------------------
 
 final currentTabProvider = StateProvider<int>((ref) => 0);
+final themeClockProvider = StreamProvider<DateTime>((ref) async* {
+  yield DateTime.now();
+  yield* Stream.periodic(const Duration(minutes: 1), (_) => DateTime.now());
+});
 
 // ---------------------------------------------------------------------------
 // Entry point
@@ -70,7 +75,7 @@ class SakinaApp extends ConsumerWidget {
 
   /// Day/night decision for the "follow sunrise/sunset" theme mode.
   bool _isDaytime(WidgetRef ref) {
-    final now = DateTime.now();
+    final now = ref.watch(themeClockProvider).valueOrNull ?? DateTime.now();
     final schedule = ref.watch(prayerTimesProvider).valueOrNull;
     if (schedule != null && schedule.isNotEmpty) {
       final times = schedule.first.times;

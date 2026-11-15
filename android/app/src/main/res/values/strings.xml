@@ -18,4 +18,5 @@
     <string name="prayer_time_notification">حان وقت صلاة %1$s</string>
     <string name="workmanager_job_tag">sakina_prayer_scheduler</string>
     <string name="widget_description">ودجت مواقيت الصلاة القادمة والعد التنازلي</string>
+    <string name="widget_large_description">ودجت كبير للصلاة القادمة ومواقيت الصلوات الخمس</string>
 </resources>
