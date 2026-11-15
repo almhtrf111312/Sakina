@@ -70,10 +70,15 @@ class MainActivity : FlutterActivity() {
         }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
             "com.sakina.app/external_link").setMethodCallHandler { call, result ->
-            if (call.method == "openTanzilSource") {
+            val url = when (call.method) {
+                "openTanzilSource" -> "https://tanzil.net/download/"
+                "openDeveloperChannel" -> "https://t.me/flowpospro"
+                else -> null
+            }
+            if (url != null) {
                 try {
                     startActivity(Intent(Intent.ACTION_VIEW,
-                        Uri.parse("https://tanzil.net/download/")))
+                        Uri.parse(url)))
                     result.success(null)
                 } catch (e: Exception) {
                     result.error("NO_BROWSER", "Unable to open source link", null)
