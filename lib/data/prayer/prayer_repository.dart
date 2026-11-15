@@ -78,8 +78,12 @@ class PrayerRepository {
   String _metaKey() =>
       'v2_${_location.latitude.toStringAsFixed(4)}_'
       '${_location.longitude.toStringAsFixed(4)}_'
+      '${_location.elevation}_'
       '${_settings.calculationMethod.name}_'
-      '${_settings.madhab.name}';
+      '${_settings.madhab.name}_'
+      '${_settings.highLatitudeRule.name}_'
+      '${jsonEncode(Map.fromEntries(_settings.prayerAdjustments.entries.toList()
+        ..sort((a, b) => a.key.compareTo(b.key))))}';
 
   Future<List<DayPrayerTimes>?> _loadFromCache() async {
     final meta = _prefs.getString(_cacheMetaKey);
@@ -92,9 +96,9 @@ class PrayerRepository {
       final list = (jsonDecode(raw) as List)
           .map((e) => DayPrayerTimes.fromJson(e as Map<String, dynamic>))
           .toList();
-      // Validate: first date must be today or in the future
+      // A cache starting in the future cannot supply today's times.
       final today = _today();
-      if (list.isNotEmpty && list.first.date.isBefore(today)) return null;
+      if (list.isEmpty || list.first.date != today) return null;
       return list;
     } catch (_) {
       return null;
@@ -173,7 +177,14 @@ class PrayerRepository {
 
 final prayerRepositoryProvider = Provider<PrayerRepository>((ref) {
   final prefs = ref.watch(sharedPreferencesProvider);
-  final settings = ref.watch(appSettingsProvider);
+  // Appearance, sound and tap sliders must not recalculate the schedule or
+  // trigger native AlarmManager rescheduling.
+  ref.watch(appSettingsProvider.select((s) => (
+    s.calculationMethod, s.madhab, s.highLatitudeRule,
+    jsonEncode(Map.fromEntries(s.prayerAdjustments.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key)))),
+  )));
+  final settings = ref.read(appSettingsProvider);
   final location = ref.watch(locationProvider);
   return PrayerRepository(prefs, settings, location);
 });
@@ -187,8 +198,8 @@ final prayerTimesProvider =
 
 /// Today's prayer times.
 final todayPrayerTimesProvider = FutureProvider<DayPrayerTimes>((ref) async {
-  final repo = ref.watch(prayerRepositoryProvider);
-  return repo.fetchToday();
+  final schedule = await ref.watch(prayerTimesProvider.future);
+  return schedule.first;
 });
 
 /// Next upcoming prayer (recalculated each second via countdownProvider).
