@@ -31,7 +31,20 @@ String _typeFor(NotificationMode mode) {
 /// shell) to keep it alive.
 final prayerAlarmSyncProvider = FutureProvider<void>((ref) async {
   final schedule = await ref.watch(prayerTimesProvider.future);
-  final settings = ref.watch(appSettingsProvider);
+  // Re-run only when a setting that affects alarms/widgets really changes;
+  // watching the whole settings object re-scheduled every alarm on each
+  // slider tick (font size, brightness, theme...), which made the UI stall.
+  ref.watch(appSettingsProvider.select((s) => Object.hash(
+        Object.hashAll(s.prayerNotifications.entries
+            .map((e) => Object.hash(e.key, e.value))),
+        s.selectedAdhanSound,
+        s.adhanVolume,
+        s.gradualVolume,
+        s.morningAzkarReminder,
+        s.eveningAzkarReminder,
+        s.persistentNotification,
+      )));
+  final settings = ref.read(appSettingsProvider);
 
   final nowUtc = DateTime.now().toUtc();
   final timeLabel = DateFormat('HH:mm');

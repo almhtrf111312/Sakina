@@ -1,6 +1,7 @@
 // lib/features/aod/always_on_screen.dart
 // "الشاشة الدائمة": clock, date and next prayer shown when the phone is locked.
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -148,11 +149,24 @@ class AlwaysOnNotifier extends StateNotifier<AlwaysOnConfig> {
     await push();
   }
 
+  Timer? _debounce;
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  /// Updates the UI state at once; saving and pushing to the native service
+  /// is debounced so dragging a slider does not hit native code every frame.
   Future<void> update(AlwaysOnConfig Function(AlwaysOnConfig) fn) async {
     state = fn(state);
-    final p = await SharedPreferences.getInstance();
-    await p.setString(_key, jsonEncode(state.toJson()));
-    await push();
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 250), () async {
+      final p = await SharedPreferences.getInstance();
+      await p.setString(_key, jsonEncode(state.toJson()));
+      await push();
+    });
   }
 
   /// Send the config to the native service. The Hijri offset comes from the
