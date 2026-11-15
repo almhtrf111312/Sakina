@@ -215,35 +215,26 @@ class SakinaShell extends ConsumerStatefulWidget {
 
 class _SakinaShellState extends ConsumerState<SakinaShell>
     with TickerProviderStateMixin {
-  late final PageController _pageController;
-
-  static const List<Widget> _screens = [
-    HomeScreen(),
-    AzkarScreen(),
-    QiblaScreen(),
-    TasbihScreen(),
-    SettingsScreen(),
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _pageController = PageController(initialPage: 0);
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
+  Widget _screenFor(int index) {
+    switch (index) {
+      case 1:
+        return const AzkarScreen(key: ValueKey('tab-azkar'));
+      case 2:
+        return const QiblaScreen(key: ValueKey('tab-qibla'));
+      case 3:
+        return const TasbihScreen(key: ValueKey('tab-tasbih'));
+      case 4:
+        return const SettingsScreen(key: ValueKey('tab-settings'));
+      default:
+        return const HomeScreen(key: ValueKey('tab-home'));
+    }
   }
 
   void _onTabTapped(int index) {
+    if (ref.read(currentTabProvider) == index) return;
+    // Only the selected tab is built: no animated sweep through heavy
+    // intermediate screens and no background sensors/timers on hidden tabs.
     ref.read(currentTabProvider.notifier).state = index;
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
   }
 
   @override
@@ -256,11 +247,7 @@ class _SakinaShellState extends ConsumerState<SakinaShell>
     final theme = Theme.of(context);
 
     return Scaffold(
-      body: PageView(
-        controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(),
-        children: _screens,
-      ),
+      body: _screenFor(currentTab),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
