@@ -143,6 +143,27 @@ class SakinaTick : BroadcastReceiver() {
 
         @Volatile private var lastSig: String? = null
 
+        private fun notificationDate(context: Context, now: Long): String {
+            val locale = java.util.Locale("ar")
+            if (Build.VERSION.SDK_INT >= 24) {
+                val raw = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+                    .getString("flutter.app_settings_v1", null)
+                val offset = try { org.json.JSONObject(raw ?: "{}").optInt("hijriOffset", 0) }
+                    catch (_: Exception) { 0 }
+                val date = java.util.Calendar.getInstance().apply {
+                    timeInMillis = now
+                    add(java.util.Calendar.DAY_OF_YEAR, offset)
+                }.time
+                return android.icu.text.SimpleDateFormat("EEEE، d MMMM y", locale).apply {
+                    calendar = android.icu.util.IslamicCalendar().apply {
+                        setCalculationType(android.icu.util.IslamicCalendar.CalculationType.ISLAMIC_UMALQURA)
+                    }
+                }.format(date)
+            }
+            return java.text.SimpleDateFormat("EEEE، d MMMM yyyy", locale)
+                .format(java.util.Date(now))
+        }
+
         private fun buildNotification(context: Context, d: WidgetData): Notification {
             ensureChannel(context)
             val n = d.next ?: return NotificationCompat.Builder(context, CHANNEL)
@@ -152,19 +173,32 @@ class SakinaTick : BroadcastReceiver() {
             val now = System.currentTimeMillis()
             val timeStr = AppTimeFormat.compact(context, n.ts)
             val minutes = ((n.ts - now + 59_999L) / 60_000L).coerceAtLeast(0L)
-            val remaining = if (minutes >= 60) "${minutes / 60} س ${minutes % 60} د"
-                else "$minutes دقيقة"
-            val title = "${n.nameAr} • $timeStr"
-            val details = "باقي $remaining • الآن ${AppTimeFormat.compact(context, now)}"
+            val remaining = if (minutes >= 60) "${minutes / 60}س ${minutes % 60}د"
+                else "${minutes}د"
+            val previous = d.previous
+            val previousText = previous?.let {
+                "${it.nameAr} ${AppTimeFormat.compact(context, it.ts)}"
+            } ?: ""
+            val title = "${n.nameAr} $timeStr"
+            val details = "${notificationDate(context, now)} • الآن ${AppTimeFormat.compact(context, now)}"
             val colors = WidgetAppearance.load(context)
+            // Notification text follows the system panel's contrast, independent
+            // of the in-app day/night palette. Never paint a white inner card.
             val views = RemoteViews(context.packageName, R.layout.notification_next_prayer).apply {
-                setTextViewText(R.id.prayer_notification_title, title)
+                setTextViewText(R.id.prayer_notification_next, title)
+                setTextViewText(R.id.prayer_notification_previous, previousText)
+                val countdown = android.text.SpannableString(remaining)
+                for (i in remaining.indices) {
+                    if (remaining[i] == 'س' || remaining[i] == 'د') {
+                        countdown.setSpan(android.text.style.RelativeSizeSpan(0.6f),
+                            i, i + 1, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    }
+                }
+                setTextViewText(R.id.prayer_notification_remaining, countdown)
+                setContentDescription(R.id.prayer_notification_remaining, "المتبقي $remaining")
                 setTextViewText(R.id.prayer_notification_details, details)
-                setTextColor(R.id.prayer_notification_title, colors.accent)
-                setTextColor(R.id.prayer_notification_details, colors.foreground)
-                setInt(R.id.prayer_notification_root, "setBackgroundColor", colors.background or 0xFF000000.toInt())
                 setImageViewBitmap(R.id.prayer_notification_progress,
-                    WidgetArtwork.bar(600, d.progress, colors))
+                    WidgetArtwork.bar(900, d.progress, colors, fromRight = true))
             }
 
             val open = PendingIntent.getActivity(
@@ -180,10 +214,9 @@ class SakinaTick : BroadcastReceiver() {
             return NotificationCompat.Builder(context, CHANNEL)
                 .setSmallIcon(R.drawable.ic_mosque)
                 .setContentTitle(title)
-                .setContentText(details)
+                .setContentText("المتبقي $remaining • $details")
                 .setCustomContentView(views)
                 .setCustomBigContentView(views)
-                .setStyle(NotificationCompat.DecoratedCustomViewStyle())
                 .setShowWhen(false)
                 .setColor(colors.accent)
                 .setOngoing(true)
