@@ -2,6 +2,7 @@
 // Main settings page: a list of categories, each opening its own page.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -275,6 +276,40 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
 
+            const SizedBox(height: 12),
+            buildSettingsCard(
+              isDark: isDark,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text('المزيد من تطبيقات المطوّر',
+                        style: TextStyle(fontFamily: 'Cairo', fontSize: 16,
+                            fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'اكتشف تطبيقاتنا وتابع أحدث الإصدارات والتحديثات عبر قناتنا على تيليغرام.',
+                      style: TextStyle(fontFamily: 'Cairo', fontSize: 13, height: 1.6)),
+                    const SizedBox(height: 12),
+                    FilledButton.icon(
+                      icon: const Icon(Icons.telegram),
+                      label: const Text('زيارة قناة المطوّر'),
+                      onPressed: () async {
+                        try {
+                          await const MethodChannel('com.sakina.app/external_link')
+                              .invokeMethod<void>('openDeveloperChannel');
+                        } catch (_) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                              content: Text('تعذر فتح القناة. تأكد من وجود متصفح أو تطبيق تيليغرام.')));
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 40),
           ],
         ),
