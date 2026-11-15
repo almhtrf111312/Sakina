@@ -63,6 +63,8 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
     final s = ref.watch(appSettingsProvider);
     final aod = ref.watch(alwaysOnProvider);
     final location = ref.watch(locationProvider);
+    final hasLocation = ref.read(sharedPreferencesProvider)
+        .containsKey('sakina_saved_location');
     final primary = Theme.of(context).colorScheme.primary;
     final title = ['مرحباً بك في المؤذن', 'موقعك ومواقيت الصلاة',
       'المظهر والخط', 'الشاشة الدائمة'][step];
@@ -85,7 +87,7 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
                   textAlign: TextAlign.center),
             ],
             if (step == 1) ...[
-              Text(location.cityName.isEmpty ? 'لم تحدد منطقة بعد' :
+              Text(!hasLocation ? 'اختر منطقة لحساب مواقيت الصلاة بدقة' :
                   '${location.cityName}، ${location.countryName}'),
               const SizedBox(height: 16),
               FilledButton.icon(
@@ -162,7 +164,8 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
             if (step > 0) TextButton(onPressed: () => setState(() => step--),
                 child: const Text('رجوع')),
             const Spacer(),
-            FilledButton(onPressed: step == 3 ? finish : () => setState(() => step++),
+            FilledButton(onPressed: step == 1 && !hasLocation
+                    ? null : step == 3 ? finish : () => setState(() => step++),
                 child: Text(step == 3 ? 'ابدأ' : 'التالي')),
           ]),
         ]),
