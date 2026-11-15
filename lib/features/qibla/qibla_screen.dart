@@ -47,7 +47,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen>
     _calibController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 3),
-    )..repeat();
+    );
 
     _initLocationAndCompass();
   }
@@ -62,6 +62,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen>
   Future<void> _initLocationAndCompass() async {
     // 1. Try to load cached location first for instant offline readiness
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     final cachedLat = prefs.getDouble(AppConstants.keyLastLatitude);
     final cachedLon = prefs.getDouble(AppConstants.keyLastLongitude);
     final cachedCity = prefs.getString(AppConstants.keyLastCity);
@@ -79,12 +80,17 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen>
 
       if (permission == LocationPermission.always ||
           permission == LocationPermission.whileInUse) {
+        if (!mounted) return;
         setState(() => _hasPermissions = true);
+        // Start the compass right away; the GPS fix can take a while and must
+        // not delay (or block) the sensor.
+        _startCompassStream();
         final pos = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.medium,
           timeLimit: const Duration(seconds: 10),
         ).catchError((_) => Geolocator.getLastKnownPosition());
 
+        if (!mounted) return;
         if (pos != null) {
           _updateCoordinates(pos.latitude, pos.longitude, 'الموقع الحالي');
           await prefs.setDouble(AppConstants.keyLastLatitude, pos.latitude);
@@ -102,11 +108,12 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen>
       }
     }
 
-    // 3. Start Compass sensor stream
-    _startCompassStream();
+    // 3. Start Compass sensor stream (no-op if already started)
+    if (mounted) _startCompassStream();
   }
 
   void _updateCoordinates(double lat, double lon, String city) {
+    if (!mounted) return;
     setState(() {
       _userLatitude = lat;
       _userLongitude = lon;
@@ -116,35 +123,59 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen>
     });
   }
 
+  int _lastUiMs = 0;
+
   void _startCompassStream() {
-    if (FlutterCompass.events == null) {
+    if (_compassSubscription != null) return;
+    final stream = FlutterCompass.events;
+    if (stream == null) {
       setState(() => _hasSensor = false);
       return;
     }
 
-    _compassSubscription = FlutterCompass.events!.listen((event) {
+    _compassSubscription = stream.listen((event) {
       if (!mounted) return;
+
+      // The sensor can fire far faster than the screen can use; rebuilding
+      // the whole page on every event stalled the UI thread. ~20 updates/s.
+      final nowMs = DateTime.now().millisecondsSinceEpoch;
+      if (nowMs - _lastUiMs < 50) return;
 
       final heading = event.heading;
       if (heading == null) {
-        setState(() => _hasSensor = false);
+        if (_hasSensor) setState(() => _hasSensor = false);
         return;
       }
+      _lastUiMs = nowMs;
 
-      // Check accuracy (accuracy is in degrees of error or null)
       final accuracy = event.accuracy;
       final isLowAcc = accuracy != null && accuracy > 25.0;
 
-      // Filter and smooth heading with low pass filter
-      final normalizedHeading = (heading + 360) % 360;
+      // Low-pass filter on the circular heading to remove jitter.
+      final raw = (heading + 360) % 360;
+      final delta = ((raw - _deviceHeading + 540) % 360) - 180;
+      final normalizedHeading =
+          delta.abs() > 90 ? raw : (_deviceHeading + delta * 0.35 + 360) % 360;
 
-      // Calculate difference to Qibla
       final diff = ((_qiblaBearing - normalizedHeading + 180) % 360) - 180;
       final aligned = diff.abs() <= AppConstants.qiblaFacingThresholdDegrees;
 
       if (aligned && !_wasAligned) {
-        // Just aligned! Give haptic confirmation
         HapticFeedback.heavyImpact();
+      }
+
+      if (isLowAcc && !_calibController.isAnimating) {
+        _calibController.repeat();
+      } else if (!isLowAcc && _calibController.isAnimating) {
+        _calibController.stop();
+      }
+
+      // Skip rebuilds when nothing visible changed.
+      if ((normalizedHeading - _deviceHeading).abs() < 0.4 &&
+          aligned == _isAligned &&
+          isLowAcc == _lowAccuracy &&
+          _hasSensor) {
+        return;
       }
 
       setState(() {
@@ -155,7 +186,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen>
         _hasSensor = true;
       });
     }, onError: (_) {
-      setState(() => _hasSensor = false);
+      if (mounted) setState(() => _hasSensor = false);
     });
   }
 
