@@ -96,8 +96,11 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
               }),
               const SizedBox(height: 8),
               FilledButton.icon(
-                onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
-                    builder: (_) => const LocationPickerScreen())),
+                onPressed: () async {
+                  await Navigator.of(context).push(MaterialPageRoute<void>(
+                      builder: (_) => const LocationPickerScreen()));
+                  if (mounted) setState(() {});
+                },
                 icon: const Icon(Icons.location_on_outlined),
                 label: const Text('اختر البلد والمدينة'),
               ),
