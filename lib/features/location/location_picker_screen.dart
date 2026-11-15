@@ -11,6 +11,7 @@ import '../../data/location/location_service.dart';
 import '../../data/location/place_search.dart';
 import '../../data/location/world_locations.dart';
 import '../../data/prayer/prayer_repository.dart';
+import 'gps_location_button.dart';
 
 class LocationPickerScreen extends ConsumerStatefulWidget {
   const LocationPickerScreen({super.key});
@@ -130,6 +131,10 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: GpsLocationButton(onLocated: () => Navigator.of(context).pop()),
+                ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                   child: TextField(
