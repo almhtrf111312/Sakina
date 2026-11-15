@@ -2,6 +2,7 @@ package com.sakina.app
 
 import android.Manifest
 import android.content.Intent
+import android.net.Uri
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -13,6 +14,7 @@ import com.sakina.app.bridge.AodBridgePlugin
 import com.sakina.app.bridge.TiltBridgePlugin
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodChannel
 
 /**
  * MainActivity — primary entry point for Sakina Flutter application.
@@ -40,6 +42,18 @@ class MainActivity : FlutterActivity() {
         flutterEngine.plugins.add(AlarmBridgePlugin())
         flutterEngine.plugins.add(AodBridgePlugin())
         flutterEngine.plugins.add(TiltBridgePlugin())
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
+            "com.sakina.app/external_link").setMethodCallHandler { call, result ->
+            if (call.method == "openTanzilSource") {
+                try {
+                    startActivity(Intent(Intent.ACTION_VIEW,
+                        Uri.parse("https://tanzil.net/download/")))
+                    result.success(null)
+                } catch (e: Exception) {
+                    result.error("NO_BROWSER", "Unable to open source link", null)
+                }
+            } else result.notImplemented()
+        }
     }
 
     private fun requestNotificationPermissionIfNeeded() {
