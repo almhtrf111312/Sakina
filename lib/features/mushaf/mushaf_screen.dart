@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/settings/settings_repository.dart';
 
@@ -257,9 +256,15 @@ class _MushafScreenState extends ConsumerState<MushafScreen> {
                     content: const Text('نص تنزيل العثماني، الإصدار ١٫١، محفوظ دون تعديل. '
                       'الفهرس وتقسيم الصفحات من الملف المرفق.'),
                     actions: [
-                      TextButton(onPressed: () => launchUrl(
-                          Uri.parse('https://tanzil.net/download/'),
-                          mode: LaunchMode.externalApplication),
+                      TextButton(onPressed: () async {
+                        try {
+                          await const MethodChannel('com.sakina.app/external_link')
+                              .invokeMethod<void>('openTanzilSource');
+                        } on PlatformException {
+                          if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(
+                              const SnackBar(content: Text('تعذر فتح الرابط')));
+                        }
+                      },
                         child: const Text('موقع تنزيل')),
                       TextButton(onPressed: () => Navigator.pop(ctx),
                         child: const Text('إغلاق')),
