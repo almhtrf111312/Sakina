@@ -8,6 +8,7 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -33,7 +34,7 @@ class SakinaTick : BroadcastReceiver() {
         private const val REQ = 7002
 
         private val widgets get() = listOf(
-            WidgetSmall(), WidgetClock(), WidgetProgress(), WidgetList(), WidgetStrip()
+            WidgetSmall(), WidgetClock(), WidgetProgress(), WidgetList(), WidgetStrip(), WidgetLarge()
         )
 
         fun refresh(context: Context) {
@@ -124,7 +125,6 @@ class SakinaTick : BroadcastReceiver() {
                 h > 0 -> "$h ساعة"
                 else -> "$m دقيقة"
             }
-            val nowStr = AppTimeFormat.format(context, System.currentTimeMillis())
             val timeStr = AppTimeFormat.format(context, n.ts)
 
             val open = PendingIntent.getActivity(
@@ -134,20 +134,18 @@ class SakinaTick : BroadcastReceiver() {
             )
 
             val title = "الصلاة القادمة: ${n.nameAr} — $timeStr"
-            val text = "متبقي $remain • الساعة الآن $nowStr"
+            val text = "المتبقي: $remain"
 
             return NotificationCompat.Builder(context, CHANNEL)
                 .setSmallIcon(R.drawable.ic_mosque)
+                .setLargeIcon(BitmapFactory.decodeResource(context.resources, R.mipmap.ic_launcher))
                 .setContentTitle(title)
                 .setContentText(text)
-                .setStyle(NotificationCompat.BigTextStyle().bigText("$title\n$text"))
-                .setSubText(d.city.ifEmpty { null })
+                .setStyle(NotificationCompat.BigTextStyle().bigText(text).setBigContentTitle(title))
                 .setProgress(100, d.progress, false)
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
-                .setWhen(n.ts)
-                .setUsesChronometer(true)
-                .setChronometerCountDown(true)
+                .setShowWhen(false)
                 .setSilent(true)
                 .setCategory(NotificationCompat.CATEGORY_STATUS)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)

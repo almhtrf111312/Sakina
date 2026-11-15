@@ -397,7 +397,10 @@ class AppSettings {
 
 class SettingsNotifier extends StateNotifier<AppSettings> {
   static const _key = 'app_settings_v1';
+  static const _themeKey = 'sakina_theme_mode';
+  static const _accentKey = 'sakina_accent_color';
   final SharedPreferences _prefs;
+  Future<void> _pendingSave = Future.value();
 
   SettingsNotifier(this._prefs) : super(const AppSettings()) {
     _load();
@@ -405,14 +408,31 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   void _load() {
     final raw = _prefs.getString(_key);
-    if (raw == null) return;
     try {
+      if (raw == null) throw const FormatException('Missing settings snapshot');
       state = AppSettings.fromJson(jsonDecode(raw) as Map<String, dynamic>);
-    } catch (_) {}
+    } catch (_) {
+      // A damaged or older settings payload must not erase the chosen theme.
+      final theme = AppThemeMode.values.firstWhere(
+          (v) => v.name == _prefs.getString(_themeKey),
+          orElse: () => AppThemeMode.night);
+      final accent = AccentColor.values.firstWhere(
+          (v) => v.name == _prefs.getString(_accentKey),
+          orElse: () => AccentColor.green);
+      state = AppSettings(themeMode: theme, accentColor: accent);
+    }
   }
 
-  Future<void> _save() async {
-    await _prefs.setString(_key, jsonEncode(state.toJson()));
+  Future<void> _save() {
+    // Capture this exact revision and serialize writes: rapid selection changes
+    // must not let an earlier disk write finish after the final selection.
+    final snapshot = state;
+    _pendingSave = _pendingSave.catchError((_) {}).then((_) async {
+      await _prefs.setString(_key, jsonEncode(snapshot.toJson()));
+      await _prefs.setString(_themeKey, snapshot.themeMode.name);
+      await _prefs.setString(_accentKey, snapshot.accentColor.name);
+    });
+    return _pendingSave;
   }
 
   Future<void> update(AppSettings Function(AppSettings) updater) async {

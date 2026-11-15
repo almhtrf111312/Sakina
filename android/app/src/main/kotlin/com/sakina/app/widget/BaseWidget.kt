@@ -70,7 +70,8 @@ class WidgetSmall : BaseWidget() {
     override fun bind(context: Context, v: RemoteViews, d: WidgetData?) {
         val n = d?.next
         if (n == null) {
-            v.setTextViewText(R.id.w_name, "سكينة"); v.setTextViewText(R.id.w_time, "--:--")
+            v.setTextViewText(R.id.w_name, "افتح سكينة لتحديث المواقيت")
+            v.setTextViewText(R.id.w_time, "")
             return
         }
         v.setTextViewText(R.id.w_name, n.nameAr)
@@ -118,6 +119,9 @@ class WidgetList : BaseWidget() {
         v.setTextViewText(R.id.w_city, d?.city ?: "")
         val list = d?.todayFive() ?: emptyList()
         val next = d?.next
+        v.setTextViewText(R.id.w_next, next?.let { "القادمة: ${it.nameAr}" }
+            ?: "افتح سكينة لتحديث المواقيت")
+        if (next != null) countdown(v, R.id.w_count, next.ts)
         for (i in 0 until 5) {
             val p = list.getOrNull(i)
             v.setTextViewText(names[i], p?.nameAr ?: "")
@@ -144,6 +148,31 @@ class WidgetStrip : BaseWidget() {
             val isNext = p != null && next != null && p.ts == next.ts
             v.setTextColor(names[i], if (isNext) 0xFF5FB59B.toInt() else 0xFF9DB0AA.toInt())
             v.setTextColor(times[i], if (isNext) 0xFF5FB59B.toInt() else 0xFFE8EFEC.toInt())
+        }
+    }
+}
+
+class WidgetLarge : BaseWidget() {
+    override val layoutId = R.layout.widget_large
+    private val names = intArrayOf(R.id.n0, R.id.n1, R.id.n2, R.id.n3, R.id.n4)
+    private val times = intArrayOf(R.id.t0, R.id.t1, R.id.t2, R.id.t3, R.id.t4)
+
+    override fun bind(context: Context, v: RemoteViews, d: WidgetData?) {
+        val next = d?.next
+        v.setTextViewText(R.id.w_city, d?.city?.ifEmpty { "سكينة" } ?: "سكينة")
+        v.setTextViewText(R.id.w_name, next?.nameAr ?: "افتح سكينة لتحديث المواقيت")
+        v.setTextViewText(R.id.w_time, next?.let { hm(context, it.ts) } ?: "")
+        v.setProgressBar(R.id.w_progress, 100, d?.progress ?: 0, false)
+        if (next != null) countdown(v, R.id.w_count, next.ts)
+        val prayers = d?.todayFive() ?: emptyList()
+        for (i in names.indices) {
+            val prayer = prayers.getOrNull(i)
+            v.setTextViewText(names[i], prayer?.nameAr ?: "")
+            v.setTextViewText(times[i], prayer?.let { hm(context, it.ts) } ?: "")
+            val color = if (prayer != null && prayer.ts == next?.ts) 0xFF5FB59B.toInt()
+                else 0xFFE8EFEC.toInt()
+            v.setTextColor(names[i], color)
+            v.setTextColor(times[i], color)
         }
     }
 }
