@@ -111,11 +111,11 @@ class SakinaTick : BroadcastReceiver() {
         }
 
         private fun buildNotification(context: Context, d: WidgetData): Notification {
+            ensureChannel(context)
             val n = d.next ?: return NotificationCompat.Builder(context, CHANNEL)
                 .setSmallIcon(R.drawable.ic_mosque)
                 .setContentTitle("سكينة • الشاشة الدائمة")
                 .setOngoing(true).setSilent(true).build()
-            ensureChannel(context)
             val remainMin = ((n.ts - System.currentTimeMillis()) / 60_000L).coerceAtLeast(0)
             val h = remainMin / 60
             val m = remainMin % 60
