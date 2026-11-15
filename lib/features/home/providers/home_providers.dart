@@ -61,12 +61,9 @@ class NextPrayerProgress {
   });
 }
 
-final nextPrayerProgressProvider = StreamProvider<NextPrayerProgress?>((ref) {
-  final scheduleAsync = ref.watch(prayerTimesProvider);
-
-  return scheduleAsync.when(
-    data: (schedule) {
-      if (schedule.isEmpty) return Stream.value(null);
+final nextPrayerProgressProvider = StreamProvider<NextPrayerProgress?>((ref) async* {
+  final schedule = await ref.watch(prayerTimesProvider.future);
+  if (schedule.isEmpty) { yield null; return; }
 
       NextPrayerProgress? current() {
         final nowUtc = DateTime.now().toUtc();
@@ -121,14 +118,8 @@ final nextPrayerProgressProvider = StreamProvider<NextPrayerProgress?>((ref) {
           formattedCountdown: formattedCountdown,
         );
       }
-      return (() async* {
-        yield current();
-        yield* Stream.periodic(const Duration(seconds: 1), (_) => current());
-      })();
-    },
-    loading: () => Stream.value(null),
-    error: (error, stack) => Stream.error(error, stack),
-  );
+  yield current();
+  yield* Stream.periodic(const Duration(seconds: 1), (_) => current());
 });
 
 // ─────────────────────────── Daily Dhikr Model & Provider ───────────────────
