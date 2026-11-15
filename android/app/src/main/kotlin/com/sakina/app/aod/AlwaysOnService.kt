@@ -10,6 +10,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ServiceInfo
+import android.os.BatteryManager
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -18,6 +19,8 @@ import android.provider.Settings
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.sakina.app.R
+import com.sakina.app.widget.WidgetData
+import java.util.Calendar
 
 /**
  * Keeps a screen-state receiver alive. When the screen turns off the
@@ -50,6 +53,39 @@ class AlwaysOnService : Service() {
         fun syncWithConfig(ctx: Context) {
             if (AlwaysOnConfig.load(ctx).enabled) start(ctx) else stop(ctx)
         }
+
+        /** Applies the "when to show" rule chosen in the app. */
+        fun shouldShowNow(ctx: Context, cfg: AlwaysOnConfig): Boolean = when (cfg.showWhen) {
+            "adhan" -> isAroundAdhan(ctx, cfg)
+            "charging" -> isCharging(ctx)
+            "schedule" -> isInSchedule(cfg)
+            else -> true
+        }
+
+        private fun isAroundAdhan(ctx: Context, cfg: AlwaysOnConfig): Boolean {
+            val items = WidgetData.load(ctx)?.items ?: return false
+            val now = System.currentTimeMillis()
+            val before = cfg.beforeAdhanMin * 60_000L
+            val after = cfg.afterAdhanMin * 60_000L
+            return items.any { now >= it.ts - before && now <= it.ts + after }
+        }
+
+        private fun isCharging(ctx: Context): Boolean {
+            val i = ctx.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+            return (i?.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) ?: 0) != 0
+        }
+
+        private fun isInSchedule(cfg: AlwaysOnConfig): Boolean {
+            val c = Calendar.getInstance()
+            val now = c.get(Calendar.HOUR_OF_DAY) * 60 + c.get(Calendar.MINUTE)
+            val from = cfg.scheduleFromMin
+            val to = cfg.scheduleToMin
+            return when {
+                from == to -> true
+                from < to -> now in from until to
+                else -> now >= from || now < to   // crosses midnight
+            }
+        }
     }
 
     private val handler = Handler(Looper.getMainLooper())
@@ -59,7 +95,8 @@ class AlwaysOnService : Service() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
                 Intent.ACTION_SCREEN_OFF -> {
-                    if (!suppressed && AlwaysOnConfig.load(context).enabled) {
+                    val cfg = AlwaysOnConfig.load(context)
+                    if (!suppressed && cfg.enabled && shouldShowNow(context, cfg)) {
                         handler.postDelayed({ showAod() }, 350)
                     }
                 }

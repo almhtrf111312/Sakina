@@ -9,6 +9,8 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Color
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.InsetDrawable
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -166,7 +168,9 @@ class AodActivity : Activity() {
             FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT,
             Gravity.CENTER))
 
-        tvTime = label(86f, main, true).also { block.addView(it, lp(0)) }
+        val timeSize = when (cfg.clockStyle) { 1 -> 80f; 2 -> 74f; 3 -> 66f; else -> 86f }
+        tvTime = label(timeSize, main, cfg.clockStyle != 2).also { block.addView(it, lp(0)) }
+        styleClock(tvTime, d)
         tvDate = label(20f, soft).also { block.addView(it, lp(6)) }
         tvHijri = label(20f, soft).also { block.addView(it, lp(2)) }
         block.addView(View(this), LinearLayout.LayoutParams(1, (28 * d).toInt()))
@@ -188,6 +192,36 @@ class AodActivity : Activity() {
         setContentView(root)
     }
 
+    /** Applies the clock design chosen in the app (digital / classic / minimal / boxed). */
+    private fun styleClock(tv: TextView, d: Float) {
+        when (cfg.clockStyle) {
+            1 -> tv.typeface = Typeface.create(Typeface.SERIF, Typeface.BOLD)
+            2 -> tv.typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
+            3 -> {
+                tv.typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+                val box = GradientDrawable().apply {
+                    shape = GradientDrawable.RECTANGLE
+                    cornerRadius = 20 * d
+                    setStroke((2 * d).toInt().coerceAtLeast(2), dimmed(cfg.color, 0.45f))
+                }
+                val inset = (28 * d).toInt()
+                tv.background = InsetDrawable(box, inset, 0, inset, 0)
+                // set after the background so it is not overridden by the drawable's padding
+                tv.setPadding(inset + (18 * d).toInt(), (14 * d).toInt(),
+                    inset + (18 * d).toInt(), (14 * d).toInt())
+            }
+            else -> tv.typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+        }
+    }
+
+    /** Western digits -> Arabic-Indic digits when the user picked them. */
+    private fun num(s: String): String {
+        if (!cfg.arabicNumerals) return s
+        val sb = StringBuilder(s.length)
+        for (ch in s) sb.append(if (ch in '0'..'9') ('٠' + (ch - '0')) else ch)
+        return sb.toString()
+    }
+
     // ── updates ────────────────────────────────────────────────────────────
 
     private val tick = object : Runnable {
@@ -199,7 +233,7 @@ class AodActivity : Activity() {
 
     private fun hm(ts: Long): String {
         val c = Calendar.getInstance().apply { timeInMillis = ts }
-        return String.format(Locale.US, "%02d:%02d", c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE))
+        return num(String.format(Locale.US, "%02d:%02d", c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE)))
     }
 
     private val monthsAr = arrayOf("يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
@@ -210,9 +244,9 @@ class AodActivity : Activity() {
 
     private fun update() {
         val now = Calendar.getInstance()
-        tvTime.text = String.format(Locale.US, "%02d:%02d", now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE))
-        tvDate.text = "${daysAr[now.get(Calendar.DAY_OF_WEEK) - 1]} ${now.get(Calendar.DAY_OF_MONTH)} " +
-            "${monthsAr[now.get(Calendar.MONTH)]} ${now.get(Calendar.YEAR)}"
+        tvTime.text = num(String.format(Locale.US, "%02d:%02d", now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE)))
+        tvDate.text = num("${daysAr[now.get(Calendar.DAY_OF_WEEK) - 1]} ${now.get(Calendar.DAY_OF_MONTH)} " +
+            "${monthsAr[now.get(Calendar.MONTH)]} ${now.get(Calendar.YEAR)}")
         tvHijri.text = hijri(now)
 
         val data = WidgetData.load(this)
@@ -224,8 +258,8 @@ class AodActivity : Activity() {
         tvName.text = "الصلاة القادمة: " + next.nameAr
         tvPrayerTime.text = hm(next.ts)
         val sec = ((next.ts - System.currentTimeMillis()) / 1000).coerceAtLeast(0)
-        tvCountdown.text = String.format(Locale.US, "المتبقي %d:%02d:%02d",
-            sec / 3600, (sec % 3600) / 60, sec % 60)
+        tvCountdown.text = num(String.format(Locale.US, "المتبقي %d:%02d:%02d",
+            sec / 3600, (sec % 3600) / 60, sec % 60))
 
         if (cfg.showPrayers) fillRow(data.todayFive(), next)
     }
@@ -298,8 +332,10 @@ class AodActivity : Activity() {
 
     // ── Hijri (tabular Kuwaiti algorithm) ──────────────────────────────────
 
-    private fun hijri(c: Calendar): String {
+    private fun hijri(base: Calendar): String {
         return try {
+            val c = base.clone() as Calendar
+            if (cfg.hijriOffset != 0) c.add(Calendar.DAY_OF_YEAR, cfg.hijriOffset)
             val y = c.get(Calendar.YEAR); val m = c.get(Calendar.MONTH) + 1; val dd = c.get(Calendar.DAY_OF_MONTH)
             val a = (14 - m) / 12
             val yy = y + 4800 - a
@@ -313,7 +349,7 @@ class AodActivity : Activity() {
             val month = (24 * l) / 709
             val day = l - (709 * month) / 24
             val year = 30 * n + j - 30
-            "$day ${hijriMonths[(month - 1).toInt().coerceIn(0, 11)]} $year هـ"
+            num("$day ${hijriMonths[(month - 1).toInt().coerceIn(0, 11)]} $year هـ")
         } catch (_: Exception) { "" }
     }
 }

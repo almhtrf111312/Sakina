@@ -10,7 +10,15 @@ class AlwaysOnConfig(
     val brightness: Float,       // 0.02 .. 0.30
     val showPrayers: Boolean,
     val timeoutMin: Int,         // 0 = until the phone is unlocked
-    val color: Int
+    val color: Int,
+    val clockStyle: Int,         // 0 digital bold | 1 classic serif | 2 minimal light | 3 boxed
+    val arabicNumerals: Boolean, // ٠١٢٣ instead of 0123
+    val hijriOffset: Int,        // -2 .. +2 days, same as the app setting
+    val showWhen: String,        // always | adhan | charging | schedule
+    val beforeAdhanMin: Int,     // "adhan" mode: minutes before the prayer
+    val afterAdhanMin: Int,      // "adhan" mode: minutes after the prayer
+    val scheduleFromMin: Int,    // "schedule" mode: minutes since midnight
+    val scheduleToMin: Int
 ) {
     companion object {
         private const val PREFS = "sakina_always_on"
@@ -24,6 +32,14 @@ class AlwaysOnConfig(
                 .putBoolean("showPrayers", m["showPrayers"] as? Boolean ?: true)
                 .putInt("timeoutMin", (m["timeoutMin"] as? Number)?.toInt() ?: 10)
                 .putInt("color", (m["color"] as? Number)?.toInt() ?: 0xFF5FB59B.toInt())
+                .putInt("clockStyle", (m["clockStyle"] as? Number)?.toInt() ?: 0)
+                .putBoolean("arabicNumerals", m["arabicNumerals"] as? Boolean ?: false)
+                .putInt("hijriOffset", (m["hijriOffset"] as? Number)?.toInt() ?: 0)
+                .putString("showWhen", m["showWhen"] as? String ?: "always")
+                .putInt("beforeAdhanMin", (m["beforeAdhanMin"] as? Number)?.toInt() ?: 10)
+                .putInt("afterAdhanMin", (m["afterAdhanMin"] as? Number)?.toInt() ?: 15)
+                .putInt("scheduleFromMin", (m["scheduleFromMin"] as? Number)?.toInt() ?: 22 * 60)
+                .putInt("scheduleToMin", (m["scheduleToMin"] as? Number)?.toInt() ?: 6 * 60)
                 .apply()
         }
 
@@ -36,7 +52,15 @@ class AlwaysOnConfig(
                 p.getFloat("brightness", 0.08f).coerceIn(0.01f, 0.5f),
                 p.getBoolean("showPrayers", true),
                 p.getInt("timeoutMin", 10),
-                p.getInt("color", 0xFF5FB59B.toInt())
+                p.getInt("color", 0xFF5FB59B.toInt()),
+                p.getInt("clockStyle", 0).coerceIn(0, 3),
+                p.getBoolean("arabicNumerals", false),
+                p.getInt("hijriOffset", 0).coerceIn(-2, 2),
+                p.getString("showWhen", "always") ?: "always",
+                p.getInt("beforeAdhanMin", 10),
+                p.getInt("afterAdhanMin", 15),
+                p.getInt("scheduleFromMin", 22 * 60),
+                p.getInt("scheduleToMin", 6 * 60)
             )
         }
     }

@@ -193,63 +193,14 @@ class AlarmBridge {
     } catch (_) {}
   }
 
-  // ─── Live Lockscreen Wallpaper Methods ─────────────────────────────────────
+  // ─── Widgets / persistent notification ─────────────────────────────────────
 
-  /// Push the prayer schedule to home-screen widgets and the persistent
-  /// "next prayer" notification.
+  /// Push the prayer schedule to home-screen widgets, the always-on screen and
+  /// the persistent "next prayer" notification.
   static Future<void> updateWidgetData(String json) async {
     try {
       await _alarmChannel.invokeMethod('updateWidgetData', {'json': json});
     } catch (_) {}
-  }
-
-  /// Set Sakina as the Live Wallpaper (lock screen & home screen).
-  static Future<bool> setAsLockscreenWallpaper() async {
-    try {
-      final result = await _aodChannel.invokeMethod('setAsLockscreenWallpaper');
-      return result == true;
-    } on PlatformException catch (e) {
-      throw AlarmBridgeException('setAsLockscreenWallpaper failed: ${e.message}');
-    }
-  }
-
-  /// Check if Live Wallpaper is supported on this device.
-  static Future<bool> isWallpaperSupported() async {
-    try {
-      final result = await _aodChannel.invokeMethod('isWallpaperSupported');
-      return result as bool? ?? false;
-    } on PlatformException {
-      return false;
-    }
-  }
-
-  /// Update wallpaper preferences (clock style, colors, prayer times, etc.)
-  static Future<void> updateWallpaperSettings({
-    int? clockStyle,
-    int? accentColor,
-    bool? showHijri,
-    bool? showGregorian,
-    bool? showCountdown,
-    bool? showPrayersRow,
-    int? hijriOffset,
-    bool? useArabicNumerals,
-    Map<String, dynamic>? prayerData,
-  }) async {
-    try {
-      await _aodChannel.invokeMethod('updateWallpaperSettings', {
-        if (clockStyle != null) 'clockStyle': clockStyle,
-        if (accentColor != null) 'accentColor': accentColor,
-        if (showHijri != null) 'showHijri': showHijri,
-        if (showGregorian != null) 'showGregorian': showGregorian,
-        if (showCountdown != null) 'showCountdown': showCountdown,
-        if (showPrayersRow != null) 'showPrayersRow': showPrayersRow,
-        if (hijriOffset != null) 'hijriOffset': hijriOffset,
-        if (useArabicNumerals != null) 'useArabicNumerals': useArabicNumerals,
-        if (prayerData != null) 'prayerData': prayerData,
-      });
-    } on PlatformException catch (e) {
-      throw AlarmBridgeException('updateWallpaperSettings failed: ${e.message}');
-    }
   }
 }
 

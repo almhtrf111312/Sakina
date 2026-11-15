@@ -43,15 +43,13 @@
     <uses-permission android:name="android.permission.VIBRATE" />
 
     <!-- ============================================================ -->
-    <!-- DISPLAY OVER OTHER APPS & WALLPAPER (AOD/Lock screen) -->
+    <!-- DISPLAY OVER OTHER APPS (Always-on screen) -->
     <!-- ============================================================ -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    <uses-permission android:name="android.permission.SET_WALLPAPER" />
 
     <!-- ============================================================ -->
     <!-- SENSORS (compass/accelerometer for Qibla) -->
     <!-- ============================================================ -->
-    <uses-feature android:name="android.software.live_wallpaper" android:required="false" />
     <uses-feature android:name="android.hardware.sensor.compass" android:required="false" />
     <uses-feature android:name="android.hardware.sensor.accelerometer" android:required="false" />
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
@@ -134,22 +132,6 @@
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Always-on clock and next prayer while the screen is off" />
-        </service>
-
-        <!-- ======================================================= -->
-        <!-- SAKINA LIVE WALLPAPER (AOD LOCK SCREEN WALLPAPER) -->
-        <!-- ======================================================= -->
-        <service
-            android:name=".aod.SakinaWallpaperService"
-            android:label="@string/app_name"
-            android:permission="android.permission.BIND_WALLPAPER"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.service.wallpaper.WallpaperService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.service.wallpaper"
-                android:resource="@xml/wallpaper" />
         </service>
 
         <!-- ======================================================= -->

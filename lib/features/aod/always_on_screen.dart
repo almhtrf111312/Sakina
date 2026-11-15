@@ -9,7 +9,23 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/alarm_bridge.dart';
-import 'aod_settings_screen.dart';
+import '../../data/settings/settings_repository.dart';
+
+/// Accent colours offered for the always-on screen.
+const alwaysOnColorKeys = ['green', 'gold', 'white', 'blue'];
+
+Color alwaysOnColor(String key) {
+  switch (key) {
+    case 'gold':
+      return const Color(0xFFC9A86A);
+    case 'white':
+      return const Color(0xFFFFFFFF);
+    case 'blue':
+      return const Color(0xFF5B9BD5);
+    default:
+      return AppColors.nightPrimary;
+  }
+}
 
 class AlwaysOnConfig {
   final bool enabled;
@@ -18,6 +34,14 @@ class AlwaysOnConfig {
   final double brightness; // 0.02 .. 0.30
   final bool showPrayers;
   final int timeoutMin; // 0 = until unlock
+  final int clockStyle; // 0 digital | 1 classic | 2 minimal | 3 boxed
+  final bool arabicNumerals;
+  final String colorKey; // green | gold | white | blue
+  final String showWhen; // always | adhan | charging | schedule
+  final int beforeAdhanMin;
+  final int afterAdhanMin;
+  final int scheduleFromMin; // minutes since midnight
+  final int scheduleToMin;
 
   const AlwaysOnConfig({
     this.enabled = false,
@@ -26,6 +50,14 @@ class AlwaysOnConfig {
     this.brightness = 0.08,
     this.showPrayers = true,
     this.timeoutMin = 10,
+    this.clockStyle = 0,
+    this.arabicNumerals = false,
+    this.colorKey = 'green',
+    this.showWhen = 'always',
+    this.beforeAdhanMin = 10,
+    this.afterAdhanMin = 15,
+    this.scheduleFromMin = 22 * 60,
+    this.scheduleToMin = 6 * 60,
   });
 
   AlwaysOnConfig copyWith({
@@ -35,6 +67,14 @@ class AlwaysOnConfig {
     double? brightness,
     bool? showPrayers,
     int? timeoutMin,
+    int? clockStyle,
+    bool? arabicNumerals,
+    String? colorKey,
+    String? showWhen,
+    int? beforeAdhanMin,
+    int? afterAdhanMin,
+    int? scheduleFromMin,
+    int? scheduleToMin,
   }) =>
       AlwaysOnConfig(
         enabled: enabled ?? this.enabled,
@@ -43,6 +83,14 @@ class AlwaysOnConfig {
         brightness: brightness ?? this.brightness,
         showPrayers: showPrayers ?? this.showPrayers,
         timeoutMin: timeoutMin ?? this.timeoutMin,
+        clockStyle: clockStyle ?? this.clockStyle,
+        arabicNumerals: arabicNumerals ?? this.arabicNumerals,
+        colorKey: colorKey ?? this.colorKey,
+        showWhen: showWhen ?? this.showWhen,
+        beforeAdhanMin: beforeAdhanMin ?? this.beforeAdhanMin,
+        afterAdhanMin: afterAdhanMin ?? this.afterAdhanMin,
+        scheduleFromMin: scheduleFromMin ?? this.scheduleFromMin,
+        scheduleToMin: scheduleToMin ?? this.scheduleToMin,
       );
 
   Map<String, dynamic> toJson() => {
@@ -52,6 +100,14 @@ class AlwaysOnConfig {
         'brightness': brightness,
         'showPrayers': showPrayers,
         'timeoutMin': timeoutMin,
+        'clockStyle': clockStyle,
+        'arabicNumerals': arabicNumerals,
+        'colorKey': colorKey,
+        'showWhen': showWhen,
+        'beforeAdhanMin': beforeAdhanMin,
+        'afterAdhanMin': afterAdhanMin,
+        'scheduleFromMin': scheduleFromMin,
+        'scheduleToMin': scheduleToMin,
       };
 
   factory AlwaysOnConfig.fromJson(Map<String, dynamic> j) => AlwaysOnConfig(
@@ -61,13 +117,23 @@ class AlwaysOnConfig {
         brightness: (j['brightness'] as num?)?.toDouble() ?? 0.08,
         showPrayers: j['showPrayers'] as bool? ?? true,
         timeoutMin: (j['timeoutMin'] as num?)?.toInt() ?? 10,
+        clockStyle: ((j['clockStyle'] as num?)?.toInt() ?? 0).clamp(0, 3).toInt(),
+        arabicNumerals: j['arabicNumerals'] as bool? ?? false,
+        colorKey: j['colorKey'] as String? ?? 'green',
+        showWhen: j['showWhen'] as String? ?? 'always',
+        beforeAdhanMin: (j['beforeAdhanMin'] as num?)?.toInt() ?? 10,
+        afterAdhanMin: (j['afterAdhanMin'] as num?)?.toInt() ?? 15,
+        scheduleFromMin: (j['scheduleFromMin'] as num?)?.toInt() ?? 22 * 60,
+        scheduleToMin: (j['scheduleToMin'] as num?)?.toInt() ?? 6 * 60,
       );
 }
 
 class AlwaysOnNotifier extends StateNotifier<AlwaysOnConfig> {
-  AlwaysOnNotifier() : super(const AlwaysOnConfig()) {
+  AlwaysOnNotifier(this._ref) : super(const AlwaysOnConfig()) {
     _load();
   }
+
+  final Ref _ref;
 
   static const _key = 'always_on_config';
 
@@ -89,18 +155,26 @@ class AlwaysOnNotifier extends StateNotifier<AlwaysOnConfig> {
     await push();
   }
 
-  /// Send the config (with the current accent colour) to the native service.
+  /// Send the config to the native service. The Hijri offset comes from the
+  /// app-wide setting so the date matches the rest of the app.
   Future<void> push() async {
     await AlarmBridge.setAlwaysOn({
       ...state.toJson(),
-      'color': AppColors.nightPrimary.value,
+      'color': alwaysOnColor(state.colorKey).value,
+      'hijriOffset': _ref.read(appSettingsProvider).hijriOffset,
     });
   }
 }
 
 final alwaysOnProvider =
-    StateNotifierProvider<AlwaysOnNotifier, AlwaysOnConfig>(
-        (ref) => AlwaysOnNotifier());
+    StateNotifierProvider<AlwaysOnNotifier, AlwaysOnConfig>((ref) {
+  final notifier = AlwaysOnNotifier(ref);
+  ref.listen<int>(
+    appSettingsProvider.select((s) => s.hijriOffset),
+    (_, __) => notifier.push(),
+  );
+  return notifier;
+});
 
 class AlwaysOnScreen extends ConsumerStatefulWidget {
   const AlwaysOnScreen({super.key});
@@ -156,6 +230,11 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
                 fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 15)),
       );
 
+  Widget _hint(String t) => Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Text(t, style: const TextStyle(fontFamily: 'Cairo', fontSize: 11)),
+      );
+
   Widget _choices<T>({
     required T value,
     required List<(T, String)> items,
@@ -193,6 +272,227 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
               child: const Text('تفعيل', style: TextStyle(fontFamily: 'Cairo')),
             ),
     );
+  }
+
+  // ─── When to show ──────────────────────────────────────────────────────────
+
+  String _two(int v) => v.toString().padLeft(2, '0');
+  String _hm(int minutes) => '${_two(minutes ~/ 60)}:${_two(minutes % 60)}';
+
+  String _whenHint(String mode) {
+    switch (mode) {
+      case 'adhan':
+        return 'تظهر فقط في الفترة المحيطة بكل أذان.';
+      case 'charging':
+        return 'تظهر فقط عندما يكون الهاتف موصولاً بالشاحن.';
+      case 'schedule':
+        return 'تظهر فقط ضمن الفترة الزمنية المحددة كل يوم.';
+      default:
+        return 'تظهر كلما انطفأت شاشة الهاتف.';
+    }
+  }
+
+  Future<void> _pickTime(int current, ValueChanged<int> onPicked) async {
+    final t = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: current ~/ 60, minute: current % 60),
+    );
+    if (t != null) onPicked(t.hour * 60 + t.minute);
+  }
+
+  Widget _whenCard(AlwaysOnConfig cfg, AlwaysOnNotifier n) {
+    return _card(Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _title('طريقة التفعيل والظهور'),
+        _choices<String>(
+          value: cfg.showWhen,
+          items: const [
+            ('always', 'عند إطفاء الشاشة'),
+            ('adhan', 'حول وقت الأذان'),
+            ('charging', 'أثناء الشحن فقط'),
+            ('schedule', 'جدول زمني'),
+          ],
+          onChanged: (v) => n.update((c) => c.copyWith(showWhen: v)),
+        ),
+        _hint(_whenHint(cfg.showWhen)),
+        if (cfg.showWhen == 'adhan') ...[
+          const SizedBox(height: 14),
+          _title('قبل الأذان'),
+          _choices<int>(
+            value: cfg.beforeAdhanMin,
+            items: const [
+              (5, '5 دقائق'),
+              (10, '10 دقائق'),
+              (15, '15 دقيقة'),
+              (30, '30 دقيقة'),
+            ],
+            onChanged: (v) => n.update((c) => c.copyWith(beforeAdhanMin: v)),
+          ),
+          const SizedBox(height: 14),
+          _title('بعد الأذان'),
+          _choices<int>(
+            value: cfg.afterAdhanMin,
+            items: const [
+              (15, '15 دقيقة'),
+              (30, '30 دقيقة'),
+              (45, '45 دقيقة'),
+              (60, 'ساعة'),
+            ],
+            onChanged: (v) => n.update((c) => c.copyWith(afterAdhanMin: v)),
+          ),
+        ],
+        if (cfg.showWhen == 'schedule') ...[
+          const SizedBox(height: 14),
+          Row(children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.bedtime_outlined, size: 18),
+                label: Text('من ${_hm(cfg.scheduleFromMin)}',
+                    style: const TextStyle(fontFamily: 'Cairo')),
+                onPressed: () => _pickTime(cfg.scheduleFromMin,
+                    (m) => n.update((c) => c.copyWith(scheduleFromMin: m))),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.wb_sunny_outlined, size: 18),
+                label: Text('إلى ${_hm(cfg.scheduleToMin)}',
+                    style: const TextStyle(fontFamily: 'Cairo')),
+                onPressed: () => _pickTime(cfg.scheduleToMin,
+                    (m) => n.update((c) => c.copyWith(scheduleToMin: m))),
+              ),
+            ),
+          ]),
+        ],
+      ],
+    ));
+  }
+
+  // ─── Clock look ────────────────────────────────────────────────────────────
+
+  Widget _clockTile(
+    AlwaysOnConfig cfg,
+    AlwaysOnNotifier n,
+    int index,
+    String label,
+    TextStyle sample, {
+    bool boxed = false,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = Theme.of(context).colorScheme.primary;
+    final selected = cfg.clockStyle == index;
+    final textColor = isDark ? Colors.white70 : Colors.black87;
+
+    Widget time = Text(
+      cfg.arabicNumerals ? '١٢:٣٤' : '12:34',
+      textDirection: TextDirection.ltr,
+      style: sample.copyWith(fontSize: 18, color: textColor),
+    );
+    if (boxed) {
+      time = Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          border: Border.all(color: textColor.withOpacity(0.5)),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: time,
+      );
+    }
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => n.update((c) => c.copyWith(clockStyle: index)),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: selected
+                ? primary.withOpacity(0.15)
+                : (isDark ? AppColors.nightElevated : AppColors.dayChip),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: selected ? primary : Colors.transparent,
+              width: 1.5,
+            ),
+          ),
+          child: Column(
+            children: [
+              time,
+              const SizedBox(height: 8),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 11,
+                  fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                  color: selected ? primary : null,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _lookCard(AlwaysOnConfig cfg, AlwaysOnNotifier n) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return _card(Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _title('شكل الساعة'),
+        Row(children: [
+          _clockTile(cfg, n, 0, 'رقمي عصري',
+              const TextStyle(fontWeight: FontWeight.w800)),
+          _clockTile(cfg, n, 1, 'خط كلاسيكي',
+              const TextStyle(fontFamily: 'Amiri', fontWeight: FontWeight.bold)),
+          _clockTile(cfg, n, 2, 'بسيط ناعم',
+              const TextStyle(fontWeight: FontWeight.w300)),
+          _clockTile(cfg, n, 3, 'إطار هندسي',
+              const TextStyle(
+                  fontFamily: 'monospace', fontWeight: FontWeight.bold),
+              boxed: true),
+        ]),
+        const SizedBox(height: 18),
+        _title('نوع الأرقام'),
+        _choices<bool>(
+          value: cfg.arabicNumerals,
+          items: const [(false, 'لاتينية 123'), (true, 'عربية ١٢٣')],
+          onChanged: (v) => n.update((c) => c.copyWith(arabicNumerals: v)),
+        ),
+        const SizedBox(height: 18),
+        _title('لون الإضاءة'),
+        Row(
+          children: [
+            for (final key in alwaysOnColorKeys)
+              GestureDetector(
+                onTap: () => n.update((c) => c.copyWith(colorKey: key)),
+                child: Container(
+                  margin: const EdgeInsetsDirectional.only(end: 12),
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: alwaysOnColor(key),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: cfg.colorKey == key
+                          ? (isDark ? Colors.white : Colors.black87)
+                          : Colors.grey.withOpacity(0.4),
+                      width: cfg.colorKey == key ? 2.5 : 1,
+                    ),
+                  ),
+                  child: cfg.colorKey == key
+                      ? const Icon(Icons.check, size: 16, color: Colors.black)
+                      : null,
+                ),
+              ),
+          ],
+        ),
+      ],
+    ));
   }
 
   @override
@@ -244,6 +544,8 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
               ]),
             ],
           )),
+          _whenCard(cfg, n),
+          _lookCard(cfg, n),
           _card(Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -258,6 +560,7 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
                 ],
                 onChanged: (v) => n.update((c) => c.copyWith(dateMode: v)),
               ),
+              _hint('يتبع التاريخ الهجري إزاحة الأيام المضبوطة في: الإعدادات ← الموقع وحساب المواقيت.'),
             ],
           )),
           _card(Column(
@@ -332,16 +635,6 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
                 ),
             ],
           )),
-          ListTile(
-            leading: const Icon(Icons.wallpaper_outlined),
-            title: const Text('خلفية شاشة القفل الحيّة',
-                style: TextStyle(fontFamily: 'Cairo')),
-            subtitle: const Text('خيار إضافي: خلفية تعرض الصلاة القادمة بدون خدمة',
-                style: TextStyle(fontFamily: 'Cairo', fontSize: 11)),
-            trailing: const Icon(Icons.chevron_left),
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const AodSettingsScreen())),
-          ),
         ],
       ),
     );

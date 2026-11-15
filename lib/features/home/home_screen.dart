@@ -281,7 +281,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
 
-              // ── AOD Lock Screen Wallpaper Quick Card ──
+              // ── Always-on screen quick card ──
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

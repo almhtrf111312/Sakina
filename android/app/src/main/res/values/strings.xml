@@ -18,5 +18,4 @@
     <string name="prayer_time_notification">حان وقت صلاة %1$s</string>
     <string name="workmanager_job_tag">sakina_prayer_scheduler</string>
     <string name="widget_description">ودجت مواقيت الصلاة القادمة والعد التنازلي</string>
-    <string name="wallpaper_description">خلفية الشاشة الدائمة لقفل الشاشة مع مواقيت الصلاة والساعة</string>
 </resources>

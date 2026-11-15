@@ -1,16 +1,12 @@
 package com.sakina.app.bridge
 
-import android.app.WallpaperManager
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.os.Build
 import androidx.annotation.NonNull
 import com.sakina.app.aod.AlwaysOnConfig
 import com.sakina.app.aod.AlwaysOnService
 import com.sakina.app.aod.AodActivity
-import com.sakina.app.aod.SakinaWallpaperService
 import android.app.Activity
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -19,11 +15,9 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
-import org.json.JSONObject
 
 /**
- * AodBridgePlugin — Flutter MethodChannel for controlling the Always-On Display (AOD)
- * and Live Lock Screen Wallpaper.
+ * AodBridgePlugin — Flutter MethodChannel for controlling the Always-On Display (AOD).
  *
  * Channel: "com.sakina.app/aod"
  * Methods:
@@ -31,9 +25,7 @@ import org.json.JSONObject
  *   - hideAodScreen()
  *   - isAodSupported() -> Boolean
  *   - updateAodData(prayerData: Map/JSON)
- *   - setAsLockscreenWallpaper() -> Boolean
- *   - updateWallpaperSettings(settings: Map) -> Boolean
- *   - isWallpaperSupported() -> Boolean
+ *   - setAlwaysOn(config: Map) / alwaysOnStatus() -> Map
  */
 class AodBridgePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
@@ -159,26 +151,6 @@ class AodBridgePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 result.success(ok)
             }
 
-            "setAsLockscreenWallpaper" -> {
-                val component = ComponentName(context, SakinaWallpaperService::class.java)
-                val attempts = listOf(
-                    Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER).apply {
-                        putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT, component)
-                    },
-                    Intent(WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER),
-                    Intent(android.provider.Settings.ACTION_DISPLAY_SETTINGS)
-                )
-                var ok = false
-                for (i in attempts) {
-                    try {
-                        launch(i)
-                        ok = true
-                        break
-                    } catch (_: Exception) {}
-                }
-                result.success(ok)
-            }
-
             "requestDrawOverApps" -> {
                 try {
                     val intent = Intent(
@@ -190,70 +162,6 @@ class AodBridgePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 } catch (e: Exception) {
                     result.success(false)
                 }
-            }
-
-            "updateWallpaperSettings" -> {
-                try {
-                    val prefs = context.getSharedPreferences(
-                        SakinaWallpaperService.PREFS_NAME,
-                        Context.MODE_PRIVATE
-                    )
-                    val editor = prefs.edit()
-
-                    call.argument<Int>("clockStyle")?.let {
-                        editor.putInt(SakinaWallpaperService.KEY_CLOCK_STYLE, it)
-                    }
-                    call.argument<Int>("accentColor")?.let {
-                        editor.putInt(SakinaWallpaperService.KEY_ACCENT_COLOR, it)
-                    }
-                    call.argument<Boolean>("showHijri")?.let {
-                        editor.putBoolean(SakinaWallpaperService.KEY_SHOW_HIJRI, it)
-                    }
-                    call.argument<Boolean>("showGregorian")?.let {
-                        editor.putBoolean(SakinaWallpaperService.KEY_SHOW_GREGORIAN, it)
-                    }
-                    call.argument<Boolean>("showCountdown")?.let {
-                        editor.putBoolean(SakinaWallpaperService.KEY_SHOW_COUNTDOWN, it)
-                    }
-                    call.argument<Boolean>("showPrayersRow")?.let {
-                        editor.putBoolean(SakinaWallpaperService.KEY_SHOW_PRAYERS_ROW, it)
-                    }
-                    call.argument<Int>("hijriOffset")?.let {
-                        editor.putInt(SakinaWallpaperService.KEY_HIJRI_OFFSET, it)
-                    }
-                    call.argument<Boolean>("useArabicNumerals")?.let {
-                        editor.putBoolean(SakinaWallpaperService.KEY_USE_ARABIC_NUMERALS, it)
-                    }
-
-                    val prayerDataArg = call.argument<Any>("prayerData")
-                    if (prayerDataArg != null) {
-                        val prayerJsonStr = when (prayerDataArg) {
-                            is String -> prayerDataArg
-                            is Map<*, *> -> JSONObject(prayerDataArg).toString()
-                            else -> null
-                        }
-                        if (prayerJsonStr != null) {
-                            editor.putString(SakinaWallpaperService.KEY_PRAYER_DATA, prayerJsonStr)
-                        }
-                    }
-
-                    editor.apply()
-
-                    val updateIntent = Intent(SakinaWallpaperService.ACTION_UPDATE_WALLPAPER).apply {
-                        setPackage(context.packageName)
-                    }
-                    context.sendBroadcast(updateIntent)
-
-                    result.success(true)
-                } catch (e: Exception) {
-                    result.error("SETTINGS_ERROR", e.message, null)
-                }
-            }
-
-            "isWallpaperSupported" -> {
-                val wm = WallpaperManager.getInstance(context)
-                val supported = wm.isWallpaperSupported
-                result.success(supported)
             }
 
             else -> result.notImplemented()
