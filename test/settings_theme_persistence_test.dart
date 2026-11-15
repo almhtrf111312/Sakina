@@ -44,6 +44,11 @@ void main() {
     final custom = 'custom|نغمتي|content%3A%2F%2Fmedia%2Ftest';
     await notifier.update((s) => s.copyWith(
         selectedFajrSound: 'adhan_4', selectedAdhanSound: custom));
+    expect(notifier.debugState.selectedAdhanSound, custom);
+    expect(jsonDecode(prefs.getString('app_settings_v1')!)['selectedAdhanSound'], custom);
+    expect(AppSettings.fromJson(
+        jsonDecode(prefs.getString('app_settings_v1')!) as Map<String, dynamic>)
+        .selectedAdhanSound, custom);
     final restored = SettingsNotifier(prefs);
     expect(restored.debugState.selectedFajrSound, 'adhan_4');
     expect(restored.debugState.selectedAdhanSound, custom);
