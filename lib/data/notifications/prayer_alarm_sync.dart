@@ -103,6 +103,12 @@ final prayerAlarmSyncProvider = FutureProvider<void>((ref) async {
     final location = ref.watch(locationProvider);
     const five = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
     final items = <Map<String, dynamic>>[];
+    // Before today's Fajr the previous prayer is yesterday's Isha. Without it
+    // the native progress bar used an arbitrary five-hour fallback and stayed
+    // empty through much of the night.
+    final previous = ref.read(prayerRepositoryProvider).previousDay();
+    final isha = previous.times['Isha'];
+    if (isha != null) items.add({'n': 'Isha', 'ts': isha.millisecondsSinceEpoch});
     final cutoff = DateTime.now().toUtc().subtract(const Duration(hours: 30));
     for (final day in schedule.take(4)) {
       for (final k in five) {

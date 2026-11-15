@@ -82,8 +82,15 @@ class AodActivity : Activity() {
         setupWindow()
         buildUi()
         detector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onDown(e: MotionEvent): Boolean = true
+
+            override fun onDoubleTap(e: MotionEvent): Boolean {
+                dismiss()
+                return true
+            }
+
             override fun onFling(e1: MotionEvent?, e2: MotionEvent, vx: Float, vy: Float): Boolean {
-                if ((e1?.y ?: 0f) - e2.y > 200 && abs(vy) > 500) { openApp(); return true }
+                if ((e1?.y ?: 0f) - e2.y > 200 && abs(vy) > 500) { dismiss(); return true }
                 return false
             }
         })
@@ -207,6 +214,12 @@ class AodActivity : Activity() {
         tvHijri.visibility = if (cfg.dateMode == "hijri" || cfg.dateMode == "both") View.VISIBLE else View.GONE
         // keep colours used by rows
         rowPrayers.tag = Pair(main, faint)
+        val exit = label(16f, soft).apply {
+            text = "إظهار شاشة القفل"
+            setPadding(0, (12 * d).toInt(), 0, (12 * d).toInt())
+            setOnClickListener { dismiss() }
+        }
+        block.addView(exit, lp(14))
         setContentView(root)
     }
 
@@ -361,10 +374,11 @@ class AodActivity : Activity() {
         dismiss()
     }
 
-    @SuppressLint("ClickableViewAccessibility")
-    override fun onTouchEvent(event: MotionEvent?): Boolean {
-        event?.let { detector.onTouchEvent(it) }
-        return super.onTouchEvent(event)
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        // Observe the entire screen, including text and prayer rows; child
+        // views must not swallow the double tap needed to reach the keyguard.
+        val handled = ::detector.isInitialized && detector.onTouchEvent(event)
+        return super.dispatchTouchEvent(event) || handled
     }
 
     // ── Hijri (tabular Kuwaiti algorithm) ──────────────────────────────────
