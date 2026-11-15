@@ -1,6 +1,7 @@
 package com.sakina.app.aod
 
 import android.app.Notification
+import android.app.KeyguardManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -101,6 +102,12 @@ class AlwaysOnService : Service() {
                         handler.postDelayed({ showAod() }, 350)
                     }
                 }
+                Intent.ACTION_SCREEN_ON -> {
+                    val cfg = AlwaysOnConfig.load(context)
+                    val locked = (getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked
+                    if (cfg.enabled && cfg.doubleTapWake && locked && !suppressed &&
+                        shouldShowNow(context, cfg)) handler.postDelayed({ showAod() }, 120)
+                }
                 Intent.ACTION_USER_PRESENT -> {
                     suppressed = false
                     sendBroadcast(Intent(AodActivity.ACTION_CLOSE_AOD).setPackage(packageName))
@@ -118,6 +125,7 @@ class AlwaysOnService : Service() {
         (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).apply { cancel(7101); cancel(FSI_ID) }
         val f = IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_OFF)
+            addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_USER_PRESENT)
             addAction(ACTION_SUPPRESS)
         }
@@ -147,6 +155,9 @@ class AlwaysOnService : Service() {
     }
 
     private fun showAod() {
+        val cfg = AlwaysOnConfig.load(this)
+        if (!cfg.enabled || suppressed || !shouldShowNow(this, cfg) ||
+            !(getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked) return
         val intent = Intent(this, AodActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or
                     Intent.FLAG_ACTIVITY_NO_ANIMATION)
@@ -174,7 +185,7 @@ class AlwaysOnService : Service() {
         )
         val n = NotificationCompat.Builder(this, FSI_CHANNEL)
             .setSmallIcon(R.drawable.ic_mosque)
-            .setContentTitle("سكينة")
+            .setContentTitle("المؤذن")
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setFullScreenIntent(pi, true)

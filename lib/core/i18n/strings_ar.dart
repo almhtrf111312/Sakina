@@ -2,7 +2,7 @@
 abstract final class StringsAr {
   static const Map<String, String> strings = {
     // ---- App & General ----
-    'appName': 'سكينة',
+    'appName': 'المؤذن',
     'ok': 'حسناً',
     'cancel': 'إلغاء',
     'save': 'حفظ',
@@ -47,7 +47,7 @@ abstract final class StringsAr {
     'locationNotFound': 'لم يتم العثور على الموقع',
     'enableLocation': 'تفعيل الموقع',
     'locationPermissionTitle': 'إذن الموقع',
-    'locationPermissionBody': 'تحتاج سكينة إلى الوصول إلى موقعك لحساب مواقيت الصلاة واتجاه القبلة.',
+    'locationPermissionBody': 'يحتاج المؤذن إلى موقعك لحساب مواقيت الصلاة واتجاه القبلة.',
     'calculating': 'جارٍ الحساب...',
     'prayedAlready': 'صليتُ',
 

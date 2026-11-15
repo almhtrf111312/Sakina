@@ -19,6 +19,7 @@ import 'features/azkar/azkar_screen.dart';
 import 'features/qibla/qibla_screen.dart';
 import 'features/tasbih/tasbih_screen.dart';
 import 'features/settings/settings_screen.dart';
+import 'features/onboarding/first_run_screen.dart';
 
 // ---------------------------------------------------------------------------
 // Providers
@@ -140,7 +141,12 @@ class SakinaApp extends ConsumerWidget {
       builder: (context, child) {
         final dark = Theme.of(context).brightness == Brightness.dark;
         final iconBrightness = dark ? Brightness.light : Brightness.dark;
-        return AnnotatedRegion<SystemUiOverlayStyle>(
+        final media = MediaQuery.of(context);
+        final systemScale = media.textScaler.scale(16) / 16;
+        return MediaQuery(
+          data: media.copyWith(textScaler: TextScaler.linear(
+              (systemScale * settings.fontSize).clamp(0.6, 2.5))),
+          child: AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,
             statusBarIconBrightness: iconBrightness,
@@ -160,9 +166,10 @@ class SakinaApp extends ConsumerWidget {
               child: child!,
             ),
           ),
+          ),
         );
       },
-      home: const SakinaShell(),
+      home: const FirstRunGate(child: SakinaShell()),
     );
   }
 }

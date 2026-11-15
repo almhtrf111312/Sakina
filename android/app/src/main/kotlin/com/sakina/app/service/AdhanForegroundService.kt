@@ -20,6 +20,8 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.PowerManager
+import android.database.ContentObserver
+import android.provider.Settings
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.sakina.app.R
@@ -80,6 +82,23 @@ class AdhanForegroundService : Service() {
     private var targetVolume = 1f
     private var isTest = false
     private var notifId     = NOTIFICATION_ID
+    private var alarmVolume = -1
+    private var musicVolume = -1
+    private var observingVolume = false
+    private val volumeObserver = object : ContentObserver(handler) {
+        override fun onChange(selfChange: Boolean) {
+            val audio = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+            val alarm = audio.getStreamVolume(AudioManager.STREAM_ALARM)
+            val music = audio.getStreamVolume(AudioManager.STREAM_MUSIC)
+            if ((alarmVolume >= 0 && alarm < alarmVolume) ||
+                (musicVolume >= 0 && music < musicVolume)) {
+                stopPlayback()
+            } else {
+                alarmVolume = alarm
+                musicVolume = music
+            }
+        }
+    }
 
     private val stopReceiver = object : BroadcastReceiver() {
         override fun onReceive(ctx: Context, intent: Intent) {
@@ -132,6 +151,15 @@ class AdhanForegroundService : Service() {
             startForeground(NOTIFICATION_ID, notif)
         }
         startPlayback()
+        if (playsSound) {
+            val audio = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+            alarmVolume = audio.getStreamVolume(AudioManager.STREAM_ALARM)
+            musicVolume = audio.getStreamVolume(AudioManager.STREAM_MUSIC)
+            if (!observingVolume) {
+                contentResolver.registerContentObserver(Settings.System.CONTENT_URI, true, volumeObserver)
+                observingVolume = true
+            }
+        }
         if (!playsSound) {
             // Silent / vibrate: leave a normal dismissible notification and stop.
             handler.postDelayed({
@@ -151,6 +179,7 @@ class AdhanForegroundService : Service() {
         super.onDestroy()
         stopPlayback()
         try { unregisterReceiver(stopReceiver) } catch (_: Exception) {}
+        if (observingVolume) contentResolver.unregisterContentObserver(volumeObserver)
         wakeLock?.release()
     }
 
@@ -289,7 +318,11 @@ class AdhanForegroundService : Service() {
                         .build()
                 )
                 .setAcceptsDelayedFocusGain(false)
-                .setOnAudioFocusChangeListener { }
+                .setOnAudioFocusChangeListener { change ->
+                    if (change == AudioManager.AUDIOFOCUS_LOSS ||
+                        change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT)
+                        handler.post { stopPlayback() }
+                }
                 .build()
             am.requestAudioFocus(audioFocusRequest!!)
         } else {
@@ -341,7 +374,7 @@ class AdhanForegroundService : Service() {
             .setColor(0xFF5FB59B.toInt())
 
         if (playing) {
-            b.addAction(0, "إيقاف", makeBroadcastPi(AdhanReceiver.ACTION_STOP_ADHAN, 1))
+            b.addAction(0, "كتم الآن", makeBroadcastPi(AdhanReceiver.ACTION_STOP_ADHAN, 1))
             b.addAction(0, "صليت", makeBroadcastPi(AdhanReceiver.ACTION_PRAYED, 2))
         }
         return b.build()
