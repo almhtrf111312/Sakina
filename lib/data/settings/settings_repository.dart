@@ -59,6 +59,7 @@ class AppSettings {
   final double tapVolume;
   final double tapHapticIntensity;
   final bool persistentNotification;
+  final double widgetOpacity;
 
   // ── Azkar ─────────────────────────────────────────────────────────────
   final double azkarFontSize;
@@ -125,6 +126,7 @@ class AppSettings {
     this.tapVolume = 0.35,
     this.tapHapticIntensity = 0.25,
     this.persistentNotification = true,
+    this.widgetOpacity = 0.88,
     this.azkarFontSize = 1.0,
     this.showTashkeel = true,
     this.showVirtueAndSource = true,
@@ -179,6 +181,7 @@ class AppSettings {
     double? tapVolume,
     double? tapHapticIntensity,
     bool? persistentNotification,
+    double? widgetOpacity,
     double? azkarFontSize,
     bool? showTashkeel,
     bool? showVirtueAndSource,
@@ -233,6 +236,7 @@ class AppSettings {
       tapVolume: tapVolume ?? this.tapVolume,
       tapHapticIntensity: tapHapticIntensity ?? this.tapHapticIntensity,
       persistentNotification: persistentNotification ?? this.persistentNotification,
+      widgetOpacity: widgetOpacity ?? this.widgetOpacity,
       azkarFontSize: azkarFontSize ?? this.azkarFontSize,
       showTashkeel: showTashkeel ?? this.showTashkeel,
       showVirtueAndSource: showVirtueAndSource ?? this.showVirtueAndSource,
@@ -292,6 +296,7 @@ class AppSettings {
         'tapVolume': tapVolume,
         'tapHapticIntensity': tapHapticIntensity,
         'persistentNotification': persistentNotification,
+        'widgetOpacity': widgetOpacity,
         'azkarFontSize': azkarFontSize,
         'showTashkeel': showTashkeel,
         'showVirtueAndSource': showVirtueAndSource,
@@ -365,6 +370,7 @@ class AppSettings {
       tapVolume: ((j['tapVolume'] as num?)?.toDouble() ?? 0.35).clamp(0.0, 1.0),
       tapHapticIntensity: ((j['tapHapticIntensity'] as num?)?.toDouble() ?? 0.25).clamp(0.0, 1.0),
       persistentNotification: (j['persistentNotification'] as bool?) ?? true,
+      widgetOpacity: ((j['widgetOpacity'] as num?)?.toDouble() ?? 0.88).clamp(0.0, 1.0),
       azkarFontSize: (j['azkarFontSize'] as num?)?.toDouble() ?? 1.0,
       showTashkeel: (j['showTashkeel'] as bool?) ?? true,
       showVirtueAndSource: (j['showVirtueAndSource'] as bool?) ?? true,
@@ -437,9 +443,11 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> update(AppSettings Function(AppSettings) updater) async {
     final previousTimeFormat = state.use24HourTime;
+    final previousAppearance = (state.themeMode, state.accentColor, state.widgetOpacity);
     state = updater(state);
     await _save();
-    if (previousTimeFormat != state.use24HourTime) {
+    if (previousTimeFormat != state.use24HourTime ||
+        previousAppearance != (state.themeMode, state.accentColor, state.widgetOpacity)) {
       await AlarmBridge.refreshTimeDisplays();
     }
   }

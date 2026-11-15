@@ -8,15 +8,13 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.graphics.BitmapFactory
 import android.os.Build
+import android.os.SystemClock
+import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.sakina.app.MainActivity
 import com.sakina.app.R
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 /**
  * Once-a-minute refresher for the home-screen widgets and the persistent
@@ -25,6 +23,20 @@ import java.util.Locale
 class SakinaTick : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent?) {
+        if (intent?.action == ACTION_DISMISSED) {
+            if (WidgetData.load(context)?.notificationEnabled == true) {
+                val alarm = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+                val retry = PendingIntent.getBroadcast(context, REQ_RESTORE,
+                    Intent(context, SakinaTick::class.java).setAction(ACTION_RESTORE),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+                try {
+                    alarm.set(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + 3000, retry)
+                } catch (_: Exception) {
+                    // The regular minute refresh still restores the notification.
+                }
+            }
+            return
+        }
         refresh(context)
     }
 
@@ -32,9 +44,13 @@ class SakinaTick : BroadcastReceiver() {
         const val CHANNEL = "sakina_next_prayer"
         const val NOTIF_ID = 7001
         private const val REQ = 7002
+        private const val REQ_RESTORE = 7003
+        private const val ACTION_DISMISSED = "com.sakina.app.PRAYER_NOTIFICATION_DISMISSED"
+        private const val ACTION_RESTORE = "com.sakina.app.PRAYER_NOTIFICATION_RESTORE"
 
         private val widgets get() = listOf(
-            WidgetSmall(), WidgetClock(), WidgetProgress(), WidgetList(), WidgetStrip(), WidgetLarge()
+            WidgetSmall(), WidgetClock(), WidgetProgress(), WidgetList(), WidgetStrip(),
+            WidgetLarge(), WidgetCircle(), WidgetBanner()
         )
 
         fun refresh(context: Context) {
@@ -49,7 +65,7 @@ class SakinaTick : BroadcastReceiver() {
                 }
             }
 
-            if (data != null && (data.notificationEnabled || com.sakina.app.aod.AlwaysOnService.running) && data.next != null) {
+            if (data?.notificationEnabled == true && data.next != null) {
                 postNotification(app, data)
                 needTick = true
             } else {
@@ -88,7 +104,7 @@ class SakinaTick : BroadcastReceiver() {
 
         fun foregroundNotification(context: Context): Notification {
             val d = WidgetData.load(context)
-            if (d?.next != null) return buildNotification(context, d)
+            if (d?.notificationEnabled == true && d.next != null) return buildNotification(context, d)
             ensureChannel(context)
             return NotificationCompat.Builder(context, CHANNEL)
                 .setSmallIcon(R.drawable.ic_mosque)
@@ -135,21 +151,43 @@ class SakinaTick : BroadcastReceiver() {
 
             val title = "الصلاة القادمة: ${n.nameAr} — $timeStr"
             val text = "المتبقي: $remain"
+            val colors = WidgetAppearance.load(context)
+            val isSystemDark = (context.resources.configuration.uiMode and
+                android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                android.content.res.Configuration.UI_MODE_NIGHT_YES
+            val foreground = if (isSystemDark) 0xFFFFFFFF.toInt() else 0xFF17211D.toInt()
+            val highlight = if (!isSystemDark && colors.accent == 0xFFE8EFEC.toInt())
+                0xFF3B4A46.toInt() else colors.accent
+
+            fun content(layout: Int): RemoteViews = RemoteViews(context.packageName, layout).apply {
+                setTextViewText(R.id.notification_prayer, n.nameAr)
+                setTextViewText(R.id.notification_time, timeStr)
+                setTextViewText(R.id.notification_remaining, text)
+                setTextColor(R.id.notification_prayer, highlight)
+                setTextColor(R.id.notification_time, foreground)
+                setTextColor(R.id.notification_remaining, foreground)
+                setImageViewBitmap(R.id.notification_bar, WidgetArtwork.bar(
+                    (context.resources.displayMetrics.widthPixels * 0.75).toInt(), d.progress, colors))
+            }
+            val dismissed = PendingIntent.getBroadcast(context, REQ_RESTORE,
+                Intent(context, SakinaTick::class.java).setAction(ACTION_DISMISSED),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
             return NotificationCompat.Builder(context, CHANNEL)
                 .setSmallIcon(R.drawable.ic_mosque)
-                .setLargeIcon(BitmapFactory.decodeResource(context.resources, R.mipmap.ic_launcher))
                 .setContentTitle(title)
                 .setContentText(text)
-                .setStyle(NotificationCompat.BigTextStyle().bigText(text).setBigContentTitle(title))
-                .setProgress(100, d.progress, false)
+                .setCustomContentView(content(R.layout.notification_next_prayer_compact))
+                .setCustomBigContentView(content(R.layout.notification_next_prayer_expanded))
+                .setStyle(NotificationCompat.DecoratedCustomViewStyle())
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
                 .setShowWhen(false)
                 .setSilent(true)
                 .setCategory(NotificationCompat.CATEGORY_STATUS)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setColor(0xFF5FB59B.toInt())
+                .setColor(highlight)
+                .setDeleteIntent(dismissed)
                 .setContentIntent(open)
                 .build()
         }
