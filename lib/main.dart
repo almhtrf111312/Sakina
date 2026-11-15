@@ -16,6 +16,7 @@ import 'data/prayer/prayer_repository.dart';
 import 'data/settings/settings_repository.dart';
 import 'features/home/home_screen.dart';
 import 'features/azkar/azkar_screen.dart';
+import 'features/mushaf/mushaf_screen.dart';
 import 'features/qibla/qibla_screen.dart';
 import 'features/tasbih/tasbih_screen.dart';
 import 'features/settings/settings_screen.dart';
@@ -160,7 +161,7 @@ class SakinaApp extends ConsumerWidget {
             volume: settings.tapVolume,
             intensity: settings.tapHapticIntensity,
             // The tasbih counter emits its own cue, including a distinct goal cue.
-            skipCounter: () => ref.read(currentTabProvider) == 3,
+            skipCounter: () => ref.read(currentTabProvider) == 4,
             child: Directionality(
               textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
               child: child!,
@@ -243,10 +244,12 @@ class _SakinaShellState extends ConsumerState<SakinaShell>
       case 1:
         return const AzkarScreen(key: ValueKey('tab-azkar'));
       case 2:
-        return const QiblaScreen(key: ValueKey('tab-qibla'));
+        return const MushafScreen(key: ValueKey('tab-mushaf'));
       case 3:
-        return const TasbihScreen(key: ValueKey('tab-tasbih'));
+        return const QiblaScreen(key: ValueKey('tab-qibla'));
       case 4:
+        return const TasbihScreen(key: ValueKey('tab-tasbih'));
+      case 5:
         return const SettingsScreen(key: ValueKey('tab-settings'));
       default:
         return const HomeScreen(key: ValueKey('tab-home'));
@@ -300,22 +303,28 @@ class _SakinaShellState extends ConsumerState<SakinaShell>
                   onTap: () => _onTabTapped(1),
                 ),
                 _NavItem(
-                  icon: Icons.explore_rounded,
-                  label: l10n.qibla,
+                  icon: Icons.menu_book_rounded,
+                  label: 'المصحف',
                   isSelected: currentTab == 2,
                   onTap: () => _onTabTapped(2),
                 ),
                 _NavItem(
-                  icon: Icons.radio_button_checked_rounded,
-                  label: l10n.tasbih,
+                  icon: Icons.explore_rounded,
+                  label: l10n.qibla,
                   isSelected: currentTab == 3,
                   onTap: () => _onTabTapped(3),
                 ),
                 _NavItem(
-                  icon: Icons.settings_rounded,
-                  label: l10n.settings,
+                  icon: Icons.radio_button_checked_rounded,
+                  label: l10n.tasbih,
                   isSelected: currentTab == 4,
                   onTap: () => _onTabTapped(4),
+                ),
+                _NavItem(
+                  icon: Icons.settings_rounded,
+                  label: l10n.settings,
+                  isSelected: currentTab == 5,
+                  onTap: () => _onTabTapped(5),
                 ),
               ],
             ),
@@ -350,11 +359,10 @@ class _NavItem extends StatelessWidget {
         ? theme.colorScheme.primary
         : theme.colorScheme.onSurface.withOpacity(0.5);
 
-    return GestureDetector(
+    return Expanded(child: GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
-        width: 64,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -385,6 +393,6 @@ class _NavItem extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ));
   }
 }
