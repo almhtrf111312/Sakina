@@ -122,7 +122,7 @@ class PrayerRepository {
     final result = <DayPrayerTimes>[];
 
     for (int i = 0; i < 61; i++) {
-      final date = today.add(Duration(days: i));
+      final date = DateTime(today.year, today.month, today.day + i);
       final times = calc.calculate(date);
       result.add(DayPrayerTimes(date: date, times: times));
     }

@@ -56,6 +56,35 @@ class MainActivity : FlutterActivity() {
             }
         })
 
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
+            "com.sakina.app/device_time").setMethodCallHandler { call, result ->
+            when (call.method) {
+                "status" -> {
+                    val autoTime = android.provider.Settings.Global.getInt(contentResolver,
+                        android.provider.Settings.Global.AUTO_TIME, 0) == 1
+                    val autoZone = android.provider.Settings.Global.getInt(contentResolver,
+                        android.provider.Settings.Global.AUTO_TIME_ZONE, 0) == 1
+                    val clockMismatch = if (Build.VERSION.SDK_INT >= 33) {
+                        try {
+                            kotlin.math.abs(android.os.SystemClock.currentNetworkTimeClock().millis() -
+                                System.currentTimeMillis()) > 120_000L
+                        } catch (_: java.time.DateTimeException) {
+                            false
+                        }
+                    } else false
+                    result.success(mapOf("autoTime" to autoTime, "autoZone" to autoZone,
+                        "clockMismatch" to clockMismatch))
+                }
+                "openSettings" -> try {
+                    startActivity(Intent(android.provider.Settings.ACTION_DATE_SETTINGS))
+                    result.success(null)
+                } catch (e: android.content.ActivityNotFoundException) {
+                    result.error("NO_DATE_SETTINGS", e.message, null)
+                }
+                else -> result.notImplemented()
+            }
+        }
+
         // Register native bridge plugins with Flutter engine
         flutterEngine.plugins.add(AlarmBridgePlugin())
         flutterEngine.plugins.add(AodBridgePlugin())

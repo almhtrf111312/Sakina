@@ -82,7 +82,7 @@ class AppearanceSettingsPage extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(children: [
                   Expanded(child: ChoiceChip(
-                    label: const Center(child: Text('12 ساعة · صباحاً/مساءً', style: TextStyle(fontFamily: 'Cairo', fontSize: 12))),
+                    label: const Center(child: Text('12 ساعة · ص / م', style: TextStyle(fontFamily: 'Cairo', fontSize: 12))),
                     selected: !settings.use24HourTime,
                     onSelected: (_) => notifier.update((s) => s.copyWith(use24HourTime: false)),
                   )),

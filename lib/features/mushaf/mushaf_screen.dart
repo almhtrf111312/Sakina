@@ -53,7 +53,7 @@ class _MushafScreenState extends ConsumerState<MushafScreen> {
   late final PageController _controller;
   late final Future<Map<String, dynamic>> _data;
   int _page = 1;
-  int _bookmark = 1;
+  List<int> _bookmarks = [];
   double _fontSize = 23;
 
   @override
@@ -61,7 +61,12 @@ class _MushafScreenState extends ConsumerState<MushafScreen> {
     super.initState();
     final prefs = ref.read(sharedPreferencesProvider);
     _page = (prefs.getInt('mushaf_last_page') ?? 1).clamp(1, 604);
-    _bookmark = (prefs.getInt('mushaf_bookmark') ?? 1).clamp(1, 604);
+    final stored = prefs.getStringList('mushaf_bookmarks');
+    final legacy = prefs.getInt('mushaf_bookmark');
+    _bookmarks = stored == null
+        ? [if (legacy != null) legacy.clamp(1, 604)]
+        : stored.map(int.tryParse).whereType<int>()
+            .where((page) => page >= 1 && page <= 604).toSet().toList();
     _fontSize = (prefs.getDouble('mushaf_font_size') ?? 23).clamp(17, 34);
     _controller = PageController(initialPage: _page - 1, keepPage: false);
     _data = ref.read(mushafDataProvider.future);
@@ -122,23 +127,74 @@ class _MushafScreenState extends ConsumerState<MushafScreen> {
   }
 
   Future<void> _choosePage() async {
-    final controller = TextEditingController(text: '$_page');
-    final value = await showDialog<int>(context: context, builder: (ctx) => AlertDialog(
-      title: const Text('اذهب إلى الصفحة'),
-      content: TextField(
-        controller: controller,
-        autofocus: true,
-        keyboardType: TextInputType.number,
-        decoration: const InputDecoration(labelText: 'من ١ إلى ٦٠٤'),
-        onSubmitted: (_) => Navigator.pop(ctx, int.tryParse(controller.text)),
+    final value = await showDialog<int>(
+      context: context,
+      builder: (context) => _PagePicker(page: _page),
+    );
+    if (mounted && value != null) _goTo(value);
+  }
+
+  void _resizeText(double delta) {
+    setState(() => _fontSize = (_fontSize + delta).clamp(17, 34));
+    ref.read(sharedPreferencesProvider).setDouble('mushaf_font_size', _fontSize);
+  }
+
+  Future<void> _showBookmarks() async {
+    final current = _page;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheet) => SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(sheet).height * .72),
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            children: [
+              Text('علامات القراءة', style: Theme.of(sheet).textTheme.titleLarge),
+              Text('الصفحة الحالية ${_digits(current)}'),
+              const SizedBox(height: 12),
+              if (_bookmarks.isEmpty) const ListTile(title: Text('لا توجد علامات محفوظة')),
+              for (final page in _bookmarks)
+                ListTile(
+                  leading: const Icon(Icons.bookmark_outline),
+                  title: Text('الصفحة ${_digits(page)}'),
+                  onTap: () { Navigator.pop(sheet); _goTo(page); },
+                  trailing: page == current ? null : TextButton(
+                    onPressed: () {
+                      Navigator.pop(sheet);
+                      _saveBookmarks([
+                        for (final saved in _bookmarks) if (saved != page) saved,
+                        if (!_bookmarks.contains(current)) current,
+                      ]);
+                    },
+                    child: const Text('استبدال'),
+                  ),
+                ),
+              FilledButton.icon(
+                onPressed: _bookmarks.contains(current) ? null : () {
+                  Navigator.pop(sheet);
+                  _saveBookmarks([..._bookmarks, current]);
+                },
+                icon: const Icon(Icons.bookmark_add_outlined),
+                label: Text(_bookmarks.isEmpty ? 'حفظ الصفحة' : 'إضافة علامة'),
+              ),
+            ],
+          ),
+        ),
       ),
-      actions: [TextButton(onPressed: () => Navigator.pop(ctx),
-          child: const Text('إلغاء')),
-        FilledButton(onPressed: () => Navigator.pop(ctx, int.tryParse(controller.text)),
-          child: const Text('انتقال'))],
+    );
+  }
+
+  Future<void> _saveBookmarks(List<int> pages) async {
+    final ok = await ref.read(sharedPreferencesProvider)
+        .setStringList('mushaf_bookmarks', pages.map((page) => '$page').toList());
+    if (!mounted) return;
+    if (ok) setState(() => _bookmarks = pages);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(ok ? 'تم حفظ العلامة' : 'تعذر حفظ العلامة'),
     ));
-    controller.dispose();
-    if (value != null && value >= 1 && value <= 604) _goTo(value);
   }
 
   Widget _pageView(int number, List<dynamic> verses, List<dynamic> surahs) {
@@ -219,15 +275,12 @@ class _MushafScreenState extends ConsumerState<MushafScreen> {
                 color: accent.withOpacity(.35))),
             child: SingleChildScrollView(
               key: PageStorageKey('mushaf-$number'),
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
               child: Column(children: [
                 Text(heading, style: TextStyle(color: accent, fontSize: 14,
                     fontWeight: FontWeight.bold)),
                 const SizedBox(height: 6),
                 ...sections,
-                const SizedBox(height: 18),
-                Text(_digits(number), style: TextStyle(color: accent,
-                    fontSize: 17, fontWeight: FontWeight.bold)),
               ]),
             ),
           ),
@@ -238,7 +291,6 @@ class _MushafScreenState extends ConsumerState<MushafScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme.primary;
     return FutureBuilder<Map<String, dynamic>>(
       future: _data,
       builder: (context, snapshot) {
@@ -247,63 +299,97 @@ class _MushafScreenState extends ConsumerState<MushafScreen> {
         final pages = data?['pages'] as List<dynamic>?;
         return Scaffold(
           appBar: AppBar(
-            title: const Text('المصحف الشريف'),
-            actions: [
-              IconButton(tooltip: 'الفهرس', icon: const Icon(Icons.list_alt_rounded),
-                onPressed: surahs == null ? null : () => _showIndex(surahs)),
-              IconButton(tooltip: 'الصفحة', icon: const Icon(Icons.menu_book_rounded),
-                onPressed: pages == null ? null : _choosePage),
-              IconButton(tooltip: 'حفظ علامة', icon: Icon(Icons.bookmark_add_outlined,
-                  color: color), onPressed: pages == null ? null : () async {
-                setState(() => _bookmark = _page);
-                await ref.read(sharedPreferencesProvider)
-                    .setInt('mushaf_bookmark', _bookmark);
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text('تم حفظ علامة الصفحة ${_digits(_bookmark)}'),
-                ));
-              }),
-            ],
+            automaticallyImplyLeading: false,
+            titleSpacing: 4,
+            title: Row(
+              children: [
+                Expanded(child: TextButton(
+                  onPressed: pages == null ? null : _choosePage,
+                  child: FittedBox(fit: BoxFit.scaleDown,
+                    child: Text('${_digits(_page)} / ٦٠٤')),
+                )),
+                IconButton(tooltip: 'الفهرس', icon: const Icon(Icons.list_alt_rounded),
+                  onPressed: surahs == null ? null : () => _showIndex(surahs)),
+                IconButton(tooltip: 'علامات القراءة', icon: const Icon(Icons.bookmark_add_outlined),
+                  onPressed: pages == null ? null : _showBookmarks),
+                IconButton(tooltip: 'تكبير الخط', icon: const Icon(Icons.text_increase),
+                  onPressed: pages == null || _fontSize >= 34 ? null : () => _resizeText(1)),
+                IconButton(tooltip: 'تصغير الخط', icon: const Icon(Icons.text_decrease),
+                  onPressed: pages == null || _fontSize <= 17 ? null : () => _resizeText(-1)),
+              ],
+            ),
           ),
           body: pages == null || surahs == null
               ? Center(child: snapshot.hasError
                   ? const Text('تعذر فتح المصحف المحلي')
                   : const CircularProgressIndicator())
-              : Column(children: [
-                  Expanded(child: PageView.builder(
-                    controller: _controller,
-                    itemCount: 604,
-                    onPageChanged: (index) => _rememberPage(index + 1),
-                    itemBuilder: (_, index) => _pageView(
-                      index + 1, pages[index] as List<dynamic>, surahs),
-                  )),
-                  SafeArea(top: false, child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Row(children: [
-                      IconButton(tooltip: 'تصغير الخط',
-                        onPressed: _fontSize <= 17 ? null : () {
-                          setState(() => _fontSize -= 1);
-                          ref.read(sharedPreferencesProvider)
-                              .setDouble('mushaf_font_size', _fontSize);
-                        }, icon: const Icon(Icons.text_decrease)),
-                      IconButton(tooltip: 'تكبير الخط',
-                        onPressed: _fontSize >= 34 ? null : () {
-                          setState(() => _fontSize += 1);
-                          ref.read(sharedPreferencesProvider)
-                              .setDouble('mushaf_font_size', _fontSize);
-                        }, icon: const Icon(Icons.text_increase)),
-                      const Spacer(),
-                      TextButton(onPressed: () => _goTo(_bookmark),
-                        child: Text('العلامة ${_digits(_bookmark)}')),
-                      Text('صفحة ${_digits(_page)} / ٦٠٤'),
-                      IconButton(tooltip: 'الصفحة التالية',
-                        onPressed: _page == 604 ? null : () => _goTo(_page + 1),
-                        icon: const Icon(Icons.chevron_left)),
-                    ]),
-                  )),
-                ]),
+              : PageView.builder(
+                  controller: _controller,
+                  itemCount: 604,
+                  onPageChanged: (index) => _rememberPage(index + 1),
+                  itemBuilder: (_, index) =>
+                      _pageView(index + 1, pages[index] as List<dynamic>, surahs),
+                ),
         );
       },
     );
+  }
+}
+
+class _PagePicker extends StatefulWidget {
+  const _PagePicker({required this.page});
+  final int page;
+
+  @override
+  State<_PagePicker> createState() => _PagePickerState();
+}
+
+class _PagePickerState extends State<_PagePicker> {
+  final _form = GlobalKey<FormState>();
+
+  int? _pageNumber(String? input) {
+    final normalized = (input ?? '').trim().replaceAllMapped(
+      RegExp('[٠-٩۰-۹]'),
+      (match) {
+        final code = match[0]!.codeUnitAt(0);
+        return (code - (code >= 0x06F0 ? 0x06F0 : 0x0660)).toString();
+      },
+    );
+    final page = int.tryParse(normalized);
+    return page != null && page >= 1 && page <= 604 ? page : null;
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    icon: const Icon(Icons.menu_book_outlined),
+    title: const Text('انتقال إلى صفحة'),
+    content: Form(
+      key: _form,
+      child: TextFormField(
+        initialValue: '${widget.page}',
+        autofocus: true,
+        textAlign: TextAlign.center,
+        textDirection: TextDirection.ltr,
+        style: Theme.of(context).textTheme.headlineMedium,
+        keyboardType: TextInputType.number,
+        textInputAction: TextInputAction.go,
+        decoration: const InputDecoration(
+          labelText: 'رقم الصفحة',
+          helperText: 'من ١ إلى ٦٠٤',
+          border: OutlineInputBorder(),
+        ),
+        validator: (input) => _pageNumber(input) == null ? 'أدخل رقماً بين ١ و٦٠٤' : null,
+        onSaved: (input) => Navigator.pop(context, _pageNumber(input)),
+        onFieldSubmitted: (_) => _submit(),
+      ),
+    ),
+    actions: [
+      TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+      FilledButton(onPressed: _submit, child: const Text('انتقال')),
+    ],
+  );
+
+  void _submit() {
+    if (_form.currentState!.validate()) _form.currentState!.save();
   }
 }

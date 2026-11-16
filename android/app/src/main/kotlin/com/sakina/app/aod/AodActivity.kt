@@ -1,6 +1,5 @@
 package com.sakina.app.aod
 
-import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.KeyguardManager
@@ -31,7 +30,6 @@ import com.sakina.app.widget.WidgetData
 import java.util.Calendar
 import java.util.Locale
 import kotlin.math.abs
-import kotlin.random.Random
 
 /**
  * Always-on screen: black background, dim text, large clock/date/next prayer,
@@ -46,7 +44,7 @@ class AodActivity : Activity() {
         const val EXTRA_ALWAYS_ON = "always_on"
         const val EXTRA_PREVIEW = "preview"
         const val ACTION_CLOSE_AOD = "com.sakina.app.ACTION_CLOSE_AOD"
-        private const val DRIFT_MS = 20_000L
+        private const val DRIFT_MS = 60_000L
     }
 
     private val handler = Handler(Looper.getMainLooper())
@@ -97,8 +95,6 @@ class AodActivity : Activity() {
         val f = IntentFilter(ACTION_CLOSE_AOD)
         if (Build.VERSION.SDK_INT >= 33) registerReceiver(receiver, f, Context.RECEIVER_NOT_EXPORTED)
         else registerReceiver(receiver, f)
-        tick.run()
-        handler.postDelayed(drift, 4000)
         val timeout = if (preview) 60_000L else cfg.timeoutMin * 60_000L
         if (timeout > 0) handler.postDelayed({ timeoutClose() }, timeout)
     }
@@ -106,6 +102,19 @@ class AodActivity : Activity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        cachedMinute = -1
+        tick.run()
+        handler.post(drift)
+    }
+
+    override fun onStop() {
+        handler.removeCallbacks(tick)
+        handler.removeCallbacks(drift)
+        super.onStop()
     }
 
     override fun onResume() {
@@ -136,7 +145,7 @@ class AodActivity : Activity() {
         }
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         val lp = window.attributes
-        lp.screenBrightness = cfg.brightness.coerceIn(0.01f, 0.5f)
+        lp.screenBrightness = (cfg.brightness * 0.5f).coerceIn(0.001f, 0.12f)
         window.attributes = lp
         window.decorView.systemUiVisibility = (
             View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
@@ -147,7 +156,7 @@ class AodActivity : Activity() {
     // ── UI ─────────────────────────────────────────────────────────────────
 
     private fun dimmed(c: Int, a: Float): Int =
-        Color.argb((255 * a).toInt(), Color.red(c), Color.green(c), Color.blue(c))
+        Color.argb((255 * a * (cfg.brightness / 0.10f).coerceIn(0.20f, 1f)).toInt(), Color.red(c), Color.green(c), Color.blue(c))
 
     private fun label(size: Float, color: Int, bold: Boolean = false): TextView =
         TextView(this).apply {
@@ -261,7 +270,7 @@ class AodActivity : Activity() {
     private val tick = object : Runnable {
         override fun run() {
             update()
-            handler.postDelayed(this, 1000)
+            handler.postDelayed(this, 60_000L - System.currentTimeMillis() % 60_000L)
         }
     }
 
@@ -276,7 +285,7 @@ class AodActivity : Activity() {
         if (cfg.use24HourTime) return num(String.format(Locale.US, "%02d:%02d", h, minute))
         val h12 = if (h % 12 == 0) 12 else h % 12
         return num(String.format(Locale.US, "%02d:%02d", h12, minute)) +
-            if (h < 12) " صباحاً" else " مساءً"
+            if (h < 12) " ص" else " م"
     }
 
     private val monthsAr = arrayOf("يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
@@ -289,9 +298,9 @@ class AodActivity : Activity() {
         val now = Calendar.getInstance()
         tvTime.text = formattedTime(now)
         analogClock?.invalidate()
-        tvDate.text = num("${daysAr[now.get(Calendar.DAY_OF_WEEK) - 1]} ${now.get(Calendar.DAY_OF_MONTH)} " +
+        if (tvDate.visibility == View.VISIBLE) tvDate.text = num("${daysAr[now.get(Calendar.DAY_OF_WEEK) - 1]} ${now.get(Calendar.DAY_OF_MONTH)} " +
             "${monthsAr[now.get(Calendar.MONTH)]} ${now.get(Calendar.YEAR)}")
-        tvHijri.text = hijri(now)
+        if (tvHijri.visibility == View.VISIBLE) tvHijri.text = hijri(now)
 
         val minute = System.currentTimeMillis() / 60_000L
         if (minute != cachedMinute) {
@@ -306,9 +315,9 @@ class AodActivity : Activity() {
         }
         tvName.text = "الصلاة القادمة: " + next.nameAr
         tvPrayerTime.text = hm(next.ts)
-        val sec = ((next.ts - System.currentTimeMillis()) / 1000).coerceAtLeast(0)
-        tvCountdown.text = num(String.format(Locale.US, "المتبقي %d:%02d:%02d",
-            sec / 3600, (sec % 3600) / 60, sec % 60))
+        val minutes = ((next.ts - System.currentTimeMillis() + 59_999L) / 60_000L).coerceAtLeast(0)
+        tvCountdown.text = num(String.format(Locale.US, "المتبقي %d س %02d د",
+            minutes / 60, minutes % 60))
 
         if (cfg.showPrayers) fillRow(data.todayFive(), next)
     }
@@ -339,15 +348,16 @@ class AodActivity : Activity() {
 
     // ── burn-in protection: the whole block keeps wandering ────────────────
 
+    private var driftIndex = 0
     private val drift = object : Runnable {
+        private val offsets = arrayOf(0 to 0, 8 to 10, -8 to 10, -8 to -10, 8 to -10)
         override fun run() {
-            val d = resources.displayMetrics.density
-            val maxX = 26 * d
-            val maxY = 60 * d
-            val x = Random.nextFloat() * 2 * maxX - maxX
-            val y = Random.nextFloat() * 2 * maxY - maxY
-            ObjectAnimator.ofFloat(block, "translationX", x).apply { duration = 4000; start() }
-            ObjectAnimator.ofFloat(block, "translationY", y).apply { duration = 4000; start() }
+            val (x, y) = offsets[driftIndex]
+            val density = resources.displayMetrics.density
+            val verticalRoom = ((root.height - block.height) / 2f).coerceAtLeast(0f)
+            block.translationX = x * density
+            block.translationY = (y * density).coerceIn(-verticalRoom, verticalRoom)
+            driftIndex = (driftIndex + 1) % offsets.size
             handler.postDelayed(this, DRIFT_MS)
         }
     }

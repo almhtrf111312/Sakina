@@ -155,6 +155,7 @@ class AlarmBridge {
       final map = Map<String, dynamic>.from(event as Map);
       return AlarmEvent(
         type: map['type'] as String,
+        trigger: map['trigger'] as String?,
         prayerName: map['prayerName'] as String?,
         message: map['message'] as String?,
       );
@@ -263,11 +264,13 @@ class AlarmBridgeException implements Exception {
 class AlarmEvent {
   final String type;
   final String? prayerName;
+  final String? trigger;
   final String? message;
 
   const AlarmEvent({
     required this.type,
     this.prayerName,
+    this.trigger,
     this.message,
   });
 }

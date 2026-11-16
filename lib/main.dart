@@ -16,6 +16,7 @@ import 'core/utils/alarm_bridge.dart';
 import 'data/prayer/prayer_repository.dart';
 import 'data/settings/settings_repository.dart';
 import 'features/home/home_screen.dart';
+import 'features/home/providers/home_providers.dart';
 import 'features/azkar/azkar_screen.dart';
 import 'features/azkar/azkar_list_screen.dart';
 import 'domain/models/azkar_model.dart';
@@ -241,13 +242,76 @@ class SakinaShell extends ConsumerStatefulWidget {
 }
 
 class _SakinaShellState extends ConsumerState<SakinaShell>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
+  static const _deviceTime = MethodChannel('com.sakina.app/device_time');
   StreamSubscription<dynamic>? _azkarReminders;
+  StreamSubscription<AlarmEvent>? _alarmEvents;
+  ({int year, int month, int day, Duration offset})? _localDay;
+  String? _timeNotice;
+
+  Future<void> _checkDeviceTime({bool changed = false}) async {
+    final now = DateTime.now();
+    final day = (year: now.year, month: now.month, day: now.day, offset: now.timeZoneOffset);
+    if (changed || (_localDay != null && day != _localDay)) {
+      ref.invalidate(prayerTimesProvider);
+      ref.invalidate(hijriDateStringProvider);
+      ref.invalidate(gregorianDateStringProvider);
+    }
+    _localDay = day;
+    try {
+      final status = await _deviceTime.invokeMapMethod<String, bool>('status');
+      if (!mounted || status == null) return;
+      final clock = status['autoTime'] == false || status['clockMismatch'] == true;
+      final zone = status['autoZone'] == false;
+      final offset = now.timeZoneOffset.inMinutes;
+      final hours = (offset.abs() ~/ 60).toString().padLeft(2, '0');
+      final minutes = (offset.abs() % 60).toString().padLeft(2, '0');
+      final gmt = 'GMT${offset < 0 ? '-' : '+'}$hours:$minutes';
+      final notice = switch ((clock, zone)) {
+        (true, true) => 'راجع التاريخ والوقت والمنطقة الزمنية ($gmt).',
+        (true, false) => 'راجع التاريخ والوقت، أو فعّل الضبط التلقائي.',
+        (false, true) => 'المنطقة الزمنية يدوية ($gmt). تأكد أنها صحيحة.',
+        _ => null,
+      };
+      if (_timeNotice != notice) setState(() => _timeNotice = notice);
+    } on PlatformException {
+      // The device settings may be unavailable on some Android variants.
+    } on MissingPluginException {
+      // Other platforms have no Android time bridge.
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _checkDeviceTime();
+  }
+
+  Future<void> _openDateSettings() async {
+    try {
+      await _deviceTime.invokeMethod<void>('openSettings');
+    } on PlatformException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('افتح التاريخ والوقت من إعدادات الهاتف.'),
+      ));
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     if (defaultTargetPlatform != TargetPlatform.android) return;
+    WidgetsBinding.instance.addObserver(this);
+    _checkDeviceTime();
+    _alarmEvents = AlarmBridge.alarmEvents.listen((event) {
+      if (event.trigger == 'android.intent.action.TIME_SET' ||
+          event.trigger == 'android.intent.action.TIMEZONE_CHANGED' ||
+          event.trigger == 'android.intent.action.DATE_CHANGED') {
+        _checkDeviceTime(changed: true);
+      }
+    }, onError: (Object error) {
+      debugPrint('Could not receive time changes: $error');
+    });
     _azkarReminders = const EventChannel('com.sakina.app/azkar_reminders')
         .receiveBroadcastStream().listen((event) {
       if (event != 'morning' && event != 'evening') return;
@@ -265,6 +329,8 @@ class _SakinaShellState extends ConsumerState<SakinaShell>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _alarmEvents?.cancel();
     _azkarReminders?.cancel();
     super.dispose();
   }
@@ -303,7 +369,18 @@ class _SakinaShellState extends ConsumerState<SakinaShell>
     final theme = Theme.of(context);
 
     return Scaffold(
-      body: _screenFor(currentTab),
+      body: currentTab == 0 && _timeNotice != null
+          ? Column(children: [
+              SafeArea(bottom: false, child: MaterialBanner(
+                content: Text(_timeNotice!),
+                actions: [
+                  TextButton(onPressed: _openDateSettings,
+                    child: const Text('إعدادات الوقت')),
+                ],
+              )),
+              Expanded(child: _screenFor(currentTab)),
+            ])
+          : _screenFor(currentTab),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
