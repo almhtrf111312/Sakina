@@ -19,13 +19,15 @@ class AzkarListScreen extends ConsumerWidget {
   final AzkarCategory category;
   final bool isFavoritesOnly;
 
+  String get _listId => isFavoritesOnly ? AzkarListNotifier.favoritesId : category.id;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     final title = isFavoritesOnly ? 'أذكاري المفضلة' : category.titleAr;
-    final state = ref.watch(azkarListProvider(category.id));
+    final state = ref.watch(azkarListProvider(_listId));
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -59,10 +61,7 @@ class AzkarListScreen extends ConsumerWidget {
             style: const TextStyle(fontFamily: AppConstants.fontCairo),
           ),
         ),
-        data: (rawAzkar) {
-          final azkar = isFavoritesOnly
-              ? rawAzkar.where((z) => z.isFavorite).toList()
-              : rawAzkar;
+        data: (azkar) {
 
           if (azkar.isEmpty) {
             return Center(
@@ -258,7 +257,7 @@ class AzkarListScreen extends ConsumerWidget {
                         ),
                         onPressed: () {
                           HapticFeedback.lightImpact();
-                          ref.read(azkarListProvider(category.id).notifier).toggleFav(zikr.id);
+                          ref.read(azkarListProvider(_listId).notifier).toggleFav(zikr.id);
                         },
                       ),
                       // Target count badge
@@ -328,7 +327,7 @@ class AzkarListScreen extends ConsumerWidget {
                   InkWell(
                     onTap: () {
                       HapticFeedback.selectionClick();
-                      ref.read(azkarListProvider(category.id).notifier).increment(zikr.id);
+                      ref.read(azkarListProvider(_listId).notifier).increment(zikr.id);
                     },
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
@@ -389,7 +388,7 @@ class AzkarListScreen extends ConsumerWidget {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              ref.read(azkarListProvider(category.id).notifier).resetAll();
+              ref.read(azkarListProvider(_listId).notifier).resetAll();
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             child: const Text('إعادة ضبط', style: TextStyle(fontFamily: AppConstants.fontCairo, color: Colors.white)),

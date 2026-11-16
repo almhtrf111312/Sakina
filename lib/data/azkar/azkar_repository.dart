@@ -190,6 +190,8 @@ final azkarRepositoryProvider = Provider<AzkarRepository>((ref) {
 
 /// Notifier to manage dynamic state of Azkar list for a category
 class AzkarListNotifier extends StateNotifier<AsyncValue<List<AzkarModel>>> {
+  static const favoritesId = 'favorites';
+
   AzkarListNotifier(this._repository, this._categoryId)
       : super(const AsyncValue.loading()) {
     load();
@@ -200,10 +202,13 @@ class AzkarListNotifier extends StateNotifier<AsyncValue<List<AzkarModel>>> {
 
   Future<void> load() async {
     try {
-      final list = await _repository.getAzkarByCategory(_categoryId);
+      final list = _categoryId == favoritesId
+          ? await _repository.getFavorites()
+          : await _repository.getAzkarByCategory(_categoryId);
+      if (!mounted) return;
       state = AsyncValue.data(list);
     } catch (e, st) {
-      state = AsyncValue.error(e, st);
+      if (mounted) state = AsyncValue.error(e, st);
     }
   }
 
@@ -212,6 +217,7 @@ class AzkarListNotifier extends StateNotifier<AsyncValue<List<AzkarModel>>> {
     if (currentList == null) return;
 
     final updated = await _repository.incrementZikr(id);
+    if (!mounted) return;
     state = AsyncValue.data([
       for (final item in currentList)
         if (item.id == id) updated else item,
@@ -234,7 +240,7 @@ class AzkarListNotifier extends StateNotifier<AsyncValue<List<AzkarModel>>> {
   }
 }
 
-final azkarListProvider = StateNotifierProvider.family<AzkarListNotifier,
+final azkarListProvider = StateNotifierProvider.autoDispose.family<AzkarListNotifier,
     AsyncValue<List<AzkarModel>>, String>((ref, categoryId) {
   final repo = ref.watch(azkarRepositoryProvider);
   return AzkarListNotifier(repo, categoryId);

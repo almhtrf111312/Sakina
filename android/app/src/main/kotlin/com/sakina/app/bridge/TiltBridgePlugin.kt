@@ -15,6 +15,8 @@ import kotlin.math.sqrt
 class TiltBridgePlugin : FlutterPlugin, EventChannel.StreamHandler, SensorEventListener {
     private var channel: EventChannel? = null
     private var manager: SensorManager? = null
+    private var uprightHeading: Double? = null
+    private val rotation = FloatArray(9)
     private var sink: EventChannel.EventSink? = null
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -39,20 +41,31 @@ class TiltBridgePlugin : FlutterPlugin, EventChannel.StreamHandler, SensorEventL
             events?.error("NO_TILT_SENSOR", "No gravity or accelerometer sensor", null)
         } else {
             manager?.registerListener(this, gravity, SensorManager.SENSOR_DELAY_UI)
+            manager?.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)?.let {
+                manager?.registerListener(this, it, SensorManager.SENSOR_DELAY_UI)
+            }
         }
     }
 
     override fun onCancel(arguments: Any?) {
         manager?.unregisterListener(this)
         sink = null
+        uprightHeading = null
     }
 
     override fun onSensorChanged(event: SensorEvent) {
+        if (event.sensor.type == Sensor.TYPE_ROTATION_VECTOR) {
+            SensorManager.getRotationMatrixFromVector(rotation, event.values)
+            // Horizontal bearing of the rear camera when held upright.
+            uprightHeading = (Math.toDegrees(atan2(-rotation[2].toDouble(),
+                -rotation[5].toDouble())) + 360) % 360
+            return
+        }
         val x = event.values[0].toDouble()
         val y = event.values[1].toDouble()
         val z = event.values[2].toDouble()
         val degreesFromVertical = Math.toDegrees(atan2(abs(z), sqrt(x * x + y * y)))
-        sink?.success(degreesFromVertical)
+        sink?.success(mapOf("tilt" to degreesFromVertical, "uprightHeading" to uprightHeading))
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit

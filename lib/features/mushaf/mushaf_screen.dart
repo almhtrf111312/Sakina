@@ -63,7 +63,7 @@ class _MushafScreenState extends ConsumerState<MushafScreen> {
     _page = (prefs.getInt('mushaf_last_page') ?? 1).clamp(1, 604);
     _bookmark = (prefs.getInt('mushaf_bookmark') ?? 1).clamp(1, 604);
     _fontSize = (prefs.getDouble('mushaf_font_size') ?? 23).clamp(17, 34);
-    _controller = PageController(initialPage: _page - 1);
+    _controller = PageController(initialPage: _page - 1, keepPage: false);
     _data = ref.read(mushafDataProvider.future);
   }
 
@@ -76,6 +76,13 @@ class _MushafScreenState extends ConsumerState<MushafScreen> {
   void _goTo(int page) {
     if (!_controller.hasClients) return;
     _controller.jumpToPage(page.clamp(1, 604) - 1);
+    _rememberPage(page.clamp(1, 604));
+  }
+
+  void _rememberPage(int page) {
+    if (_page == page) return;
+    setState(() => _page = page);
+    ref.read(sharedPreferencesProvider).setInt('mushaf_last_page', page);
   }
 
   String _digits(int n) => n.toString().replaceAllMapped(
@@ -250,30 +257,12 @@ class _MushafScreenState extends ConsumerState<MushafScreen> {
                   color: color), onPressed: pages == null ? null : () async {
                 setState(() => _bookmark = _page);
                 await ref.read(sharedPreferencesProvider)
-                    .setInt('mushaf_bookmark', _page);
+                    .setInt('mushaf_bookmark', _bookmark);
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text('تم حفظ علامة الصفحة ${_digits(_bookmark)}'),
+                ));
               }),
-              IconButton(tooltip: 'مصدر النص', icon: const Icon(Icons.info_outline),
-                onPressed: () => showDialog<void>(context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text('مصدر النص القرآني'),
-                    content: const Text('نص تنزيل العثماني، الإصدار ١٫١، محفوظ دون تعديل. '
-                      'الفهرس وتقسيم الصفحات من الملف المرفق.'),
-                    actions: [
-                      TextButton(onPressed: () async {
-                        try {
-                          await const MethodChannel('com.sakina.app/external_link')
-                              .invokeMethod<void>('openTanzilSource');
-                        } on PlatformException {
-                          if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(
-                              const SnackBar(content: Text('تعذر فتح الرابط')));
-                        }
-                      },
-                        child: const Text('موقع تنزيل')),
-                      TextButton(onPressed: () => Navigator.pop(ctx),
-                        child: const Text('إغلاق')),
-                    ],
-                  )),
-              ),
             ],
           ),
           body: pages == null || surahs == null
@@ -284,11 +273,7 @@ class _MushafScreenState extends ConsumerState<MushafScreen> {
                   Expanded(child: PageView.builder(
                     controller: _controller,
                     itemCount: 604,
-                    onPageChanged: (index) {
-                      setState(() => _page = index + 1);
-                      ref.read(sharedPreferencesProvider)
-                          .setInt('mushaf_last_page', index + 1);
-                    },
+                    onPageChanged: (index) => _rememberPage(index + 1),
                     itemBuilder: (_, index) => _pageView(
                       index + 1, pages[index] as List<dynamic>, surahs),
                   )),
