@@ -17,6 +17,7 @@ import com.sakina.app.bridge.TiltBridgePlugin
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugin.common.EventChannel
 
 /**
  * MainActivity — primary entry point for Sakina Flutter application.
@@ -32,6 +33,7 @@ class MainActivity : FlutterActivity() {
         private const val PERMISSION_REQUEST_CODE_NOTIFICATIONS = 101
         private const val REQUEST_CUSTOM_SOUND = 102
     }
+    private var azkarReminderSink: EventChannel.EventSink? = null
     private var pendingSoundResult: MethodChannel.Result? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,6 +43,18 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+
+        EventChannel(flutterEngine.dartExecutor.binaryMessenger,
+            "com.sakina.app/azkar_reminders").setStreamHandler(object : EventChannel.StreamHandler {
+            override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                azkarReminderSink = events
+                deliverAzkarReminder(intent)
+            }
+
+            override fun onCancel(arguments: Any?) {
+                azkarReminderSink = null
+            }
+        })
 
         // Register native bridge plugins with Flutter engine
         flutterEngine.plugins.add(AlarmBridgePlugin())
@@ -112,6 +126,21 @@ class MainActivity : FlutterActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        deliverAzkarReminder(intent)
+    }
+
+    private fun deliverAzkarReminder(intent: Intent?) {
+        val sink = azkarReminderSink ?: return
+        val category = intent?.getStringExtra("open_azkar") ?: return
+        intent.removeExtra("open_azkar")
+        if (category == "morning" || category == "evening") sink.success(category)
+    }
+
+    override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        azkarReminderSink = null
+        EventChannel(flutterEngine.dartExecutor.binaryMessenger,
+            "com.sakina.app/azkar_reminders").setStreamHandler(null)
+        super.cleanUpFlutterEngine(flutterEngine)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

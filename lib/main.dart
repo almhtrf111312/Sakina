@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -16,6 +17,8 @@ import 'data/prayer/prayer_repository.dart';
 import 'data/settings/settings_repository.dart';
 import 'features/home/home_screen.dart';
 import 'features/azkar/azkar_screen.dart';
+import 'features/azkar/azkar_list_screen.dart';
+import 'domain/models/azkar_model.dart';
 import 'features/mushaf/mushaf_screen.dart';
 import 'features/qibla/qibla_screen.dart';
 import 'features/tasbih/tasbih_screen.dart';
@@ -239,6 +242,33 @@ class SakinaShell extends ConsumerStatefulWidget {
 
 class _SakinaShellState extends ConsumerState<SakinaShell>
     with TickerProviderStateMixin {
+  StreamSubscription<dynamic>? _azkarReminders;
+
+  @override
+  void initState() {
+    super.initState();
+    if (defaultTargetPlatform != TargetPlatform.android) return;
+    _azkarReminders = const EventChannel('com.sakina.app/azkar_reminders')
+        .receiveBroadcastStream().listen((event) {
+      if (event != 'morning' && event != 'evening') return;
+      final category = event == 'morning' ? AzkarCategory.morning : AzkarCategory.evening;
+      if (!mounted) return;
+      _onTabTapped(1);
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      Navigator.of(context).push(MaterialPageRoute<void>(
+        builder: (_) => AzkarListScreen(category: category),
+      ));
+    }, onError: (Object error) {
+      debugPrint('Could not receive Azkar reminder: $error');
+    });
+  }
+
+  @override
+  void dispose() {
+    _azkarReminders?.cancel();
+    super.dispose();
+  }
+
   Widget _screenFor(int index) {
     switch (index) {
       case 1:

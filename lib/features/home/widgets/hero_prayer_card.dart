@@ -4,7 +4,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart' hide TextDirection;
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/date_utils.dart';
@@ -183,9 +182,7 @@ class _LiveClockState extends ConsumerState<_LiveClock> {
     final settings = ref.watch(appSettingsProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primary = isDark ? AppColors.nightPrimary : AppColors.dayPrimary;
-    final sub = isDark ? AppColors.nightTextSecondary : AppColors.dayTextSecondary;
     String two(int n) => n.toString().padLeft(2, '0');
-    final date = DateFormat('EEEE، d MMMM yyyy', 'ar').format(_now);
     return Column(
       children: [
         Row(
@@ -217,8 +214,6 @@ class _LiveClockState extends ConsumerState<_LiveClock> {
             ),
           ],
         ),
-        Text(date,
-            style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: sub)),
       ],
     );
   }

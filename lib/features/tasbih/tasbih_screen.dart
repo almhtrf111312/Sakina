@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
@@ -98,30 +97,44 @@ class _TasbihScreenState extends ConsumerState<TasbihScreen> with SingleTickerPr
     super.dispose();
   }
 
-  Future<void> _loadStats() async {
-    final prefs = await SharedPreferences.getInstance();
-    final todayKey = 'sakina_tasbih_daily_${DateTime.now().year}_${DateTime.now().month}_${DateTime.now().day}';
-    final weekKey = 'sakina_tasbih_weekly_${DateTime.now().year}_${(DateTime.now().day / 7).ceil()}';
+  String _dailyKey(DateTime day) =>
+      'sakina_tasbih_daily_${day.year}_${day.month}_${day.day}';
 
-    setState(() {
-      _counter = prefs.getInt(AppConstants.keyTasbihCount) ?? 0;
-      _targetGoal = prefs.getInt(AppConstants.keyTasbihTarget) ?? 33;
-      _dailyTotal = prefs.getInt(todayKey) ?? 0;
-      _weeklyTotal = prefs.getInt(weekKey) ?? 0;
-      _roundsCompleted = prefs.getInt('sakina_tasbih_rounds') ?? 0;
-    });
+  DateTime? _statsDay;
+
+  void _loadStats() {
+    final prefs = ref.read(sharedPreferencesProvider);
+    _counter = prefs.getInt(AppConstants.keyTasbihCount) ?? 0;
+    _targetGoal = prefs.getInt(AppConstants.keyTasbihTarget) ?? 33;
+    _roundsCompleted = prefs.getInt('sakina_tasbih_rounds') ?? 0;
+    _selectedPhraseIndex = (prefs.getInt('sakina_tasbih_phrase') ?? 0)
+        .clamp(0, _suggestedPhrases.length - 1);
+    _refreshCalendarTotals();
+  }
+
+  void _refreshCalendarTotals() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    if (_statsDay == today) return;
+    _statsDay = today;
+    final prefs = ref.read(sharedPreferencesProvider);
+    _dailyTotal = prefs.getInt(_dailyKey(today)) ?? 0;
+    _weeklyTotal = 0;
+    for (var daysAgo = 0; daysAgo < today.weekday; daysAgo++) {
+      final day = DateTime(today.year, today.month, today.day - daysAgo);
+      _weeklyTotal += prefs.getInt(_dailyKey(day)) ?? 0;
+    }
   }
 
   Future<void> _saveStats() async {
-    final prefs = await SharedPreferences.getInstance();
-    final todayKey = 'sakina_tasbih_daily_${DateTime.now().year}_${DateTime.now().month}_${DateTime.now().day}';
-    final weekKey = 'sakina_tasbih_weekly_${DateTime.now().year}_${(DateTime.now().day / 7).ceil()}';
-
-    await prefs.setInt(AppConstants.keyTasbihCount, _counter);
-    await prefs.setInt(AppConstants.keyTasbihTarget, _targetGoal);
-    await prefs.setInt(todayKey, _dailyTotal);
-    await prefs.setInt(weekKey, _weeklyTotal);
-    await prefs.setInt('sakina_tasbih_rounds', _roundsCompleted);
+    final prefs = ref.read(sharedPreferencesProvider);
+    await Future.wait([
+      prefs.setInt(AppConstants.keyTasbihCount, _counter),
+      prefs.setInt(AppConstants.keyTasbihTarget, _targetGoal),
+      prefs.setInt(_dailyKey(_statsDay!), _dailyTotal),
+      prefs.setInt('sakina_tasbih_rounds', _roundsCompleted),
+      prefs.setInt('sakina_tasbih_phrase', _selectedPhraseIndex),
+    ]);
   }
 
   void _increment() {
@@ -138,6 +151,7 @@ class _TasbihScreenState extends ConsumerState<TasbihScreen> with SingleTickerPr
     _pulseController.forward().then((_) => _pulseController.reverse());
 
     setState(() {
+      _refreshCalendarTotals();
       _counter++;
       _dailyTotal++;
       _weeklyTotal++;
@@ -159,10 +173,10 @@ class _TasbihScreenState extends ConsumerState<TasbihScreen> with SingleTickerPr
           children: [
             const Icon(Icons.stars_rounded, color: Colors.amber),
             const SizedBox(width: 8),
-            Text(
+            Flexible(child: Text(
               'ما شاء الله! اكتمل الهدف ($_targetGoal) - دورة رقم $_roundsCompleted',
               style: const TextStyle(fontFamily: AppConstants.fontCairo),
-            ),
+            )),
           ],
         ),
         duration: const Duration(seconds: 2),

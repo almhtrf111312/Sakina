@@ -57,7 +57,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final location = ref.watch(locationProvider);
     final hijriDate = ref.watch(hijriDateStringProvider);
     final gregorianDate = ref.watch(gregorianDateStringProvider);
-    final nextPrayerAsync = ref.watch(nextPrayerProvider);
     final prayerListAsync = ref.watch(orderedPrayerListProvider);
 
     return Scaffold(
@@ -102,8 +101,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           const SizedBox(height: 2),
                           Text(
                             gregorianDate,
-                            style: theme.textTheme.bodySmall?.copyWith(
+                            style: theme.textTheme.titleMedium?.copyWith(
                               fontFamily: 'Cairo',
+                              fontWeight: FontWeight.w600,
                               color: isDark
                                   ? AppColors.nightTextSecondary
                                   : AppColors.dayTextSecondary,
@@ -246,13 +246,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // ── Prayer List Items ──
               prayerListAsync.when(
                 data: (prayers) {
-                  final nextName = nextPrayerAsync.asData?.value?.name;
+                  final upcoming = ref.watch(nextPrayerProgressProvider.select(
+                      (value) => value.valueOrNull == null ? null : (
+                        value.valueOrNull!.prayerName, value.valueOrNull!.targetTime)));
 
                   return SliverList(
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
                         final item = prayers[index];
-                        final isNext = item.key == nextName;
+                        final isNext = upcoming != null && item.key == upcoming.$1 &&
+                            item.value.isAtSameMomentAs(upcoming.$2);
                         return PrayerListTile(
                           prayerName: item.key,
                           prayerTime: item.value,

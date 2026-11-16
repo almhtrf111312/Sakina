@@ -26,7 +26,8 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen>
   StreamSubscription<CompassEvent>? _compassSubscription;
   StreamSubscription<dynamic>? _tiltSubscription;
   static const _tiltChannel = EventChannel('com.sakina.app/device_tilt');
-  double? _tiltDegrees;
+  bool _upright = false;
+  double? _uprightHeading;
 
   double _deviceHeading = 0.0;
   double _qiblaBearing = 135.0; // Default calculated bearing
@@ -53,11 +54,13 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen>
       duration: const Duration(seconds: 3),
     );
     _headingController = AnimationController.unbounded(vsync: this);
-    _tiltSubscription = _tiltChannel.receiveBroadcastStream().listen((angle) {
-      if (mounted && angle is num && (_tiltDegrees == null ||
-          (angle.toDouble() - _tiltDegrees!).abs() > 3)) {
-        setState(() => _tiltDegrees = angle.toDouble());
-      }
+    _tiltSubscription = _tiltChannel.receiveBroadcastStream().listen((event) {
+      if (!mounted || event is! Map) return;
+      final tilt = (event['tilt'] as num?)?.toDouble();
+      _uprightHeading = (event['uprightHeading'] as num?)?.toDouble();
+      if (tilt == null) return;
+      final upright = _upright ? tilt < 35 : tilt < 25;
+      if (upright != _upright) setState(() => _upright = upright);
     }, onError: (_) {});
 
     _initLocationAndCompass();
@@ -154,7 +157,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen>
       final nowMs = DateTime.now().millisecondsSinceEpoch;
       if (nowMs - _lastUiMs < 50) return;
 
-      final heading = event.heading;
+      final heading = (_upright ? _uprightHeading : null) ?? event.heading;
       if (heading == null) {
         if (_hasSensor) setState(() => _hasSensor = false);
         return;
@@ -340,36 +343,13 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen>
             else if (_lowAccuracy)
               _buildCalibrationGraphic(theme),
 
-            if (_tiltDegrees != null && _tiltDegrees! > 25)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                child: Semantics(
-                  label: 'ارفع الهاتف حتى يصبح عمودياً لاستخدام البوصلة بدقة',
-                  child: Card(
-                    color: theme.colorScheme.primaryContainer,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.screen_rotation_rounded, color: theme.colorScheme.onPrimaryContainer),
-                          const SizedBox(width: 8),
-                          Flexible(child: Text('ارفع الهاتف عمودياً ↑  (${_tiltDegrees!.round()}° ميل)',
-                            style: TextStyle(fontFamily: AppConstants.fontCairo,
-                              color: theme.colorScheme.onPrimaryContainer))),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
             // Main Compass View
             Expanded(
               child: Center(
                 child: AnimatedBuilder(
                   animation: _headingController,
                   builder: (context, _) => CompassWidget(
+                    upright: _upright,
                     heading: _headingController.value,
                     qiblaBearing: _qiblaBearing,
                     isAligned: _isAligned,
@@ -442,11 +422,11 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen>
                   ),
                   _buildAngleCard(
                     title: 'اتجاه الهاتف',
-                    value: '${_deviceHeading.toStringAsFixed(0)}°',
+                    value: _hasSensor ? '${_deviceHeading.toStringAsFixed(0)}°' : '—',
                   ),
                   _buildAngleCard(
                     title: 'الحالة',
-                    value: _isAligned ? 'متطابق' : 'غير متطابق',
+                    value: _isAligned ? 'باتجاه القبلة' : _upright ? 'عرض منظور' : 'عرض مسطّح',
                     isHighlight: _isAligned,
                   ),
                 ],

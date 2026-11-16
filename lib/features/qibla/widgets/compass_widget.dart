@@ -14,6 +14,7 @@ class CompassWidget extends StatelessWidget {
     required this.qiblaBearing,
     required this.isAligned,
     this.size = 280.0,
+    this.upright = false,
   });
 
   /// Device's current heading in degrees from true North (0..360)
@@ -27,6 +28,7 @@ class CompassWidget extends StatelessWidget {
 
   /// Diameter of the compass circle
   final double size;
+  final bool upright;
 
   @override
   Widget build(BuildContext context) {
@@ -41,68 +43,74 @@ class CompassWidget extends StatelessWidget {
     final qiblaPointerAngle = relativeQiblaDeg * (math.pi / 180.0);
 
     return Center(
-      child: SizedBox(
-        width: size,
-        height: size,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // Glow ring: only changes when the alignment state changes.
-            RepaintBoundary(
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                width: size,
-                height: size,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: isAligned
-                          ? AppColors.success.withOpacity(0.4)
-                          : (isDark
-                                  ? AppColors.nightSecondary
-                                  : AppColors.daySecondary)
-                              .withOpacity(0.15),
-                      blurRadius: isAligned ? 35 : 18,
-                      spreadRadius: isAligned ? 4 : 0,
+      child: Transform(
+        alignment: Alignment.center,
+        transform: Matrix4.identity()
+          ..setEntry(3, 2, 0.0015)
+          ..rotateX(upright ? 0.95 : 0),
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Glow ring: only changes when the alignment state changes.
+              RepaintBoundary(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  width: size,
+                  height: size,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: isAligned
+                            ? AppColors.success.withOpacity(0.4)
+                            : (isDark
+                                    ? AppColors.nightSecondary
+                                    : AppColors.daySecondary)
+                                .withOpacity(0.15),
+                        blurRadius: isAligned ? 35 : 18,
+                        spreadRadius: isAligned ? 4 : 0,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Rotating dial: painted once and cached, only re-composited.
+              Transform.rotate(
+                angle: dialRotation,
+                child: RepaintBoundary(
+                  child: CustomPaint(
+                    size: Size(size, size),
+                    painter: _CompassDialPainter(
+                      isDark: isDark,
+                      isAligned: isAligned,
+                      qiblaBearing: qiblaBearing,
                     ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Rotating dial: painted once and cached, only re-composited.
-            Transform.rotate(
-              angle: dialRotation,
-              child: RepaintBoundary(
-                child: CustomPaint(
-                  size: Size(size, size),
-                  painter: _CompassDialPainter(
-                    isDark: isDark,
-                    isAligned: isAligned,
-                    qiblaBearing: qiblaBearing,
                   ),
                 ),
               ),
-            ),
 
-            // Needle pointing to Qibla relative to the device.
-            Transform.rotate(
-              angle: qiblaPointerAngle,
-              child: RepaintBoundary(
-                child: CustomPaint(
-                  size: Size(size, size),
-                  painter: _QiblaNeedlePainter(
-                    isAligned: isAligned,
-                    isDark: isDark,
+              // Needle pointing to Qibla relative to the device.
+              Transform.rotate(
+                angle: qiblaPointerAngle,
+                child: RepaintBoundary(
+                  child: CustomPaint(
+                    size: Size(size, size),
+                    painter: _QiblaNeedlePainter(
+                      isAligned: isAligned,
+                      isDark: isDark,
+                    ),
                   ),
                 ),
               ),
-            ),
 
-            // Center hub with Kaaba indicator
-            RepaintBoundary(child: _buildCenterHub(context, isDark)),
-          ],
+              // Center hub with Kaaba indicator
+              RepaintBoundary(child: _buildCenterHub(context, isDark)),
+            ],
+          ),
         ),
       ),
     );
