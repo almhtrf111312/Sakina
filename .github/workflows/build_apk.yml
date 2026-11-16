@@ -1,4 +1,4 @@
-name: Build Sakina APK
+name: Build Al Muadhan APK
 
 on:
   push:
@@ -47,11 +47,11 @@ jobs:
           mkdir -p artifacts
           version="$(awk '/^version: / {print $2; exit}' pubspec.yaml)"
           test -n "$version"
-          cp build/app/outputs/flutter-apk/app-release.apk "artifacts/Sakina-${version%+*}.apk"
+          cp build/app/outputs/flutter-apk/app-release.apk "artifacts/Al-Muadhan-${version%+*}.apk"
 
       - name: Upload APK
         uses: actions/upload-artifact@v6
         with:
-          name: Sakina-APK
-          path: artifacts/Sakina-*.apk
+          name: Al-Muadhan-APK
+          path: artifacts/Al-Muadhan-*.apk
           retention-days: 30

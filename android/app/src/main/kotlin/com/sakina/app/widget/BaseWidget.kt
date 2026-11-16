@@ -84,7 +84,7 @@ class WidgetSmall : BaseWidget() {
     override fun bind(context: Context, v: RemoteViews, d: WidgetData?) {
         val n = d?.next
         if (n == null) {
-            v.setTextViewText(R.id.w_name, "افتح المؤذن لتحديث المواقيت")
+            v.setTextViewText(R.id.w_name, "افتح المؤذان لتحديث المواقيت")
             v.setTextViewText(R.id.w_time, "")
             return
         }
@@ -99,7 +99,7 @@ class WidgetClock : BaseWidget() {
     override fun bind(context: Context, v: RemoteViews, d: WidgetData?) {
         val n = d?.next
         if (n == null) {
-            v.setTextViewText(R.id.w_name, "المؤذن"); v.setTextViewText(R.id.w_time, "")
+            v.setTextViewText(R.id.w_name, "المؤذان"); v.setTextViewText(R.id.w_time, "")
             return
         }
         v.setTextViewText(R.id.w_name, "الصلاة القادمة: " + n.nameAr)
@@ -114,7 +114,7 @@ class WidgetProgress : BaseWidget() {
         val n = d?.next
         v.setTextViewText(R.id.w_city, d?.city ?: "")
         if (n == null) {
-            v.setTextViewText(R.id.w_name, "المؤذن"); v.setTextViewText(R.id.w_time, "--:--")
+            v.setTextViewText(R.id.w_name, "المؤذان"); v.setTextViewText(R.id.w_time, "--:--")
             v.setProgressBar(R.id.w_progress, 100, 0, false)
             return
         }
@@ -136,7 +136,7 @@ class WidgetList : BaseWidget() {
         val colors = WidgetAppearance.load(context)
         v.setTextColor(R.id.w_next, colors.accent)
         v.setTextViewText(R.id.w_next, next?.let { "القادمة: ${it.nameAr}" }
-            ?: "افتح المؤذن لتحديث المواقيت")
+            ?: "افتح المؤذان لتحديث المواقيت")
         if (next != null) countdown(v, R.id.w_count, next.ts)
         for (i in 0 until 5) {
             val p = list.getOrNull(i)
@@ -177,8 +177,8 @@ class WidgetLarge : BaseWidget() {
     override fun bind(context: Context, v: RemoteViews, d: WidgetData?) {
         val next = d?.next
         val colors = WidgetAppearance.load(context)
-        v.setTextViewText(R.id.w_city, d?.city?.ifEmpty { "المؤذن" } ?: "المؤذن")
-        v.setTextViewText(R.id.w_name, next?.nameAr ?: "افتح المؤذن لتحديث المواقيت")
+        v.setTextViewText(R.id.w_city, d?.city?.ifEmpty { "المؤذان" } ?: "المؤذان")
+        v.setTextViewText(R.id.w_name, next?.nameAr ?: "افتح المؤذان لتحديث المواقيت")
         v.setTextViewText(R.id.w_time, next?.let { hm(context, it.ts) } ?: "")
         v.setProgressBar(R.id.w_progress, 100, d?.progress ?: 0, false)
         if (next != null) countdown(v, R.id.w_count, next.ts)
@@ -224,7 +224,7 @@ class WidgetCircle : BaseWidget() {
         val n = d?.next
         v.setTextViewText(R.id.w_name, n?.nameAr ?: "الصلاة القادمة")
         v.setTextViewText(R.id.w_time, n?.let { AppTimeFormat.compact(context, it.ts) }
-            ?: "افتح المؤذن")
+            ?: "افتح المؤذان")
         if (n != null) countdown(v, R.id.w_count, n.ts)
         else v.setTextViewText(R.id.w_count, "")
     }
@@ -256,7 +256,7 @@ class WidgetBanner : BaseWidget() {
         val n = d?.next
         v.setTextViewText(R.id.w_next, n?.nameAr ?: "الصلاة القادمة")
         v.setTextViewText(R.id.w_time, n?.let { AppTimeFormat.compact(context, it.ts) }
-            ?: "افتح المؤذن")
+            ?: "افتح المؤذان")
         if (n != null) countdown(v, R.id.w_count, n.ts)
         else v.setTextViewText(R.id.w_count, "")
     }

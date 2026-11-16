@@ -222,7 +222,7 @@ class SettingsScreen extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'المؤذن | Al Muadhin',
+                              'المؤذان | Al Muadhan',
                               style: TextStyle(
                                 fontFamily: 'Cairo',
                                 fontSize: 17,

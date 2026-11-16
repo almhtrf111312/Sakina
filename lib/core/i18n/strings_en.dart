@@ -2,7 +2,7 @@
 abstract final class StringsEn {
   static const Map<String, String> strings = {
     // ---- App & General ----
-    'appName': 'Al Muadhin',
+    'appName': 'Al Muadhan',
     'ok': 'OK',
     'cancel': 'Cancel',
     'save': 'Save',
@@ -48,7 +48,7 @@ abstract final class StringsEn {
     'enableLocation': 'Enable Location',
     'locationPermissionTitle': 'Location Permission',
     'locationPermissionBody':
-        'Al Muadhin needs access to your location to calculate prayer times and qibla direction.',
+        'Al Muadhan needs access to your location to calculate prayer times and qibla direction.',
     'calculating': 'Calculating...',
     'prayedAlready': 'I prayed',
 

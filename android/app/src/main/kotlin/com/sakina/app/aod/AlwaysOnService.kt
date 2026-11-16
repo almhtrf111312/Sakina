@@ -178,7 +178,7 @@ class AlwaysOnService : Service() {
         )
         val n = NotificationCompat.Builder(this, FSI_CHANNEL)
             .setSmallIcon(R.drawable.ic_mosque)
-            .setContentTitle("المؤذن")
+            .setContentTitle("المؤذان")
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setFullScreenIntent(pi, true)
