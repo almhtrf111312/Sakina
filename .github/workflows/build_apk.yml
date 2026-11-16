@@ -32,16 +32,25 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.50.0'
           channel: 'stable'
           cache: true
+
+      - name: Cache Android native build tools
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/local/lib/android/sdk/ndk/28.2.13676358
+            /usr/local/lib/android/sdk/cmake/3.22.1
+          key: android-native-v1-${{ runner.os }}-${{ runner.arch }}-ndk28.2.13676358-cmake3.22.1
 
       - name: Install dependencies
         run: flutter pub get
 
       - name: Test navigation and daily azkar reset
-        run: flutter test
+        run: flutter test --no-pub
 
-      - name: Build single universal release APK
+      - name: Build single compressed release APK
         env:
           ALMUADHAN_KEYSTORE_B64: ${{ secrets.ALMUADHAN_KEYSTORE_B64 }}
           ALMUADHAN_KEYSTORE_PASSWORD: ${{ secrets.ALMUADHAN_KEYSTORE_PASSWORD }}
@@ -60,9 +69,16 @@ jobs:
             printf '%s' "$ALMUADHAN_KEYSTORE_B64" | base64 --decode > "$ALMUADHAN_KEYSTORE_PATH"
             suffix=""
           fi
-          flutter build apk --release
+          flutter build apk --release --no-pub
           apk="build/app/outputs/flutter-apk/app-release.apk"
           test "$("$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" manifest application-id "$apk")" = "com.almuadhan.app"
+          python3 - "$apk" <<'PYTHON'
+          import sys
+          import zipfile
+          with zipfile.ZipFile(sys.argv[1]) as apk:
+              for abi in ("armeabi-v7a", "arm64-v8a"):
+                  assert apk.getinfo(f"lib/{abi}/libflutter.so").compress_type == zipfile.ZIP_DEFLATED, abi
+          PYTHON
           version="$(awk '/^version: / {print $2; exit}' pubspec.yaml)"
           mkdir -p artifacts
           cp "$apk" "artifacts/Al-Muadhan-${version%+*}${suffix}.apk"
@@ -72,4 +88,5 @@ jobs:
         with:
           name: Al-Muadhan-APK
           path: artifacts/Al-Muadhan-*.apk
+          compression-level: 0
           retention-days: 30

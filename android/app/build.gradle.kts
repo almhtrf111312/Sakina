@@ -28,6 +28,13 @@ android {
         versionName = flutter.versionName
     }
 
+    // Store native libraries compressed in the single downloadable APK.
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+
     signingConfigs {
         if (releaseSigningAvailable) {
             create("appRelease") {
