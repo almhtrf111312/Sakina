@@ -42,12 +42,30 @@ jobs:
         run: flutter test
 
       - name: Build single universal release APK
+        env:
+          ALMUADHAN_KEYSTORE_B64: ${{ secrets.ALMUADHAN_KEYSTORE_B64 }}
+          ALMUADHAN_KEYSTORE_PASSWORD: ${{ secrets.ALMUADHAN_KEYSTORE_PASSWORD }}
+          ALMUADHAN_KEY_ALIAS: ${{ secrets.ALMUADHAN_KEY_ALIAS }}
+          ALMUADHAN_KEY_PASSWORD: ${{ secrets.ALMUADHAN_KEY_PASSWORD }}
         run: |
+          set -euo pipefail
+          suffix="-unsigned"
+          if [[ -n "$ALMUADHAN_KEYSTORE_B64" ]]; then
+            : "${ALMUADHAN_KEYSTORE_PASSWORD:?Missing release keystore password}"
+            : "${ALMUADHAN_KEY_ALIAS:?Missing release key alias}"
+            : "${ALMUADHAN_KEY_PASSWORD:?Missing release key password}"
+            umask 077
+            export ALMUADHAN_KEYSTORE_PATH="$(mktemp "$RUNNER_TEMP/almuadhan.XXXXXX")"
+            trap 'rm -f "$ALMUADHAN_KEYSTORE_PATH"' EXIT
+            printf '%s' "$ALMUADHAN_KEYSTORE_B64" | base64 --decode > "$ALMUADHAN_KEYSTORE_PATH"
+            suffix=""
+          fi
           flutter build apk --release
-          mkdir -p artifacts
+          apk="build/app/outputs/flutter-apk/app-release.apk"
+          test "$("$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" manifest application-id "$apk")" = "com.almuadhan.app"
           version="$(awk '/^version: / {print $2; exit}' pubspec.yaml)"
-          test -n "$version"
-          cp build/app/outputs/flutter-apk/app-release.apk "artifacts/Al-Muadhan-${version%+*}.apk"
+          mkdir -p artifacts
+          cp "$apk" "artifacts/Al-Muadhan-${version%+*}${suffix}.apk"
 
       - name: Upload APK
         uses: actions/upload-artifact@v6
