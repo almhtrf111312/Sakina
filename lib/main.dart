@@ -148,9 +148,12 @@ class SakinaApp extends ConsumerWidget {
         final iconBrightness = dark ? Brightness.light : Brightness.dark;
         final media = MediaQuery.of(context);
         final systemScale = media.textScaler.scale(16) / 16;
+        // Fit the default typography to the available logical width.
+        // The saved slider still adjusts that baseline on every screen size.
+        final screenScale = (media.size.width / 390).clamp(0.80, 1.0);
         return MediaQuery(
           data: media.copyWith(textScaler: TextScaler.linear(
-              (systemScale * settings.fontSize).clamp(0.6, 2.5))),
+              (systemScale * screenScale * settings.fontSize).clamp(0.6, 2.5))),
           child: AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,

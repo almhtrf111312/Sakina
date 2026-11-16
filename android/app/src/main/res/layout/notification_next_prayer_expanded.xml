@@ -1,17 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="92dp"
-    android:orientation="vertical" android:gravity="center_vertical" android:padding="8dp">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:layout_width="match_parent" android:layout_height="57.6dp"
+    android:orientation="vertical" android:layoutDirection="ltr">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="33.6dp"
         android:orientation="horizontal" android:gravity="center_vertical">
-        <TextView android:id="@+id/notification_prayer" android:layout_width="0dp" android:layout_weight="1"
-            android:layout_height="wrap_content" android:textSize="22sp" android:textStyle="bold" android:maxLines="1" />
-        <TextView android:id="@+id/notification_time" android:layout_width="wrap_content"
-            android:layout_height="wrap_content" android:textSize="21sp" android:textStyle="bold" android:maxLines="1" />
+        <TextView android:id="@+id/prayer_notification_next"
+            android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent"
+            android:gravity="center_vertical|start" android:textDirection="rtl"
+            android:textAppearance="@style/TextAppearance.Compat.Notification.Title"
+            android:textSize="13sp" android:maxLines="1" android:includeFontPadding="false"
+            android:autoSizeTextType="uniform" android:autoSizeMinTextSize="10sp"
+            android:autoSizeMaxTextSize="13sp" android:autoSizeStepGranularity="1sp" />
+        <TextView android:id="@+id/prayer_notification_remaining"
+            android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent"
+            android:gravity="center" android:textDirection="rtl"
+            android:textAppearance="@style/TextAppearance.Compat.Notification.Title"
+            android:textStyle="bold" android:textSize="21sp" android:maxLines="1"
+            android:includeFontPadding="false" android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="13sp" android:autoSizeMaxTextSize="21sp"
+            android:autoSizeStepGranularity="1sp" />
+        <TextView android:id="@+id/prayer_notification_previous"
+            android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent"
+            android:gravity="center_vertical|end" android:textDirection="rtl"
+            android:textAppearance="@style/TextAppearance.Compat.Notification.Title"
+            android:textSize="13sp" android:maxLines="1" android:includeFontPadding="false"
+            android:autoSizeTextType="uniform" android:autoSizeMinTextSize="10sp"
+            android:autoSizeMaxTextSize="13sp" android:autoSizeStepGranularity="1sp" />
     </LinearLayout>
-    <TextView android:id="@+id/notification_remaining" android:layout_width="match_parent"
-        android:layout_height="wrap_content" android:textSize="17sp" android:layout_marginTop="4dp" />
-    <ImageView android:id="@+id/notification_bar" android:layout_width="match_parent"
-        android:layout_height="5dp" android:layout_marginTop="8dp" android:scaleType="fitXY"
-        android:contentDescription="تقدم الوقت للصلاة القادمة" />
+    <ImageView android:id="@+id/prayer_notification_progress"
+        android:layout_width="match_parent" android:layout_height="4.8dp"
+        android:scaleType="fitXY" android:contentDescription="تقدم الوقت حتى الصلاة القادمة" />
+    <TextView android:id="@+id/prayer_notification_details"
+        android:layout_width="match_parent" android:layout_height="19.2dp"
+        android:gravity="center" android:textDirection="rtl"
+        android:textAppearance="@style/TextAppearance.Compat.Notification.Info"
+        android:textSize="11sp" android:maxLines="1" android:includeFontPadding="false"
+        android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp"
+        android:autoSizeMaxTextSize="11sp" android:autoSizeStepGranularity="1sp" />
 </LinearLayout>
