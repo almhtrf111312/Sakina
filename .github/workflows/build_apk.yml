@@ -68,6 +68,17 @@ jobs:
             trap 'rm -f "$ALMUADHAN_KEYSTORE_PATH"' EXIT
             printf '%s' "$ALMUADHAN_KEYSTORE_B64" | base64 --decode > "$ALMUADHAN_KEYSTORE_PATH"
             suffix=""
+          elif [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            # A disposable signing key makes the PR build installable for testing.
+            umask 077
+            signing_dir="$(mktemp -d "$RUNNER_TEMP/almuadhan-preview.XXXXXX")"
+            trap 'rm -rf "$signing_dir"' EXIT
+            export ALMUADHAN_KEYSTORE_PATH="$signing_dir/preview.jks"
+            export ALMUADHAN_KEYSTORE_PASSWORD="$(openssl rand -hex 24)"
+            export ALMUADHAN_KEY_PASSWORD="$ALMUADHAN_KEYSTORE_PASSWORD"
+            export ALMUADHAN_KEY_ALIAS=preview
+            keytool -genkeypair -storetype PKCS12 -keystore "$ALMUADHAN_KEYSTORE_PATH"               -storepass:env ALMUADHAN_KEYSTORE_PASSWORD -alias "$ALMUADHAN_KEY_ALIAS"               -keyalg RSA -keysize 2048 -validity 365 -dname "CN=Al Muadhan Preview"
+            suffix="-preview"
           fi
           flutter build apk --release --no-pub
           apk="build/app/outputs/flutter-apk/app-release.apk"
@@ -79,6 +90,11 @@ jobs:
               for abi in ("armeabi-v7a", "arm64-v8a"):
                   assert apk.getinfo(f"lib/{abi}/libflutter.so").compress_type == zipfile.ZIP_DEFLATED, abi
           PYTHON
+          if [[ "$suffix" != "-unsigned" ]]; then
+            signer="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
+            test -x "$signer"
+            "$signer" verify --verbose "$apk"
+          fi
           version="$(awk '/^version: / {print $2; exit}' pubspec.yaml)"
           mkdir -p artifacts
           cp "$apk" "artifacts/Al-Muadhan-${version%+*}${suffix}.apk"
