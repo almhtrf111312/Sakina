@@ -7,7 +7,7 @@ abstract final class AppConstants {
   static const String appNameEn = 'Al Muadhan';
   static const String appVersion = '1.0.0';
   static const int appBuildNumber = 1;
-  static const String packageName = 'com.sakina.app';
+  static const String packageName = 'com.almuadhan.app';
 
   // Geographic Coordinates - Holy Kaaba, Mecca, Saudi Arabia
   static const double meccaLatitude = 21.4225;

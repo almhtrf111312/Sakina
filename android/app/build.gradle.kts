@@ -3,6 +3,13 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val releaseStore = providers.environmentVariable("ALMUADHAN_KEYSTORE_PATH").orNull
+val releaseStorePassword = providers.environmentVariable("ALMUADHAN_KEYSTORE_PASSWORD").orNull
+val releaseKeyAlias = providers.environmentVariable("ALMUADHAN_KEY_ALIAS").orNull
+val releaseKeyPassword = providers.environmentVariable("ALMUADHAN_KEY_PASSWORD").orNull
+val releaseSigningAvailable = listOf(releaseStore, releaseStorePassword, releaseKeyAlias, releaseKeyPassword)
+    .all { !it.isNullOrBlank() }
+
 android {
     namespace = "com.sakina.app"
     compileSdk = 36
@@ -14,26 +21,34 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.sakina.app"
+        applicationId = "com.almuadhan.app"
         minSdk = 24
         targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
-    // Fixed signing key (committed) so every CI build can be installed over the previous one.
+    // Store native libraries compressed in the single downloadable APK.
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+
     signingConfigs {
-        create("sakina") {
-            storeFile = file("sakina-release.jks")
-            storePassword = "sakina2026"
-            keyAlias = "sakina"
-            keyPassword = "sakina2026"
+        if (releaseSigningAvailable) {
+            create("appRelease") {
+                storeFile = file(checkNotNull(releaseStore))
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
         }
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("sakina")
+            signingConfig = signingConfigs.findByName("appRelease")
         }
     }
 }
