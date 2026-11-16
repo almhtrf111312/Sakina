@@ -8,24 +8,24 @@
             android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent"
             android:gravity="center_vertical|start" android:textDirection="rtl"
             android:textAppearance="@style/TextAppearance.Compat.Notification.Title"
-            android:textSize="13sp" android:maxLines="1" android:includeFontPadding="false"
+            android:textSize="16sp" android:maxLines="1" android:includeFontPadding="false"
             android:autoSizeTextType="uniform" android:autoSizeMinTextSize="10sp"
-            android:autoSizeMaxTextSize="13sp" android:autoSizeStepGranularity="1sp" />
+            android:autoSizeMaxTextSize="16sp" android:autoSizeStepGranularity="1sp" />
         <TextView android:id="@+id/prayer_notification_remaining"
             android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent"
             android:gravity="center" android:textDirection="rtl"
             android:textAppearance="@style/TextAppearance.Compat.Notification.Title"
-            android:textStyle="bold" android:textSize="21sp" android:maxLines="1"
+            android:textStyle="bold" android:textSize="24sp" android:maxLines="1"
             android:includeFontPadding="false" android:autoSizeTextType="uniform"
-            android:autoSizeMinTextSize="13sp" android:autoSizeMaxTextSize="21sp"
+            android:autoSizeMinTextSize="16sp" android:autoSizeMaxTextSize="24sp"
             android:autoSizeStepGranularity="1sp" />
         <TextView android:id="@+id/prayer_notification_previous"
             android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent"
             android:gravity="center_vertical|end" android:textDirection="rtl"
             android:textAppearance="@style/TextAppearance.Compat.Notification.Title"
-            android:textSize="13sp" android:maxLines="1" android:includeFontPadding="false"
+            android:textSize="16sp" android:maxLines="1" android:includeFontPadding="false"
             android:autoSizeTextType="uniform" android:autoSizeMinTextSize="10sp"
-            android:autoSizeMaxTextSize="13sp" android:autoSizeStepGranularity="1sp" />
+            android:autoSizeMaxTextSize="16sp" android:autoSizeStepGranularity="1sp" />
     </LinearLayout>
     <ImageView android:id="@+id/prayer_notification_progress"
         android:layout_width="match_parent" android:layout_height="4.8dp"
@@ -34,7 +34,7 @@
         android:layout_width="match_parent" android:layout_height="19.2dp"
         android:gravity="center" android:textDirection="rtl"
         android:textAppearance="@style/TextAppearance.Compat.Notification.Info"
-        android:textSize="11sp" android:maxLines="1" android:includeFontPadding="false"
+        android:textSize="13sp" android:maxLines="1" android:includeFontPadding="false"
         android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp"
-        android:autoSizeMaxTextSize="11sp" android:autoSizeStepGranularity="1sp" />
+        android:autoSizeMaxTextSize="13sp" android:autoSizeStepGranularity="1sp" />
 </LinearLayout>

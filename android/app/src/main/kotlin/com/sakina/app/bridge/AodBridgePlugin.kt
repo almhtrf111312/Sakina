@@ -160,7 +160,12 @@ class AodBridgePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     context.startActivity(intent)
                     result.success(true)
                 } catch (e: Exception) {
-                    result.success(false)
+                    try {
+                        launch(Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION))
+                        result.success(true)
+                    } catch (_: Exception) {
+                        result.success(false)
+                    }
                 }
             }
 
