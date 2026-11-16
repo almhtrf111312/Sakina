@@ -48,7 +48,7 @@ class AlwaysOnConfig {
   final bool enabled;
   final String dateMode; // none | gregorian | hijri | both
   final double textScale; // 1.0 | 1.3 | 1.6
-  final double brightness; // 0.02 .. 0.30
+  final double brightness; // 0.02 .. 0.24
   final bool showPrayers;
   final int timeoutMin; // 0 = until unlock
   final int clockStyle; // 0..5 digital | 6..7 analog
@@ -517,7 +517,7 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
         _title('نظام الوقت · ينطبق على التطبيق كله'),
         _choices<bool>(
           value: ref.watch(appSettingsProvider).use24HourTime,
-          items: const [(false, '12 ساعة · صباحاً/مساءً'), (true, '24 ساعة')],
+          items: const [(false, '12 ساعة · ص / م'), (true, '24 ساعة')],
           onChanged: (v) => ref.read(settingsNotifierProvider.notifier)
               .update((s) => s.copyWith(use24HourTime: v)),
         ),
@@ -644,10 +644,10 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
               _choices<String>(
                 value: cfg.dateMode,
                 items: const [
-                  ('none', 'بدون'),
+                  ('none', 'بدون تاريخ'),
                   ('gregorian', 'ميلادي'),
                   ('hijri', 'هجري'),
-                  ('both', 'الاثنان'),
+                  ('both', 'ميلادي وهجري'),
                 ],
                 onChanged: (v) => n.update((c) => c.copyWith(dateMode: v)),
               ),
@@ -677,16 +677,16 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
           _card(Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _title('السطوع (${(cfg.brightness * 100).round()}%)'),
+              _title('السطوع (${(cfg.brightness.clamp(0.02, 0.24) * 100).round()}%)'),
               Slider(
-                value: cfg.brightness.clamp(0.02, 0.3),
+                value: cfg.brightness.clamp(0.02, 0.24),
                 min: 0.02,
-                max: 0.3,
-                divisions: 14,
+                max: 0.24,
+                divisions: 11,
                 onChanged: (v) => n.update((c) => c.copyWith(brightness: v)),
               ),
               const Text(
-                'سقف منخفض عمداً لحماية شاشة AMOLED. العناصر تتحرك ببطء باستمرار لمنع الحرق.',
+                'ينتقل المحتوى مسافة صغيرة كل دقيقة للمساعدة على حماية الشاشة.',
                 style: TextStyle(fontFamily: 'Cairo', fontSize: 11),
               ),
               const SizedBox(height: 14),

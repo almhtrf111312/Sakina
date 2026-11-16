@@ -155,7 +155,7 @@ class AppDateUtils {
   // ---------------------------------------------------------------------------
 
   /// Formats time in 12-hour or 24-hour style.
-  /// Example (12h Ar): "04:30 مساءً", Example (12h En): "04:30 PM", (24h): "16:30"
+  /// Example (12h Ar): "04:30 م", Example (12h En): "04:30 PM", (24h): "16:30"
   static String formatPrayerTime(
     DateTime time, {
     bool is24Hour = false,
@@ -172,7 +172,7 @@ class AppDateUtils {
 
     final isPm = hour24 >= 12;
     final amPm = switch (languageCode) {
-      'ar' => isPm ? 'مساءً' : 'صباحاً',
+      'ar' => isPm ? 'م' : 'ص',
       'tr' => isPm ? 'ÖS' : 'ÖÖ',
       _ => isPm ? 'PM' : 'AM',
     };

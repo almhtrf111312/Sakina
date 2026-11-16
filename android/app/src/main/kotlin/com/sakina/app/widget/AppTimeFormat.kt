@@ -8,7 +8,6 @@ import java.util.Locale
 /** Matches the Flutter appearance setting in native widgets and notifications. */
 object AppTimeFormat {
     fun compact(context: Context, timestamp: Long): String = format(context, timestamp)
-        .replace(" صباحاً", " ص").replace(" مساءً", " م")
     fun is24Hour(context: Context): Boolean = try {
         val json = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
             .getString("flutter.app_settings_v1", null)
@@ -22,6 +21,6 @@ object AppTimeFormat {
         if (is24Hour(context)) return String.format(Locale.US, "%02d:%02d", hour, minute)
         val hour12 = if (hour % 12 == 0) 12 else hour % 12
         return String.format(Locale.US, "%02d:%02d %s", hour12, minute,
-            if (hour < 12) "صباحاً" else "مساءً")
+            if (hour < 12) "ص" else "م")
     }
 }
