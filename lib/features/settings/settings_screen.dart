@@ -15,6 +15,11 @@ import 'pages/qibla_settings_page.dart';
 import 'widgets/permission_check_screen.dart';
 import 'widgets/settings_common.dart';
 
+final _installedVersionProvider = FutureProvider<String?>((ref) {
+  return const MethodChannel('com.sakina.app/app_info')
+      .invokeMethod<String>('installedVersion');
+});
+
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -229,7 +234,12 @@ class SettingsScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'الإصدار 1.0.0 (Build 1)',
+                              ref.watch(_installedVersionProvider).when(
+                                data: (version) => version == null
+                                    ? 'رقم الإصدار غير متاح' : 'الإصدار $version',
+                                loading: () => 'جاري قراءة رقم الإصدار…',
+                                error: (_, __) => 'رقم الإصدار غير متاح',
+                              ),
                               style: TextStyle(
                                 fontFamily: 'Cairo',
                                 fontSize: 12,

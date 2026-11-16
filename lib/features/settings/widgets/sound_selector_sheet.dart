@@ -10,6 +10,7 @@ class AdhanSoundOption {
   final String durationText;
   final String descriptionAr;
   final bool fajrOnly;
+  final bool full;
 
   const AdhanSoundOption({
     required this.id,
@@ -18,6 +19,7 @@ class AdhanSoundOption {
     required this.durationText,
     required this.descriptionAr,
     this.fajrOnly = false,
+    this.full = false,
   });
 }
 
@@ -32,36 +34,36 @@ const List<AdhanSoundOption> adhanSoundList = [
     nameAr: 'الأذان الأول',
     muadhinAr: '',
     durationText: '٢٢ ثانية',
-    descriptionAr: 'الأذان كاملاً.',
+    descriptionAr: 'مقطع قصير يُشغّل بمدته الأصلية.',
   ),
   AdhanSoundOption(
     id: 'adhan_2',
     nameAr: 'الأذان الثاني',
     muadhinAr: '',
     durationText: '٣٠ ثانية',
-    descriptionAr: 'الأذان كاملاً.',
+    descriptionAr: 'مقطع قصير يُشغّل بمدته الأصلية.',
   ),
   AdhanSoundOption(
     id: 'adhan_3',
     nameAr: 'الأذان الثالث',
     muadhinAr: '',
     durationText: '١٨ ثانية',
-    descriptionAr: 'الأذان كاملاً.',
+    descriptionAr: 'مقطع قصير يُشغّل بمدته الأصلية.',
   ),
   AdhanSoundOption(
     id: 'adhan_4',
     nameAr: 'حي على الصلاة للفجر',
     muadhinAr: '',
     durationText: '١٩ ثانية',
-    descriptionAr: 'الأذان كاملاً.',
+    descriptionAr: 'مقطع قصير يُشغّل بمدته الأصلية.',
     fajrOnly: true,
   ),
   AdhanSoundOption(
     id: 'adhan_5',
-    nameAr: 'الأذان الخامس (الافتراضي)',
+    nameAr: 'تكبيرة مختصرة (الافتراضي)',
     muadhinAr: 'الأقصر',
     durationText: '١١ ثانية',
-    descriptionAr: 'الأذان الأقصر مدة، وهو الصوت الافتراضي.',
+    descriptionAr: 'مقطع التكبير الافتراضي.',
   ),
   AdhanSoundOption(id: 'adhan_6', nameAr: 'أذان إضافي ١', muadhinAr: '',
     durationText: '١١ ثانية', descriptionAr: ''),
@@ -73,14 +75,18 @@ const List<AdhanSoundOption> adhanSoundList = [
     durationText: '٢٠ ثانية', descriptionAr: ''),
   AdhanSoundOption(id: 'adhan_10', nameAr: 'الله أكبر', muadhinAr: '',
     durationText: '٣٠ ثانية', descriptionAr: ''),
+  AdhanSoundOption(id: 'adhan_fajr_mecca', nameAr: 'أذان الفجر – مكة',
+    muadhinAr: '', durationText: '٣٠ ثانية', descriptionAr: '', fajrOnly: true),
+  AdhanSoundOption(id: 'adhan_full_1', nameAr: 'أذان كامل ١',
+    muadhinAr: '', durationText: '٢:٥٤', descriptionAr: '', full: true),
+  AdhanSoundOption(id: 'adhan_full_2', nameAr: 'أذان كامل ٢',
+    muadhinAr: '', durationText: '٣:٤١', descriptionAr: '', full: true),
+  AdhanSoundOption(id: 'adhan_full_3', nameAr: 'أذان كامل ٣',
+    muadhinAr: '', durationText: '٣:٢٩', descriptionAr: '', full: true),
 ];
 
 /// Display name for a stored sound id.
 String adhanSoundName(String id) {
-  if (id.startsWith('custom|')) {
-    final parts = id.split('|');
-    if (parts.length == 3) return Uri.decodeComponent(parts[1]);
-  }
   for (final o in adhanSoundList) {
     if (o.id == id) return o.nameAr;
   }
@@ -91,12 +97,14 @@ class SoundSelectorSheet extends StatefulWidget {
   final String selectedSoundId;
   final double initialVolume;
   final bool fajr;
+  final bool full;
 
   const SoundSelectorSheet({
     super.key,
     required this.selectedSoundId,
     this.initialVolume = 1.0,
     this.fajr = false,
+    this.full = false,
   });
 
   static Future<String?> show(
@@ -104,6 +112,7 @@ class SoundSelectorSheet extends StatefulWidget {
     required String selectedSoundId,
     double initialVolume = 1.0,
     bool fajr = false,
+    bool full = false,
   }) {
     return showModalBottomSheet<String>(
       context: context,
@@ -113,6 +122,7 @@ class SoundSelectorSheet extends StatefulWidget {
         selectedSoundId: selectedSoundId,
         initialVolume: initialVolume,
         fajr: fajr,
+        full: full,
       ),
     );
   }
@@ -139,38 +149,12 @@ class _SoundSelectorSheetState extends State<SoundSelectorSheet> {
     try {
       final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
       final assets = manifest.listAssets().toSet();
-      final result = <AdhanSoundOption>[];
-      final known = <String>{};
-      for (final o in adhanSoundList) {
-        known.add(o.id);
-        if ((widget.fajr || !o.fajrOnly) &&
-            assets.contains('assets/audio/${o.id}.mp3')) result.add(o);
-      }
-      // Any extra adhan_*.mp3 file the user adds shows up automatically.
-      for (final a in assets) {
-        final m = RegExp(r'^assets/audio/(adhan_[A-Za-z0-9_]+)\.mp3$').firstMatch(a);
-        if (m != null && !known.contains(m.group(1))) {
-          final id = m.group(1)!;
-          final fajrOnly = id.toLowerCase().contains('fajr') || id.contains('الفجر');
-          if (!widget.fajr && fajrOnly) continue;
-          result.add(AdhanSoundOption(
-            id: id,
-            nameAr: id.replaceFirst('adhan_', '').replaceAll('_', ' '),
-            muadhinAr: 'صوت مضاف',
-            durationText: '',
-            descriptionAr: '',
-            fajrOnly: fajrOnly,
-          ));
-        }
-      }
-      if (result.isEmpty) result.addAll(adhanSoundList.take(1));
-      if (_currentSelectedId.startsWith('custom|')) result.insert(0,
-        AdhanSoundOption(id: _currentSelectedId,
-          nameAr: adhanSoundName(_currentSelectedId), muadhinAr: 'من الجهاز',
-          durationText: '', descriptionAr: 'نغمة شخصية'));
+      final result = adhanSoundList.where((sound) =>
+          sound.full == widget.full && (!sound.fajrOnly || widget.fajr) &&
+          assets.contains('assets/audio/${sound.id}.mp3')).toList();
       if (mounted) setState(() => _options = result);
-    } catch (_) {
-      if (mounted) setState(() => _options = adhanSoundList.take(1).toList());
+    } on FlutterError {
+      if (mounted) setState(() => _options = []);
     }
   }
 
@@ -195,32 +179,6 @@ class _SoundSelectorSheetState extends State<SoundSelectorSheet> {
           setState(() => _currentlyPlayingId = null);
         }
       }
-    }
-  }
-
-  Future<void> _pickCustomSound() async {
-    try {
-      final id = await AlarmBridge.pickCustomSound();
-      if (id == null || !mounted) return;
-      final name = adhanSoundName(id);
-      if (!widget.fajr &&
-          (name.toLowerCase().contains('fajr') || name.contains('الفجر'))) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('هذا الصوت مخصص للفجر؛ اختره من صوت أذان الفجر')));
-        return;
-      }
-      setState(() {
-        _options = [
-          AdhanSoundOption(id: id, nameAr: name,
-            muadhinAr: 'من الجهاز', durationText: '', descriptionAr: 'نغمة شخصية'),
-          ..._options.where((o) => !o.id.startsWith('custom|')),
-        ];
-        _currentSelectedId = id;
-      });
-    } on PlatformException {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('تعذر الوصول إلى ملف الصوت. اختر ملفاً من ملفات الجهاز.')));
     }
   }
 
@@ -276,7 +234,7 @@ class _SoundSelectorSheetState extends State<SoundSelectorSheet> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            widget.fajr ? 'صوت أذان الفجر' : 'صوت الأذان والتنبيه',
+                            widget.full ? 'الأذان الكامل' : widget.fajr ? 'المقطع القصير للفجر' : 'مقاطع التكبير',
                             style: TextStyle(
                               fontFamily: 'Cairo',
                               fontSize: 18,
@@ -377,15 +335,6 @@ class _SoundSelectorSheetState extends State<SoundSelectorSheet> {
                   ),
                 ),
                 const Divider(height: 10),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: OutlinedButton.icon(
-                    onPressed: _pickCustomSound,
-                    icon: const Icon(Icons.folder_open),
-                    label: const Text('اختيار نغمة من الجهاز'),
-                  ),
-                ),
-
                 // Sound list
                 Expanded(
                   child: ListView.separated(

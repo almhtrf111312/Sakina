@@ -1,3 +1,4 @@
+import '../home/widgets/daily_dhikr_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -187,7 +188,10 @@ class AzkarScreen extends ConsumerWidget {
           ),
 
           const SliverToBoxAdapter(
-            child: SizedBox(height: 32),
+            child: Padding(
+              padding: EdgeInsets.only(top: 12, bottom: 24),
+              child: DailyDhikrCard(),
+            ),
           ),
         ],
       ),

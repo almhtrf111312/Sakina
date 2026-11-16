@@ -127,9 +127,9 @@ Color accentColorValue(AccentColor c) {
 String notificationModeName(NotificationMode m) {
   switch (m) {
     case NotificationMode.shortBeep:
-      return 'أذان';
-    case NotificationMode.silent:
-      return 'إشعار صامت';
+      return 'تكبيرة فقط';
+    case NotificationMode.fullAdhan:
+      return 'أذان كامل';
     case NotificationMode.vibrate:
       return 'اهتزاز فقط';
     case NotificationMode.off:
@@ -141,8 +141,8 @@ IconData notificationModeIcon(NotificationMode m) {
   switch (m) {
     case NotificationMode.shortBeep:
       return Icons.notifications_active_outlined;
-    case NotificationMode.silent:
-      return Icons.notifications_none_outlined;
+    case NotificationMode.fullAdhan:
+      return Icons.mosque_outlined;
     case NotificationMode.vibrate:
       return Icons.vibration_rounded;
     case NotificationMode.off:

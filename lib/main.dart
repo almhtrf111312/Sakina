@@ -248,6 +248,7 @@ class _SakinaShellState extends ConsumerState<SakinaShell>
   StreamSubscription<AlarmEvent>? _alarmEvents;
   ({int year, int month, int day, Duration offset})? _localDay;
   String? _timeNotice;
+  static const _dismissedTimeNoticeKey = 'dismissed_device_time_notice';
 
   Future<void> _checkDeviceTime({bool changed = false}) async {
     final now = DateTime.now();
@@ -273,7 +274,12 @@ class _SakinaShellState extends ConsumerState<SakinaShell>
         (false, true) => 'المنطقة الزمنية يدوية ($gmt). تأكد أنها صحيحة.',
         _ => null,
       };
-      if (_timeNotice != notice) setState(() => _timeNotice = notice);
+      final dismissed = ref.read(sharedPreferencesProvider)
+          .getString(_dismissedTimeNoticeKey);
+      final visibleNotice = dismissed == notice ? null : notice;
+      if (_timeNotice != visibleNotice) {
+        setState(() => _timeNotice = visibleNotice);
+      }
     } on PlatformException {
       // The device settings may be unavailable on some Android variants.
     } on MissingPluginException {
@@ -284,6 +290,13 @@ class _SakinaShellState extends ConsumerState<SakinaShell>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) _checkDeviceTime();
+  }
+
+  void _dismissTimeNotice() {
+    final notice = _timeNotice;
+    if (notice == null) return;
+    ref.read(sharedPreferencesProvider).setString(_dismissedTimeNoticeKey, notice);
+    setState(() => _timeNotice = null);
   }
 
   Future<void> _openDateSettings() async {
@@ -373,6 +386,11 @@ class _SakinaShellState extends ConsumerState<SakinaShell>
           ? Column(children: [
               SafeArea(bottom: false, child: MaterialBanner(
                 content: Text(_timeNotice!),
+                leading: IconButton(
+                  icon: const Icon(Icons.close, size: 18),
+                  tooltip: 'إخفاء تنبيه الوقت',
+                  onPressed: _dismissTimeNotice,
+                ),
                 actions: [
                   TextButton(onPressed: _openDateSettings,
                     child: const Text('إعدادات الوقت')),

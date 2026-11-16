@@ -27,18 +27,18 @@ class HomeClockDisplay extends StatelessWidget {
     }
     if (style == 2) {
       return Column(children: [
-        const _AnalogClock(), const SizedBox(height: 16),
+        const HomeAnalogClock(), const SizedBox(height: 6),
         const Text('المتبقي على الأذان'), countdown,
       ]);
     }
-    return SizedBox(width: 200, height: 200, child: Stack(
+    return SizedBox(width: 142, height: 142, child: Stack(
       alignment: Alignment.center,
       children: [
         Positioned.fill(child: CircularProgressIndicator(
           value: data.progress, strokeWidth: 8,
           backgroundColor: colors.primary.withOpacity(.12),
           strokeCap: StrokeCap.round)),
-        Padding(padding: const EdgeInsets.all(24), child: Column(
+        Padding(padding: const EdgeInsets.all(14), child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [const Text('المتبقي على الأذان', textAlign: TextAlign.center),
             const SizedBox(height: 8), countdown],
@@ -48,13 +48,13 @@ class HomeClockDisplay extends StatelessWidget {
   }
 }
 
-class _AnalogClock extends StatefulWidget {
-  const _AnalogClock();
+class HomeAnalogClock extends StatefulWidget {
+  const HomeAnalogClock({super.key});
   @override
-  State<_AnalogClock> createState() => _AnalogClockState();
+  State<HomeAnalogClock> createState() => _HomeAnalogClockState();
 }
 
-class _AnalogClockState extends State<_AnalogClock> {
+class _HomeAnalogClockState extends State<HomeAnalogClock> {
   late final Timer _timer;
   DateTime _now = DateTime.now();
   @override
@@ -69,7 +69,7 @@ class _AnalogClockState extends State<_AnalogClock> {
   @override
   Widget build(BuildContext context) => Semantics(
     label: 'ساعة تناظرية ${_now.hour}:${_now.minute}',
-    child: CustomPaint(size: const Size(190, 190), painter: _ClockPainter(
+    child: CustomPaint(size: const Size(116, 116), painter: _ClockPainter(
         _now, Theme.of(context).colorScheme.primary,
         Theme.of(context).colorScheme.onSurface)),
   );
