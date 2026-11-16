@@ -32,26 +32,77 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.50.0'
           channel: 'stable'
           cache: true
+
+      - name: Cache Android native build tools
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/local/lib/android/sdk/ndk/28.2.13676358
+            /usr/local/lib/android/sdk/cmake/3.22.1
+          key: android-native-v1-${{ runner.os }}-${{ runner.arch }}-ndk28.2.13676358-cmake3.22.1
 
       - name: Install dependencies
         run: flutter pub get
 
       - name: Test navigation and daily azkar reset
-        run: flutter test
+        run: flutter test --no-pub
 
-      - name: Build single universal release APK
+      - name: Build single compressed release APK
+        env:
+          ALMUADHAN_KEYSTORE_B64: ${{ secrets.ALMUADHAN_KEYSTORE_B64 }}
+          ALMUADHAN_KEYSTORE_PASSWORD: ${{ secrets.ALMUADHAN_KEYSTORE_PASSWORD }}
+          ALMUADHAN_KEY_ALIAS: ${{ secrets.ALMUADHAN_KEY_ALIAS }}
+          ALMUADHAN_KEY_PASSWORD: ${{ secrets.ALMUADHAN_KEY_PASSWORD }}
         run: |
-          flutter build apk --release
-          mkdir -p artifacts
+          set -euo pipefail
+          suffix="-unsigned"
+          if [[ -n "$ALMUADHAN_KEYSTORE_B64" ]]; then
+            : "${ALMUADHAN_KEYSTORE_PASSWORD:?Missing release keystore password}"
+            : "${ALMUADHAN_KEY_ALIAS:?Missing release key alias}"
+            : "${ALMUADHAN_KEY_PASSWORD:?Missing release key password}"
+            umask 077
+            export ALMUADHAN_KEYSTORE_PATH="$(mktemp "$RUNNER_TEMP/almuadhan.XXXXXX")"
+            trap 'rm -f "$ALMUADHAN_KEYSTORE_PATH"' EXIT
+            printf '%s' "$ALMUADHAN_KEYSTORE_B64" | base64 --decode > "$ALMUADHAN_KEYSTORE_PATH"
+            suffix=""
+          elif [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            # A disposable signing key makes the PR build installable for testing.
+            umask 077
+            signing_dir="$(mktemp -d "$RUNNER_TEMP/almuadhan-preview.XXXXXX")"
+            trap 'rm -rf "$signing_dir"' EXIT
+            export ALMUADHAN_KEYSTORE_PATH="$signing_dir/preview.jks"
+            export ALMUADHAN_KEYSTORE_PASSWORD="$(openssl rand -hex 24)"
+            export ALMUADHAN_KEY_PASSWORD="$ALMUADHAN_KEYSTORE_PASSWORD"
+            export ALMUADHAN_KEY_ALIAS=preview
+            keytool -genkeypair -storetype PKCS12 -keystore "$ALMUADHAN_KEYSTORE_PATH"               -storepass:env ALMUADHAN_KEYSTORE_PASSWORD -alias "$ALMUADHAN_KEY_ALIAS"               -keyalg RSA -keysize 2048 -validity 365 -dname "CN=Al Muadhan Preview"
+            suffix="-preview"
+          fi
+          flutter build apk --release --no-pub
+          apk="build/app/outputs/flutter-apk/app-release.apk"
+          test "$("$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" manifest application-id "$apk")" = "com.almuadhan.app"
+          python3 - "$apk" <<'PYTHON'
+          import sys
+          import zipfile
+          with zipfile.ZipFile(sys.argv[1]) as apk:
+              for abi in ("armeabi-v7a", "arm64-v8a"):
+                  assert apk.getinfo(f"lib/{abi}/libflutter.so").compress_type == zipfile.ZIP_DEFLATED, abi
+          PYTHON
+          if [[ "$suffix" != "-unsigned" ]]; then
+            signer="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
+            test -x "$signer"
+            "$signer" verify --verbose "$apk"
+          fi
           version="$(awk '/^version: / {print $2; exit}' pubspec.yaml)"
-          test -n "$version"
-          cp build/app/outputs/flutter-apk/app-release.apk "artifacts/Al-Muadhan-${version%+*}.apk"
+          mkdir -p artifacts
+          cp "$apk" "artifacts/Al-Muadhan-${version%+*}${suffix}.apk"
 
       - name: Upload APK
         uses: actions/upload-artifact@v6
         with:
           name: Al-Muadhan-APK
           path: artifacts/Al-Muadhan-*.apk
+          compression-level: 0
           retention-days: 30
