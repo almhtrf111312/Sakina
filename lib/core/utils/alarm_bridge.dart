@@ -204,9 +204,16 @@ class AlarmBridge {
   }
 
   /// Open DRAW_OVER_OTHER_APPS system settings for the app.
+  static Future<bool> openFullScreenIntentSettings() async {
+    return await _aodChannel.invokeMethod<bool>('openFullScreenIntentSettings') ?? false;
+  }
+
   static Future<void> requestDrawOverApps() async {
     try {
-      await _aodChannel.invokeMethod('requestDrawOverApps');
+      final opened = await _aodChannel.invokeMethod<bool>('requestDrawOverApps');
+      if (opened != true) {
+        throw AlarmBridgeException('Overlay settings unavailable');
+      }
     } on PlatformException catch (e) {
       throw AlarmBridgeException('requestDrawOverApps failed: ${e.message}');
     }

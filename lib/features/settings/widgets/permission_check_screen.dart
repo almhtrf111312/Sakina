@@ -32,6 +32,7 @@ class PermissionCheckScreen extends StatefulWidget {
 class _PermissionCheckScreenState extends State<PermissionCheckScreen>
     with WidgetsBindingObserver {
   bool _isLoading = true;
+  int _permissionCheckId = 0;
   Map<String, bool> _permissionStatus = {
     'notifications': false,
     'exact_alarms': false,
@@ -113,21 +114,23 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
   }
 
   Future<void> _checkAllPermissions() async {
+    if (!mounted) return;
+    final checkId = ++_permissionCheckId;
     setState(() => _isLoading = true);
 
     bool notif = false;
     bool exact = false;
     bool battery = false;
     bool loc = false;
-    bool fullScreen = true; // default true unless Android requires explicit
+    bool fullScreen = !Platform.isAndroid;
     bool drawOver = false;
 
     try {
       final nativeMap = await AlarmBridge.checkPermissions();
       exact = nativeMap['exactAlarm'] ?? false;
       battery = nativeMap['batteryOptimizationIgnored'] ?? false;
-      drawOver = nativeMap['draw_over_apps'] ?? false;
-      fullScreen = nativeMap['fullScreenIntent'] ?? true;
+      drawOver = nativeMap['drawOverApps'] ?? false;
+      fullScreen = nativeMap['fullScreenIntent'] ?? fullScreen;
     } catch (_) {}
 
     try {
@@ -147,7 +150,7 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
       }
     } catch (_) {}
 
-    if (mounted) {
+    if (mounted && checkId == _permissionCheckId) {
       setState(() {
         _permissionStatus = {
           'notifications': notif,
@@ -191,7 +194,11 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
         }
         break;
       case 'full_screen_intent':
-        await openAppSettings();
+        var opened = false;
+        try {
+          opened = await AlarmBridge.openFullScreenIntentSettings();
+        } catch (_) {}
+        if (!opened) await openAppSettings();
         break;
       case 'draw_over_apps':
         try {

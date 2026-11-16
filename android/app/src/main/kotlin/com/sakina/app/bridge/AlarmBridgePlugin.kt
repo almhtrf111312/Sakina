@@ -367,6 +367,9 @@ class AlarmBridgePlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamH
             permissions["batteryOptimizationIgnored"] = true
         }
 
+        permissions["drawOverApps"] = Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
+            android.provider.Settings.canDrawOverlays(context)
+
         // Full screen intent (Android 14+ / API 34+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
