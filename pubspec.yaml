@@ -1,7 +1,7 @@
 name: sakina
 description: Al Muadhan - المؤذان | Prayer Times, Quran, Azkar & Qibla
 publish_to: 'none'
-version: 1.2.22+25
+version: 1.2.23+26
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
