@@ -575,7 +575,7 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
                 _buildManufacturerItem(
                   brand: 'Xiaomi / Poco / Redmi (MIUI / HyperOS)',
                   tips:
-                      '١. افتح شاشة التطبيقات الحديثة واضغط مطولاً على "سكينة" ثم اختر أيقونة القفل 🔒.\n٢. الضبط > التطبيقات > إدارة التطبيقات > المؤذن > تفعيل "التشغيل التلقائي" (Autostart).\n٣. موفر البطارية > اختر "لا توجد قيود" (No restrictions).',
+                      '١. افتح شاشة التطبيقات الحديثة واضغط مطولاً على "المؤذن" ثم اختر أيقونة القفل 🔒.\n٢. الضبط > التطبيقات > إدارة التطبيقات > المؤذن > تفعيل "التشغيل التلقائي" (Autostart).\n٣. موفر البطارية > اختر "لا توجد قيود" (No restrictions).',
                   isDark: isDark,
                   primary: primary,
                 ),
@@ -583,7 +583,7 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
                 _buildManufacturerItem(
                   brand: 'Samsung (One UI)',
                   tips:
-                      '١. الضبط > العناية بالجهاز > البطارية > حدود استخدام الخلفية.\n٢. تأكد من عدم وجود "سكينة" في "تطبيقات في وضع السكون العميق".\n٣. معلومات تطبيق المؤذن > البطارية > اختر "غير مقيد" (Unrestricted).',
+                      '١. الضبط > العناية بالجهاز > البطارية > حدود استخدام الخلفية.\n٢. تأكد من عدم وجود "المؤذن" في "تطبيقات في وضع السكون العميق".\n٣. معلومات تطبيق المؤذن > البطارية > اختر "غير مقيد" (Unrestricted).',
                   isDark: isDark,
                   primary: primary,
                 ),
@@ -599,7 +599,7 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
                 _buildManufacturerItem(
                   brand: 'Oppo / Realme / OnePlus (ColorOS / OxygenOS)',
                   tips:
-                      '١. الإعدادات > البطارية > إدارة بطارية التطبيقات > المؤذن > السماح بنشاط الخلفية.\n٢. إدارة التطبيقات > بدء التشغيل التلقائي > فعّل سكينة.\n٣. قفل التطبيق في قائمة المهام الحديثة.',
+                      '١. الإعدادات > البطارية > إدارة بطارية التطبيقات > المؤذن > السماح بنشاط الخلفية.\n٢. إدارة التطبيقات > بدء التشغيل التلقائي > فعّل المؤذن.\n٣. قفل التطبيق في قائمة المهام الحديثة.',
                   isDark: isDark,
                   primary: primary,
                 ),

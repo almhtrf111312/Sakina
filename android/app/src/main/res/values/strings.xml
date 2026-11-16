@@ -21,4 +21,16 @@
     <string name="widget_large_description">ودجت كبير للصلاة القادمة ومواقيت الصلوات الخمس</string>
     <string name="widget_circle_description">ساعة دائرية قابلة للتكبير مع الصلاة القادمة والمتبقي</string>
     <string name="widget_banner_description">شريط أفقي للساعة والصلاة القادمة والمتبقي</string>
+    <string name="widget_small_picker_title">المؤذن · الصلاة القادمة</string>
+    <string name="widget_small_picker_description">اسم الصلاة القادمة ووقتها والعد التنازلي</string>
+    <string name="widget_clock_picker_title">المؤذن · الساعة ومواقيت الصلاة</string>
+    <string name="widget_clock_picker_description">الوقت والتاريخ والصلاة القادمة</string>
+    <string name="widget_progress_picker_title">المؤذن · الوقت المتبقي للصلاة</string>
+    <string name="widget_progress_picker_description">موعد الصلاة القادمة مع شريط التقدم والعد التنازلي</string>
+    <string name="widget_list_picker_title">المؤذن · مواقيت الصلوات الخمس</string>
+    <string name="widget_list_picker_description">قائمة عمودية لمواقيت الصلوات الخمس</string>
+    <string name="widget_circle_picker_title">المؤذن · الساعة الدائرية</string>
+    <string name="widget_circle_picker_description">ساعة دائرية مع وقت الصلاة القادمة والمتبقي</string>
+    <string name="widget_banner_picker_title">المؤذن · شريط الصلاة القادمة</string>
+    <string name="widget_banner_picker_description">شريط أفقي للساعة وموعد الصلاة القادمة والمتبقي</string>
 </resources>

@@ -48,7 +48,7 @@ abstract final class StringsEn {
     'enableLocation': 'Enable Location',
     'locationPermissionTitle': 'Location Permission',
     'locationPermissionBody':
-        'Sakina needs access to your location to calculate prayer times and qibla direction.',
+        'Al Muadhin needs access to your location to calculate prayer times and qibla direction.',
     'calculating': 'Calculating...',
     'prayedAlready': 'I prayed',
 
