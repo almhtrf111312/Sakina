@@ -184,7 +184,7 @@ class SakinaTick : BroadcastReceiver() {
             val colors = WidgetAppearance.load(context)
             // Notification text follows the system panel's contrast, independent
             // of the in-app day/night palette. Never paint a white inner card.
-            val views = RemoteViews(context.packageName, R.layout.notification_next_prayer).apply {
+            fun views(layout: Int) = RemoteViews(context.packageName, layout).apply {
                 setTextViewText(R.id.prayer_notification_next, title)
                 setTextViewText(R.id.prayer_notification_previous, previousText)
                 val countdown = android.text.SpannableString(remaining)
@@ -215,8 +215,8 @@ class SakinaTick : BroadcastReceiver() {
                 .setSmallIcon(R.drawable.ic_mosque)
                 .setContentTitle(title)
                 .setContentText("المتبقي $remaining • $details")
-                .setCustomContentView(views)
-                .setCustomBigContentView(views)
+                .setCustomContentView(views(R.layout.notification_next_prayer))
+                .setCustomBigContentView(views(R.layout.notification_next_prayer_expanded))
                 .setShowWhen(false)
                 .setColor(colors.accent)
                 .setOngoing(true)

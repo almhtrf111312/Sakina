@@ -42,16 +42,18 @@ jobs:
         run: flutter test
 
       - name: Build single universal release APK
+        id: apk
         run: |
           flutter build apk --release
           mkdir -p artifacts
           version="$(awk '/^version: / {print $2; exit}' pubspec.yaml)"
           test -n "$version"
+          echo "version=${version%+*}" >> "$GITHUB_OUTPUT"
           cp build/app/outputs/flutter-apk/app-release.apk "artifacts/Al-Muadhan-${version%+*}.apk"
 
       - name: Upload APK
         uses: actions/upload-artifact@v6
         with:
-          name: Al-Muadhan-APK
+          name: Al-Muadhan-${{ steps.apk.outputs.version }}
           path: artifacts/Al-Muadhan-*.apk
           retention-days: 30
