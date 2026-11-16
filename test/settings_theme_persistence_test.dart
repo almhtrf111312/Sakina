@@ -43,17 +43,19 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
     final notifier = SettingsNotifier(prefs);
-    final custom = 'custom|نغمتي|content%3A%2F%2Fmedia%2Ftest';
+    const shortClip = 'adhan_10';
     await notifier.update((s) => s.copyWith(
-        selectedFajrSound: 'adhan_4', selectedAdhanSound: custom));
-    expect(notifier.debugState.selectedAdhanSound, custom);
-    expect(jsonDecode(prefs.getString('app_settings_v1')!)['selectedAdhanSound'], custom);
+        selectedFajrSound: 'adhan_4', selectedAdhanSound: shortClip,
+        selectedFullAdhanSound: 'adhan_full_3'));
+    expect(notifier.debugState.selectedAdhanSound, shortClip);
+    expect(jsonDecode(prefs.getString('app_settings_v1')!)['selectedAdhanSound'], shortClip);
     expect(AppSettings.fromJson(
         jsonDecode(prefs.getString('app_settings_v1')!) as Map<String, dynamic>)
-        .selectedAdhanSound, custom);
+        .selectedAdhanSound, shortClip);
     final restored = SettingsNotifier(prefs);
     expect(restored.debugState.selectedFajrSound, 'adhan_4');
-    expect(restored.debugState.selectedAdhanSound, custom);
+    expect(restored.debugState.selectedFullAdhanSound, 'adhan_full_3');
+    expect(restored.debugState.selectedAdhanSound, shortClip);
     notifier.dispose();
     restored.dispose();
   });

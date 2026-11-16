@@ -220,7 +220,7 @@ class _NotificationsSettingsPageState extends ConsumerState<NotificationsSetting
 
               // Adhan sound selection
               ListTile(
-                title: const Text('صوت الأذان',
+                title: const Text('مقطع التكبير',
                     style: TextStyle(fontFamily: 'Cairo', fontSize: 15)),
                 subtitle: Text(
                   adhanSoundName(settings.selectedAdhanSound),
@@ -245,7 +245,7 @@ class _NotificationsSettingsPageState extends ConsumerState<NotificationsSetting
               settingsDivider(isDark),
 
               ListTile(
-                title: const Text('صوت أذان الفجر',
+                title: const Text('المقطع القصير للفجر',
                     style: TextStyle(fontFamily: 'Cairo', fontSize: 15)),
                 subtitle: Text(adhanSoundName(settings.selectedFajrSound),
                     style: TextStyle(fontFamily: 'Cairo', fontSize: 13,
@@ -257,6 +257,23 @@ class _NotificationsSettingsPageState extends ConsumerState<NotificationsSetting
                       initialVolume: settings.adhanVolume, fajr: true);
                   if (selected != null) {
                     notifier.update((s) => s.copyWith(selectedFajrSound: selected));
+                  }
+                },
+              ),
+              settingsDivider(isDark),
+
+              ListTile(
+                title: const Text('الأذان الكامل'),
+                subtitle: Text(adhanSoundName(settings.selectedFullAdhanSound)),
+                trailing: const Icon(Icons.mosque_outlined),
+                onTap: () async {
+                  final selected = await SoundSelectorSheet.show(context,
+                    selectedSoundId: settings.selectedFullAdhanSound,
+                    initialVolume: settings.adhanVolume,
+                    full: true,
+                  );
+                  if (selected != null && context.mounted) {
+                    await notifier.update((s) => s.copyWith(selectedFullAdhanSound: selected));
                   }
                 },
               ),

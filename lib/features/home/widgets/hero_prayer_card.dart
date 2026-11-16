@@ -26,7 +26,7 @@ class HeroPrayerCard extends ConsumerWidget {
     return progressAsync.when(
       data: (data) {
         if (data == null) {
-          return _buildLoadingPlaceholder(context, isDark,
+          return _buildLoadingPlaceholder(context, isDark, settings.homeClockStyle,
               failed: ref.watch(prayerTimesProvider).hasError);
         }
 
@@ -35,8 +35,8 @@ class HeroPrayerCard extends ConsumerWidget {
 
         return Container(
           width: double.infinity,
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(28),
             gradient: LinearGradient(
@@ -70,14 +70,13 @@ class HeroPrayerCard extends ConsumerWidget {
           ),
           child: Column(
             children: [
-              const _LiveClock(),
-              const SizedBox(height: 14),
+              if (settings.homeClockStyle != 2) const _LiveClock(),
               // ── Header: Icon + Next Prayer Title ──
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
                       color: isDark
                           ? AppColors.nightPrimary.withOpacity(0.15)
@@ -89,7 +88,7 @@ class HeroPrayerCard extends ConsumerWidget {
                       color: isDark
                           ? AppColors.nightPrimary
                           : AppColors.dayPrimary,
-                      size: 22,
+                      size: 17,
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -105,10 +104,10 @@ class HeroPrayerCard extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 2),
               // Target Adhan Time
               Text(
-                'حان موعدها الساعة $formattedTime',
+                '$formattedTime',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: isDark
                       ? AppColors.nightTextSecondary
@@ -116,7 +115,7 @@ class HeroPrayerCard extends ConsumerWidget {
                   fontFamily: 'Cairo',
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 4),
 
               HomeClockDisplay(style: settings.homeClockStyle, data: data),
 
@@ -124,16 +123,16 @@ class HeroPrayerCard extends ConsumerWidget {
           ),
         );
       },
-      loading: () => _buildLoadingPlaceholder(context, isDark),
-      error: (_, __) => _buildLoadingPlaceholder(context, isDark, failed: true),
+      loading: () => _buildLoadingPlaceholder(context, isDark, settings.homeClockStyle),
+      error: (_, __) => _buildLoadingPlaceholder(context, isDark, settings.homeClockStyle, failed: true),
     );
   }
 
-  Widget _buildLoadingPlaceholder(BuildContext context, bool isDark, {bool failed = false}) {
+  Widget _buildLoadingPlaceholder(BuildContext context, bool isDark, int style, {bool failed = false}) {
     return Container(
       width: double.infinity,
-      height: 280,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      height: 164,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
         color: isDark ? AppColors.nightSurface : Colors.white,
@@ -141,7 +140,7 @@ class HeroPrayerCard extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const _LiveClock(),
+          if (style == 2) const HomeAnalogClock() else const _LiveClock(),
           const SizedBox(height: 16),
           Text(failed ? 'تعذر تحميل مواقيت الصلاة' : 'جارٍ تجهيز مواقيت الصلاة'),
         ],

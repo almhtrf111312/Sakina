@@ -85,6 +85,17 @@ class MainActivity : FlutterActivity() {
             }
         }
 
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
+            "com.sakina.app/app_info").setMethodCallHandler { call, result ->
+            if (call.method != "installedVersion") {
+                result.notImplemented()
+            } else {
+                @Suppress("DEPRECATION")
+                val info = packageManager.getPackageInfo(packageName, 0)
+                result.success(info.versionName)
+            }
+        }
+
         // Register native bridge plugins with Flutter engine
         flutterEngine.plugins.add(AlarmBridgePlugin())
         flutterEngine.plugins.add(AodBridgePlugin())
@@ -150,6 +161,14 @@ class MainActivity : FlutterActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         // Handled or delegated to Flutter permission_handler plugin
+    }
+
+    override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+        if (event.action == android.view.KeyEvent.ACTION_DOWN &&
+            (event.keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP ||
+                event.keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN) &&
+            com.sakina.app.service.AdhanForegroundService.stopIfAlerting(this)) return true
+        return super.dispatchKeyEvent(event)
     }
 
     override fun onNewIntent(intent: Intent) {

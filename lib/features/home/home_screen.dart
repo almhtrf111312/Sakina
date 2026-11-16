@@ -7,12 +7,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/location/location_service.dart';
 import '../../data/prayer/prayer_repository.dart';
-import '../../domain/models/azkar_model.dart';
 import '../aod/always_on_screen.dart';
-import '../azkar/azkar_list_screen.dart';
 import '../location/location_picker_screen.dart';
 import 'providers/home_providers.dart';
-import 'widgets/daily_dhikr_card.dart';
 import 'widgets/hero_prayer_card.dart';
 import 'widgets/prayer_list_tile.dart';
 
@@ -30,14 +27,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     await ref.read(prayerRepositoryProvider).invalidateCache();
     ref.invalidate(prayerTimesProvider);
     ref.invalidate(todayPrayerTimesProvider);
-  }
-
-  void _openAzkar(BuildContext context, AzkarCategory category) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => AzkarListScreen(category: category),
-      ),
-    );
   }
 
   void _showCitySelector(BuildContext context) {
@@ -80,7 +69,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // ── Top Bar: Location & Dates ──
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -182,40 +171,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: HeroPrayerCard(),
               ),
 
-              // ── Quick Azkar Shortcuts (صباح / مساء) ──
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _AzkarShortcutCard(
-                          title: 'أذكار الصباح',
-                          subtitle: 'نور وبركة ليومك',
-                          icon: Icons.wb_sunny_outlined,
-                          accentColor: AppColors.nightSecondary,
-                          onTap: () => _openAzkar(context, AzkarCategory.morning),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _AzkarShortcutCard(
-                          title: 'أذكار المساء',
-                          subtitle: 'حفظ وسكينة لليلتك',
-                          icon: Icons.nights_stay_outlined,
-                          accentColor: AppColors.nightPrimary,
-                          onTap: () => _openAzkar(context, AzkarCategory.evening),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
               // ── Section Title: مواقيت الصلاة ──
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -381,102 +340,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
 
-              // ── Daily Dhikr Card at Bottom ──
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.only(top: 8, bottom: 24),
-                  child: DailyDhikrCard(),
-                ),
-              ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────── Azkar Shortcut Card ────────────────────────────
-
-class _AzkarShortcutCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Color accentColor;
-  final VoidCallback onTap;
-
-  const _AzkarShortcutCard({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.accentColor,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.nightSurface : Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: accentColor.withOpacity(0.2),
-            width: 1.0,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.15 : 0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: accentColor.withOpacity(0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: accentColor, size: 20),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontFamily: 'Cairo',
-                      fontWeight: FontWeight.bold,
-                      color: isDark
-                          ? AppColors.nightTextPrimary
-                          : AppColors.dayTextPrimary,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontFamily: 'Cairo',
-                      color: isDark
-                          ? AppColors.nightTextSecondary
-                          : AppColors.dayTextSecondary,
-                      fontSize: 10,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ),
       ),
     );

@@ -52,6 +52,16 @@ class AdhanForegroundService : Service() {
         const val CHANNEL_NAME = "الأذان"
         const val NOTIFICATION_ID = 1001
 
+        const val ACTION_ALERT_CHANGED = "com.sakina.app.PRAYER_ALERT_CHANGED"
+        @Volatile var activePrayer: String? = null
+            private set
+
+        fun stopIfAlerting(context: Context): Boolean {
+            if (activePrayer == null) return false
+            context.stopService(Intent(context, AdhanForegroundService::class.java))
+            return true
+        }
+
         const val EXTRA_PRAYER_NAME = "prayer_name"
         const val EXTRA_PRAYER_TIME = "prayer_time"
         const val EXTRA_PRAYER_JSON = "prayer_json"
@@ -61,7 +71,7 @@ class AdhanForegroundService : Service() {
 
         // Adhan asset filenames (placed in android/app/src/main/assets/audio/)
         private const val ADHAN_ASSET_DEFAULT = "flutter_assets/assets/audio/adhan_5.mp3"
-        private const val ADHAN_ASSET_FAJR    = "flutter_assets/assets/audio/adhan_4.mp3"
+        private const val ADHAN_ASSET_FAJR    = "flutter_assets/assets/audio/adhan_fajr_mecca.mp3"
 
         private const val DEFAULT_TIMEOUT_MS  = 3 * 60 * 1000L  // 3 min
         private const val GRADUAL_VOLUME_STEP_MS = 500L
@@ -84,18 +94,23 @@ class AdhanForegroundService : Service() {
     private var notifId     = NOTIFICATION_ID
     private var alarmVolume = -1
     private var musicVolume = -1
+    private var ringVolume = -1
     private var observingVolume = false
+    private var activeVibrator: android.os.Vibrator? = null
     private val volumeObserver = object : ContentObserver(handler) {
         override fun onChange(selfChange: Boolean) {
             val audio = getSystemService(Context.AUDIO_SERVICE) as AudioManager
             val alarm = audio.getStreamVolume(AudioManager.STREAM_ALARM)
             val music = audio.getStreamVolume(AudioManager.STREAM_MUSIC)
-            if ((alarmVolume >= 0 && alarm < alarmVolume) ||
-                (musicVolume >= 0 && music < musicVolume)) {
+            val ring = audio.getStreamVolume(AudioManager.STREAM_RING)
+            if ((ringVolume >= 0 && ring != ringVolume) ||
+                (alarmVolume >= 0 && alarm != alarmVolume) ||
+                (musicVolume >= 0 && music != musicVolume)) {
                 stopPlayback()
             } else {
                 alarmVolume = alarm
                 musicVolume = music
+                ringVolume = ring
             }
         }
     }
@@ -114,7 +129,6 @@ class AdhanForegroundService : Service() {
     override fun onCreate() {
         super.onCreate()
         ensureNotificationChannel()
-        acquireWakeLock()
         registerStopReceiver()
     }
 
@@ -134,7 +148,6 @@ class AdhanForegroundService : Service() {
         if (prayerJson != null) {
             try {
                 val obj = JSONObject(prayerJson)
-                timeoutMs  = obj.optLong("timeoutMs", DEFAULT_TIMEOUT_MS)
                 gradualVol = obj.optBoolean("gradualVolume", false)
                 soundId    = obj.optString("soundId", "")
                 targetVolume = obj.optDouble("volume", 1.0).toFloat().coerceIn(0.05f, 1f)
@@ -142,33 +155,48 @@ class AdhanForegroundService : Service() {
             } catch (_: Exception) {}
         }
 
-        val playsSound = notifType != "silent" && notifType != "off" && notifType != "vibrate"
-        val notif = buildNotification(playsSound)
+        val alerting = notifType != "silent" && notifType != "off"
+        val displayIntent = if (alerting && !isTest &&
+            (getSystemService(KEYGUARD_SERVICE) as android.app.KeyguardManager).isKeyguardLocked) {
+            Intent(this, AodActivity::class.java).apply {
+                this.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra(AodActivity.EXTRA_PRAYER_ALERT, true)
+            }
+        } else null
+        if (alerting) activePrayer = prayerArabicName(prayerName)
+        val notif = buildNotification(alerting, displayIntent)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(NOTIFICATION_ID, notif,
                 android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
         } else {
             startForeground(NOTIFICATION_ID, notif)
         }
-        startPlayback()
-        if (playsSound) {
+        if (alerting) {
+            sendBroadcast(Intent(ACTION_ALERT_CHANGED).setPackage(packageName))
+            if (displayIntent != null && (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
+                    Settings.canDrawOverlays(this))) {
+                try { startActivity(displayIntent) } catch (e: Exception) {
+                    Log.w(TAG, "Unable to open prayer display directly", e)
+                }
+            }
             val audio = getSystemService(Context.AUDIO_SERVICE) as AudioManager
             alarmVolume = audio.getStreamVolume(AudioManager.STREAM_ALARM)
             musicVolume = audio.getStreamVolume(AudioManager.STREAM_MUSIC)
+            ringVolume = audio.getStreamVolume(AudioManager.STREAM_RING)
             if (!observingVolume) {
                 contentResolver.registerContentObserver(Settings.System.CONTENT_URI, true, volumeObserver)
                 observingVolume = true
             }
+            startPlayback()
+            val duration = mediaPlayer?.duration?.toLong() ?: DEFAULT_TIMEOUT_MS
+            timeoutMs = if (notifType == "vibrate") DEFAULT_TIMEOUT_MS
+                else (duration + 15_000L).coerceAtLeast(30_000L)
+            acquireWakeLock()
+            scheduleTimeout()
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) stopForeground(STOP_FOREGROUND_DETACH)
+            stopSelf()
         }
-        if (!playsSound) {
-            // Silent / vibrate: leave a normal dismissible notification and stop.
-            handler.postDelayed({
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) stopForeground(STOP_FOREGROUND_DETACH)
-                stopSelf()
-            }, 1500)
-            return START_NOT_STICKY
-        }
-        scheduleTimeout()
 
         return START_NOT_STICKY
     }
@@ -180,7 +208,7 @@ class AdhanForegroundService : Service() {
         stopPlayback()
         try { unregisterReceiver(stopReceiver) } catch (_: Exception) {}
         if (observingVolume) contentResolver.unregisterContentObserver(volumeObserver)
-        wakeLock?.release()
+        wakeLock?.let { if (it.isHeld) it.release() }
     }
 
     // ── Playback ─────────────────────────────────────────────────────────────
@@ -202,17 +230,15 @@ class AdhanForegroundService : Service() {
         requestAudioFocus()
 
         val base = "flutter_assets/assets/audio/"
-        val fallback = if (isFajr) ADHAN_ASSET_FAJR else ADHAN_ASSET_DEFAULT
-        val candidates = if (notifType == "beep") {
-            listOf(base + "beep_short.mp3")
-        } else {
-            listOf(
-                if (soundId.matches(Regex("adhan_[A-Za-z0-9_]+")))
-                    "$base$soundId.mp3" else fallback,
-                fallback
-            )
+        val fallback = if (notifType == "full_adhan") base + "adhan_full_1.mp3"
+            else if (isFajr) ADHAN_ASSET_FAJR else ADHAN_ASSET_DEFAULT
+        val validSound = when (notifType) {
+            "full_adhan" -> soundId.matches(Regex("adhan_full_[1-3]"))
+            else -> soundId.matches(Regex("adhan_(?:[1-35-9]|10)")) ||
+                (isFajr && (soundId == "adhan_4" || soundId == "adhan_fajr_mecca"))
         }
-        val assetName = candidates.firstOrNull { assetExists(it) } ?: fallback
+        val selected = "$base$soundId.mp3"
+        val assetName = if (validSound && assetExists(selected)) selected else fallback
 
         try {
             mediaPlayer = MediaPlayer().apply {
@@ -222,23 +248,8 @@ class AdhanForegroundService : Service() {
                         .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                         .build()
                 )
-                // Try loading from assets
-                val customUri = soundId.split('|').takeIf {
-                    it.size == 3 && it[0] == "custom"
-                }?.let { android.net.Uri.parse(android.net.Uri.decode(it[2])) }
-                if (notifType != "beep" && customUri?.scheme == "content") {
-                    try {
-                        setDataSource(applicationContext, customUri)
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Custom sound unavailable; using bundled adhan", e)
-                        val afd = assets.openFd(fallback)
-                        setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
-                        afd.close()
-                    }
-                } else {
-                    val afd = assets.openFd(assetName)
+                assets.openFd(assetName).use { afd ->
                     setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
-                    afd.close()
                 }
 
                 isLooping = false
@@ -259,32 +270,16 @@ class AdhanForegroundService : Service() {
             Log.i(TAG, "Adhan playback started ($assetName)")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start MediaPlayer", e)
-            // Fall back to system alarm sound
-            playSystemAlarm()
-        }
-    }
-
-    private fun playSystemAlarm() {
-        try {
-            val alarmUri = android.provider.Settings.System.DEFAULT_ALARM_ALERT_URI
-            mediaPlayer = MediaPlayer().apply {
-                setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ALARM)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .build()
-                )
-                setDataSource(applicationContext, alarmUri)
-                isLooping = false
-                prepare()
-                start()
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to play system alarm", e)
         }
     }
 
     private fun stopPlayback() {
+        activeVibrator?.cancel()
+        activeVibrator = null
+        if (activePrayer != null) {
+            activePrayer = null
+            sendBroadcast(Intent(ACTION_ALERT_CHANGED).setPackage(packageName))
+        }
         handler.removeCallbacksAndMessages(null)
         try {
             mediaPlayer?.let {
@@ -359,7 +354,7 @@ class AdhanForegroundService : Service() {
 
     // ── Notification ─────────────────────────────────────────────────────────
 
-    private fun buildNotification(playing: Boolean): Notification {
+    private fun buildNotification(playing: Boolean, display: Intent?): Notification {
         val arabicName = prayerArabicName(prayerName)
         val title = if (isTest) "تجربة الأذان" else "حان وقت $arabicName"
         val text = when {
@@ -368,29 +363,31 @@ class AdhanForegroundService : Service() {
             else -> arabicName
         }
 
-        val openApp = Intent(this, com.sakina.app.MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        val tapPi = PendingIntent.getActivity(
-            this, 0, openApp, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        val stop = makeBroadcastPi(AdhanReceiver.ACTION_STOP_ADHAN, 1)
 
         val b = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_mosque)
             .setContentTitle(title)
             .setContentText(text)
-            .setContentIntent(tapPi)
+            .setContentIntent(stop)
+            .setDeleteIntent(stop)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOnlyAlertOnce(true)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .setSilent(true)
-            .setOngoing(playing)
-            .setAutoCancel(!playing)
+            .setOngoing(false)
+            .setAutoCancel(true)
             .setColor(0xFF5FB59B.toInt())
 
+        if (display != null) {
+            val show = PendingIntent.getActivity(this, 101, display,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+            b.setFullScreenIntent(show, true)
+        }
         if (playing) {
-            b.addAction(0, "كتم الآن", makeBroadcastPi(AdhanReceiver.ACTION_STOP_ADHAN, 1))
+            b.addAction(0, "إيقاف التنبيه", stop)
             b.addAction(0, "صليت", makeBroadcastPi(AdhanReceiver.ACTION_PRAYED, 2))
         }
         return b.build()
@@ -424,6 +421,7 @@ class AdhanForegroundService : Service() {
 
     private fun acquireWakeLock() {
         val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+        wakeLock?.let { if (it.isHeld) it.release() }
         wakeLock = pm.newWakeLock(
             PowerManager.PARTIAL_WAKE_LOCK,
             "sakina:AdhanWakeLock"
@@ -452,12 +450,14 @@ class AdhanForegroundService : Service() {
             @Suppress("DEPRECATION")
             getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
         }
-        val pattern = longArrayOf(0, 500, 300, 500, 300, 500)
+        activeVibrator = vibrator
+        val pattern = longArrayOf(0, 600, 450)
+        val attributes = AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).build()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator.vibrate(android.os.VibrationEffect.createWaveform(pattern, -1))
+            vibrator.vibrate(android.os.VibrationEffect.createWaveform(pattern, 0), attributes)
         } else {
             @Suppress("DEPRECATION")
-            vibrator.vibrate(pattern, -1)
+            vibrator.vibrate(pattern, 0, attributes)
         }
     }
 

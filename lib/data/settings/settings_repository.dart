@@ -22,7 +22,7 @@ enum AppThemeMode { night, day, amoled, systemAuto, sunriseAuto }
 
 enum NumeralType { arabic, western }
 
-enum NotificationMode { shortBeep, silent, vibrate, off }
+enum NotificationMode { shortBeep, fullAdhan, vibrate, off }
 
 enum AccentColor { green, gold, white, blue, teal, purple, rose, orange, red, lime }
 
@@ -38,6 +38,7 @@ class AppSettings {
   final Map<String, NotificationMode> prayerNotifications;
   final String selectedAdhanSound;
   final String selectedFajrSound;
+  final String selectedFullAdhanSound;
   final double adhanVolume; // 0.0 .. 1.0
   final bool gradualVolume;
   final int preAdhanReminderMinutes; // 0 = off
@@ -108,7 +109,8 @@ class AppSettings {
       'Isha': NotificationMode.shortBeep,
     },
     this.selectedAdhanSound = 'adhan_5',
-    this.selectedFajrSound = 'adhan_4',
+    this.selectedFajrSound = 'adhan_fajr_mecca',
+    this.selectedFullAdhanSound = 'adhan_full_1',
     this.adhanVolume = 1.0,
     this.gradualVolume = false,
     this.preAdhanReminderMinutes = 0,
@@ -166,6 +168,7 @@ class AppSettings {
     Map<String, NotificationMode>? prayerNotifications,
     String? selectedAdhanSound,
     String? selectedFajrSound,
+    String? selectedFullAdhanSound,
     double? adhanVolume,
     bool? gradualVolume,
     int? preAdhanReminderMinutes,
@@ -222,6 +225,7 @@ class AppSettings {
       prayerNotifications: prayerNotifications ?? this.prayerNotifications,
       selectedAdhanSound: selectedAdhanSound ?? this.selectedAdhanSound,
       selectedFajrSound: selectedFajrSound ?? this.selectedFajrSound,
+      selectedFullAdhanSound: selectedFullAdhanSound ?? this.selectedFullAdhanSound,
       adhanVolume: adhanVolume ?? this.adhanVolume,
       gradualVolume: gradualVolume ?? this.gradualVolume,
       preAdhanReminderMinutes: preAdhanReminderMinutes ?? this.preAdhanReminderMinutes,
@@ -285,6 +289,7 @@ class AppSettings {
             prayerNotifications.map((k, v) => MapEntry(k, v.name)),
         'selectedAdhanSound': selectedAdhanSound,
         'selectedFajrSound': selectedFajrSound,
+        'selectedFullAdhanSound': selectedFullAdhanSound,
         'adhanVolume': adhanVolume,
         'gradualVolume': gradualVolume,
         'preAdhanReminderMinutes': preAdhanReminderMinutes,
@@ -333,6 +338,16 @@ class AppSettings {
         'aodDisablePowerSave': aodDisablePowerSave,
       };
 
+  static String _shortSound(Object? value, {bool fajr = false}) {
+    if (fajr && const ['adhan_4', 'adhan_fajr_mecca'].contains(value)) {
+      return value as String;
+    }
+    if (value is String && RegExp(r'^adhan_(?:[1-35-9]|10)$').hasMatch(value)) {
+      return value;
+    }
+    return fajr ? 'adhan_fajr_mecca' : 'adhan_5';
+  }
+
   factory AppSettings.fromJson(Map<String, dynamic> j) {
     T en<T extends Enum>(List<T> values, String? name, T fallback) =>
         values.firstWhere((v) => v.name == name,
@@ -353,11 +368,12 @@ class AppSettings {
               (k, v) => MapEntry(
                   k,
                   en(NotificationMode.values, v as String?,
-                      NotificationMode.shortBeep))),
-      selectedAdhanSound: (j['selectedAdhanSound'] as String?) == 'adhan_4'
-          ? 'adhan_5' : (j['selectedAdhanSound'] as String?) ?? 'adhan_5',
-      selectedFajrSound:
-          (j['selectedFajrSound'] as String?) ?? 'adhan_4',
+                      v == 'silent' ? NotificationMode.off : NotificationMode.shortBeep))),
+      selectedAdhanSound: _shortSound(j['selectedAdhanSound']),
+      selectedFajrSound: _shortSound(j['selectedFajrSound'], fajr: true),
+      selectedFullAdhanSound: const ['adhan_full_1', 'adhan_full_2', 'adhan_full_3']
+              .contains(j['selectedFullAdhanSound'])
+          ? j['selectedFullAdhanSound'] as String : 'adhan_full_1',
       adhanVolume: (j['adhanVolume'] as num?)?.toDouble() ?? 1.0,
       gradualVolume: (j['gradualVolume'] as bool?) ?? false,
       preAdhanReminderMinutes: (j['preAdhanReminderMinutes'] as int?) ?? 0,

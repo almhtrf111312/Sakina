@@ -16,9 +16,9 @@ import '../settings/settings_repository.dart';
 String _typeFor(NotificationMode mode) {
   switch (mode) {
     case NotificationMode.shortBeep:
-      return 'adhan';
-    case NotificationMode.silent:
-      return 'silent';
+      return 'takbir';
+    case NotificationMode.fullAdhan:
+      return 'full_adhan';
     case NotificationMode.vibrate:
       return 'vibrate';
     case NotificationMode.off:
@@ -39,6 +39,7 @@ final prayerAlarmSyncProvider = FutureProvider<void>((ref) async {
             .map((e) => Object.hash(e.key, e.value))),
         s.selectedAdhanSound,
         s.selectedFajrSound,
+        s.selectedFullAdhanSound,
         s.adhanVolume,
         s.gradualVolume,
         s.morningAzkarReminder,
@@ -64,10 +65,9 @@ final prayerAlarmSyncProvider = FutureProvider<void>((ref) async {
         'timeLabel': timeLabel.format(time.toLocal()),
         'enabled': mode != NotificationMode.off,
         'notificationType': _typeFor(mode),
-        'soundId': name == 'Fajr'
-            ? settings.selectedFajrSound
-            : (settings.selectedAdhanSound == 'adhan_4'
-                ? 'adhan_5' : settings.selectedAdhanSound),
+        'soundId': mode == NotificationMode.fullAdhan
+            ? settings.selectedFullAdhanSound
+            : name == 'Fajr' ? settings.selectedFajrSound : settings.selectedAdhanSound,
         'volume': settings.adhanVolume,
         'gradualVolume': settings.gradualVolume,
       });

@@ -19,6 +19,8 @@ import android.util.TypedValue
 import android.view.Gravity
 import android.view.GestureDetector
 import android.view.MotionEvent
+import android.view.KeyEvent
+import com.sakina.app.service.AdhanForegroundService
 import android.view.View
 import android.view.WindowManager
 import android.widget.FrameLayout
@@ -42,6 +44,7 @@ class AodActivity : Activity() {
 
     companion object {
         const val EXTRA_ALWAYS_ON = "always_on"
+        const val EXTRA_PRAYER_ALERT = "prayer_alert"
         const val EXTRA_PREVIEW = "preview"
         const val ACTION_CLOSE_AOD = "com.sakina.app.ACTION_CLOSE_AOD"
         private const val DRIFT_MS = 60_000L
@@ -57,6 +60,8 @@ class AodActivity : Activity() {
     private var analogClock: AnalogClockView? = null
     private lateinit var tvDate: TextView
     private lateinit var tvHijri: TextView
+    private lateinit var tvExit: TextView
+    private lateinit var tvAlert: TextView
     private lateinit var tvName: TextView
     private lateinit var tvPrayerTime: TextView
     private lateinit var tvCountdown: TextView
@@ -67,7 +72,10 @@ class AodActivity : Activity() {
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(c: Context, i: Intent) {
-            if (i.action == ACTION_CLOSE_AOD) finish()
+            when (i.action) {
+                ACTION_CLOSE_AOD -> finish()
+                AdhanForegroundService.ACTION_ALERT_CHANGED -> updatePrayerAlert()
+            }
         }
     }
 
@@ -92,21 +100,27 @@ class AodActivity : Activity() {
                 return false
             }
         })
-        val f = IntentFilter(ACTION_CLOSE_AOD)
+        val f = IntentFilter(ACTION_CLOSE_AOD).apply {
+            addAction(AdhanForegroundService.ACTION_ALERT_CHANGED)
+        }
         if (Build.VERSION.SDK_INT >= 33) registerReceiver(receiver, f, Context.RECEIVER_NOT_EXPORTED)
         else registerReceiver(receiver, f)
         val timeout = if (preview) 60_000L else cfg.timeoutMin * 60_000L
-        if (timeout > 0) handler.postDelayed({ timeoutClose() }, timeout)
+        if (timeout > 0 && !intent.getBooleanExtra(EXTRA_PRAYER_ALERT, false)) {
+            handler.postDelayed({ timeoutClose() }, timeout)
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        updatePrayerAlert()
     }
 
     override fun onStart() {
         super.onStart()
         cachedMinute = -1
+        updatePrayerAlert()
         tick.run()
         handler.post(drift)
     }
@@ -206,6 +220,10 @@ class AodActivity : Activity() {
         tvDate = label(20f, soft).also { block.addView(it, lp(6)) }
         tvHijri = label(20f, soft).also { block.addView(it, lp(2)) }
         block.addView(View(this), LinearLayout.LayoutParams(1, (28 * d).toInt()))
+        tvAlert = label(24f, main, true).apply {
+            visibility = View.GONE
+            accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
+        }.also { block.addView(it, lp(0)) }
         tvName = label(44f, main, true).also { block.addView(it, lp(0)) }
         tvPrayerTime = label(38f, main).also { block.addView(it, lp(4)) }
         // A single clock in the framed style; prayer name/countdown remain below it.
@@ -223,12 +241,12 @@ class AodActivity : Activity() {
         tvHijri.visibility = if (cfg.dateMode == "hijri" || cfg.dateMode == "both") View.VISIBLE else View.GONE
         // keep colours used by rows
         rowPrayers.tag = Pair(main, faint)
-        val exit = label(16f, soft).apply {
+        tvExit = label(16f, soft).apply {
             text = "إظهار شاشة القفل"
             setPadding(0, (12 * d).toInt(), 0, (12 * d).toInt())
             setOnClickListener { dismiss() }
         }
-        block.addView(exit, lp(14))
+        block.addView(tvExit, lp(14))
         setContentView(root)
     }
 
@@ -374,6 +392,7 @@ class AodActivity : Activity() {
     }
 
     private fun timeoutClose() {
+        if (AdhanForegroundService.activePrayer != null) return
         if (!preview) suppressUntilUnlock()
         finish()
     }
@@ -384,7 +403,40 @@ class AodActivity : Activity() {
         dismiss()
     }
 
+    private fun updatePrayerAlert() {
+        if (preview) return
+        val name = AdhanForegroundService.activePrayer
+        if (name == null) {
+            tvAlert.animate().cancel()
+            tvAlert.visibility = View.GONE
+            tvExit.text = "إظهار شاشة القفل"
+            if (intent.getBooleanExtra(EXTRA_PRAYER_ALERT, false)) finish()
+            return
+        }
+        val title = "حان الآن موعد أذان $name"
+        if (tvAlert.visibility == View.VISIBLE && tvAlert.text == title) return
+        tvExit.text = "المس الشاشة لإيقاف التنبيه"
+        tvAlert.text = title
+        tvAlert.visibility = View.VISIBLE
+        tvAlert.alpha = 0.25f
+        tvAlert.animate().alpha(1f).setDuration(550).start()
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN &&
+            (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP ||
+                event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) &&
+            AdhanForegroundService.stopIfAlerting(this)) return true
+        return super.dispatchKeyEvent(event)
+    }
+
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        if (!preview && AdhanForegroundService.activePrayer != null) {
+            if (event.actionMasked == MotionEvent.ACTION_UP) {
+                AdhanForegroundService.stopIfAlerting(this)
+            }
+            return true
+        }
         // Observe the entire screen, including text and prayer rows; child
         // views must not swallow the double tap needed to reach the keyguard.
         val handled = ::detector.isInitialized && detector.onTouchEvent(event)
