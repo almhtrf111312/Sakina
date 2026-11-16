@@ -159,7 +159,7 @@ class AdhanForegroundService : Service() {
         val displayIntent = if (alerting && !isTest &&
             (getSystemService(KEYGUARD_SERVICE) as android.app.KeyguardManager).isKeyguardLocked) {
             Intent(this, AodActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                this.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 putExtra(AodActivity.EXTRA_PRAYER_ALERT, true)
             }
         } else null
