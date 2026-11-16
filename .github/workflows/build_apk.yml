@@ -37,7 +37,7 @@ jobs:
           cache: true
 
       - name: Cache Android native build tools
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             /usr/local/lib/android/sdk/ndk/28.2.13676358
@@ -59,7 +59,6 @@ jobs:
           ALMUADHAN_KEY_PASSWORD: ${{ secrets.ALMUADHAN_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          suffix="-unsigned"
           if [[ -n "$ALMUADHAN_KEYSTORE_B64" ]]; then
             : "${ALMUADHAN_KEYSTORE_PASSWORD:?Missing release keystore password}"
             : "${ALMUADHAN_KEY_ALIAS:?Missing release key alias}"
@@ -69,8 +68,8 @@ jobs:
             trap 'rm -f "$ALMUADHAN_KEYSTORE_PATH"' EXIT
             printf '%s' "$ALMUADHAN_KEYSTORE_B64" | base64 --decode > "$ALMUADHAN_KEYSTORE_PATH"
             suffix=""
-          elif [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
-            # A disposable signing key makes the PR build installable for testing.
+          else
+            echo "::notice::Release signing is not configured. Uploading an installable preview signed with a temporary key."
             umask 077
             signing_dir="$(mktemp -d "$RUNNER_TEMP/almuadhan-preview.XXXXXX")"
             trap 'rm -rf "$signing_dir"' EXIT
@@ -91,22 +90,19 @@ jobs:
               for abi in ("armeabi-v7a", "arm64-v8a"):
                   assert apk.getinfo(f"lib/{abi}/libflutter.so").compress_type == zipfile.ZIP_DEFLATED, abi
           PYTHON
-          if [[ "$suffix" != "-unsigned" ]]; then
-            signer="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
-            test -x "$signer"
-            "$signer" verify --verbose "$apk"
-          fi
+          signer="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
+          test -x "$signer"
+          "$signer" verify --verbose "$apk"
           version="$(awk '/^version: / {print $2; exit}' pubspec.yaml)"
           echo "version=${version%+*}${suffix}" >> "$GITHUB_OUTPUT"
-          echo "installable=$([[ "$suffix" != "-unsigned" ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
           mkdir -p artifacts
           cp "$apk" "artifacts/Al-Muadhan-${version%+*}${suffix}.apk"
 
       - name: Upload APK
-        if: steps.apk.outputs.installable == 'true'
         uses: actions/upload-artifact@v6
         with:
           name: Al-Muadhan-${{ steps.apk.outputs.version }}
           path: artifacts/Al-Muadhan-*.apk
+          if-no-files-found: error
           compression-level: 0
           retention-days: 30
