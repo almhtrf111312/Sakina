@@ -219,7 +219,7 @@
         <!-- HOME SCREEN PRAYER WIDGET -->
         <!-- ======================================================= -->
         <receiver
-            android:name=".widget.WidgetSmall"
+            android:name=".widget.WidgetSmall" android:label="@string/widget_small_picker_title"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -230,7 +230,7 @@
         </receiver>
 
         <receiver
-            android:name=".widget.WidgetClock"
+            android:name=".widget.WidgetClock" android:label="@string/widget_clock_picker_title"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -241,7 +241,7 @@
         </receiver>
 
         <receiver
-            android:name=".widget.WidgetProgress"
+            android:name=".widget.WidgetProgress" android:label="@string/widget_progress_picker_title"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -252,7 +252,7 @@
         </receiver>
 
         <receiver
-            android:name=".widget.WidgetList"
+            android:name=".widget.WidgetList" android:label="@string/widget_list_picker_title"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -262,6 +262,7 @@
                 android:resource="@xml/widget_list_info" />
         </receiver>
 
+        <!-- Legacy widget components remain registered for existing placements. -->
         <receiver
             android:name=".widget.WidgetStrip"
             android:exported="true">
@@ -284,12 +285,12 @@
                 android:resource="@xml/widget_large_info" />
         </receiver>
 
-        <receiver android:name=".widget.WidgetCircle" android:exported="true">
+        <receiver android:name=".widget.WidgetCircle" android:label="@string/widget_circle_picker_title" android:exported="true">
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_circle_info" />
         </receiver>
 
-        <receiver android:name=".widget.WidgetBanner" android:exported="true">
+        <receiver android:name=".widget.WidgetBanner" android:label="@string/widget_banner_picker_title" android:exported="true">
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_banner_info" />
         </receiver>
