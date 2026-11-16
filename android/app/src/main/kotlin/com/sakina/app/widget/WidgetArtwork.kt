@@ -65,7 +65,7 @@ object WidgetArtwork {
         return bitmap
     }
 
-    fun bar(width: Int, progress: Int, colors: WidgetAppearance): Bitmap {
+    fun bar(width: Int, progress: Int, colors: WidgetAppearance, fromRight: Boolean = false): Bitmap {
         val w = width.coerceIn(200, 900)
         val h = 12
         val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
@@ -74,7 +74,9 @@ object WidgetArtwork {
         p.color = Color.argb(95, Color.red(colors.muted), Color.green(colors.muted), Color.blue(colors.muted))
         canvas.drawRoundRect(0f, 2f, w.toFloat(), 10f, 5f, 5f, p)
         p.color = colors.accent
-        canvas.drawRoundRect(0f, 2f, w * progress.coerceIn(0, 100) / 100f, 10f, 5f, 5f, p)
+        val filled = w * progress.coerceIn(0, 100) / 100f
+        canvas.drawRoundRect(if (fromRight) w - filled else 0f, 2f,
+            if (fromRight) w.toFloat() else filled, 10f, 5f, 5f, p)
         return bitmap
     }
 }
