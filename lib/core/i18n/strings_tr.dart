@@ -48,7 +48,7 @@ abstract final class StringsTr {
     'enableLocation': 'Konumu Etkinleştir',
     'locationPermissionTitle': 'Konum İzni',
     'locationPermissionBody':
-        'Al Muadhin, namaz vakitlerini ve kıble yönünü hesaplamak için konumunuza erişmek istiyor.',
+        'Al Muadhan, namaz vakitlerini ve kıble yönünü hesaplamak için konumunuza erişmek istiyor.',
     'calculating': 'Hesaplanıyor...',
     'prayedAlready': 'Namazı kıldım',
 

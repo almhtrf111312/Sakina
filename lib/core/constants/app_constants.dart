@@ -3,8 +3,8 @@ abstract final class AppConstants {
   AppConstants._();
 
   // App Identity
-  static const String appName = 'المؤذن';
-  static const String appNameEn = 'Al Muadhin';
+  static const String appName = 'المؤذان';
+  static const String appNameEn = 'Al Muadhan';
   static const String appVersion = '1.0.0';
   static const int appBuildNumber = 1;
   static const String packageName = 'com.sakina.app';

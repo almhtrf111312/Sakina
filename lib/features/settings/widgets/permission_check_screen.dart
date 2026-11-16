@@ -359,7 +359,7 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
                 const SizedBox(height: 3),
                 Text(
                   allGood
-                      ? 'تطبيق المؤذن جاهز لإطلاق الأذان في مواقيته بدقة دون انقطاع.'
+                      ? 'تطبيق المؤذان جاهز لإطلاق الأذان في مواقيته بدقة دون انقطاع.'
                       : 'يرجى تفعيل الأذونات المعلمة باللون الأحمر لضمان سماع الأذان.',
                   style: TextStyle(
                     fontFamily: 'Cairo',
@@ -575,7 +575,7 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
                 _buildManufacturerItem(
                   brand: 'Xiaomi / Poco / Redmi (MIUI / HyperOS)',
                   tips:
-                      '١. افتح شاشة التطبيقات الحديثة واضغط مطولاً على "المؤذن" ثم اختر أيقونة القفل 🔒.\n٢. الضبط > التطبيقات > إدارة التطبيقات > المؤذن > تفعيل "التشغيل التلقائي" (Autostart).\n٣. موفر البطارية > اختر "لا توجد قيود" (No restrictions).',
+                      '١. افتح شاشة التطبيقات الحديثة واضغط مطولاً على "المؤذان" ثم اختر أيقونة القفل 🔒.\n٢. الضبط > التطبيقات > إدارة التطبيقات > المؤذان > تفعيل "التشغيل التلقائي" (Autostart).\n٣. موفر البطارية > اختر "لا توجد قيود" (No restrictions).',
                   isDark: isDark,
                   primary: primary,
                 ),
@@ -583,7 +583,7 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
                 _buildManufacturerItem(
                   brand: 'Samsung (One UI)',
                   tips:
-                      '١. الضبط > العناية بالجهاز > البطارية > حدود استخدام الخلفية.\n٢. تأكد من عدم وجود "المؤذن" في "تطبيقات في وضع السكون العميق".\n٣. معلومات تطبيق المؤذن > البطارية > اختر "غير مقيد" (Unrestricted).',
+                      '١. الضبط > العناية بالجهاز > البطارية > حدود استخدام الخلفية.\n٢. تأكد من عدم وجود "المؤذان" في "تطبيقات في وضع السكون العميق".\n٣. معلومات تطبيق المؤذان > البطارية > اختر "غير مقيد" (Unrestricted).',
                   isDark: isDark,
                   primary: primary,
                 ),
@@ -591,7 +591,7 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
                 _buildManufacturerItem(
                   brand: 'Huawei / Honor (EMUI / MagicOS)',
                   tips:
-                      '١. الإعدادات > البطارية > بدء تشغيل التطبيقات (App Launch).\n٢. ابحث عن المؤذن وقم بتعطيل الإدارة التلقائية واختر "إدارة يدوية".\n٣. فعّل: التشغيل التلقائي، التشغيل الثانوي، والتشغيل في الخلفية.',
+                      '١. الإعدادات > البطارية > بدء تشغيل التطبيقات (App Launch).\n٢. ابحث عن المؤذان وقم بتعطيل الإدارة التلقائية واختر "إدارة يدوية".\n٣. فعّل: التشغيل التلقائي، التشغيل الثانوي، والتشغيل في الخلفية.',
                   isDark: isDark,
                   primary: primary,
                 ),
@@ -599,7 +599,7 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
                 _buildManufacturerItem(
                   brand: 'Oppo / Realme / OnePlus (ColorOS / OxygenOS)',
                   tips:
-                      '١. الإعدادات > البطارية > إدارة بطارية التطبيقات > المؤذن > السماح بنشاط الخلفية.\n٢. إدارة التطبيقات > بدء التشغيل التلقائي > فعّل المؤذن.\n٣. قفل التطبيق في قائمة المهام الحديثة.',
+                      '١. الإعدادات > البطارية > إدارة بطارية التطبيقات > المؤذان > السماح بنشاط الخلفية.\n٢. إدارة التطبيقات > بدء التشغيل التلقائي > فعّل المؤذان.\n٣. قفل التطبيق في قائمة المهام الحديثة.',
                   isDark: isDark,
                   primary: primary,
                 ),

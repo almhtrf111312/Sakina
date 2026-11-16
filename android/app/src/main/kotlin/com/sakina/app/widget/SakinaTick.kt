@@ -108,7 +108,7 @@ class SakinaTick : BroadcastReceiver() {
             ensureChannel(context)
             return NotificationCompat.Builder(context, CHANNEL)
                 .setSmallIcon(R.drawable.ic_mosque)
-                .setContentTitle("المؤذن • الشاشة الدائمة")
+                .setContentTitle("المؤذان • الشاشة الدائمة")
                 .setContentText("مواقيت الصلاة")
                 .setOngoing(true).setSilent(true).build()
         }
@@ -168,7 +168,7 @@ class SakinaTick : BroadcastReceiver() {
             ensureChannel(context)
             val n = d.next ?: return NotificationCompat.Builder(context, CHANNEL)
                 .setSmallIcon(R.drawable.ic_mosque)
-                .setContentTitle("المؤذن • الشاشة الدائمة")
+                .setContentTitle("المؤذان • الشاشة الدائمة")
                 .setOngoing(true).setSilent(true).build()
             val now = System.currentTimeMillis()
             val timeStr = AppTimeFormat.compact(context, n.ts)

@@ -328,7 +328,7 @@ class AodActivity : Activity() {
         val data = cachedData
         val next = data?.next
         if (next == null) {
-            tvName.text = "المؤذن"; tvPrayerTime.text = ""; tvCountdown.text = ""
+            tvName.text = "المؤذان"; tvPrayerTime.text = ""; tvCountdown.text = ""
             return
         }
         tvName.text = "الصلاة القادمة: " + next.nameAr

@@ -67,7 +67,7 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
     final hasLocation = ref.read(sharedPreferencesProvider)
         .containsKey('sakina_saved_location');
     final primary = Theme.of(context).colorScheme.primary;
-    final title = ['مرحباً بك في المؤذن', 'موقعك ومواقيت الصلاة',
+    final title = ['مرحباً بك في المؤذان', 'موقعك ومواقيت الصلاة',
       'المظهر والخط', 'الشاشة الدائمة'][step];
     return Scaffold(
       appBar: AppBar(title: Text(title), automaticallyImplyLeading: false),
@@ -80,7 +80,7 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
             if (step == 0) ...[
               Icon(Icons.mosque_rounded, size: 84, color: primary),
               const SizedBox(height: 24),
-              const Text('المؤذن يعرض مواقيت الصلاة، ينبهك عند وقتها، '
+              const Text('المؤذان يعرض مواقيت الصلاة، ينبهك عند وقتها، '
                   'ويساعدك في الأذكار والتسبيح واتجاه القبلة.',
                   textAlign: TextAlign.center, style: TextStyle(fontSize: 19)),
               const SizedBox(height: 16),
