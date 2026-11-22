@@ -46,6 +46,7 @@ class BootReceiver : BroadcastReceiver() {
     private fun handleReschedule(context: Context, triggerAction: String) {
         com.sakina.app.widget.SakinaTick.refresh(context)
         com.sakina.app.aod.AlwaysOnService.syncWithConfig(context)
+        PrayerSilenceScheduler.refresh(context)
         // Try to reschedule from stored prayer times
         if (triggerAction == android.app.AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED &&
             !AlarmScheduler.canScheduleExactAlarms(context)) return

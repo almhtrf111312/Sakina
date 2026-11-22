@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/prayer/prayer_calculator.dart';
 import '../../core/utils/alarm_bridge.dart';
+import 'prayer_silence_settings.dart';
 
 // ─────────────────────────── SharedPreferences provider ─────────────────────
 
@@ -36,6 +37,8 @@ class AppSettings {
 
   // ── Notifications ──────────────────────────────────────────────────────
   final Map<String, NotificationMode> prayerNotifications;
+  final bool prayerSilenceEnabled;
+  final Map<String, PrayerSilence> prayerSilence;
   final String selectedAdhanSound;
   final String selectedFajrSound;
   final String selectedFullAdhanSound;
@@ -100,6 +103,8 @@ class AppSettings {
     this.highLatitudeRule = HighLatitudeRule.middleOfNight,
     this.hijriOffset = 0,
     this.prayerAdjustments = const {},
+    this.prayerSilenceEnabled = false,
+    this.prayerSilence = const {},
     this.prayerNotifications = const {
       'Fajr': NotificationMode.shortBeep,
       'Sunrise': NotificationMode.off,
@@ -166,6 +171,8 @@ class AppSettings {
     int? hijriOffset,
     Map<String, int>? prayerAdjustments,
     Map<String, NotificationMode>? prayerNotifications,
+    bool? prayerSilenceEnabled,
+    Map<String, PrayerSilence>? prayerSilence,
     String? selectedAdhanSound,
     String? selectedFajrSound,
     String? selectedFullAdhanSound,
@@ -223,6 +230,8 @@ class AppSettings {
       hijriOffset: hijriOffset ?? this.hijriOffset,
       prayerAdjustments: prayerAdjustments ?? this.prayerAdjustments,
       prayerNotifications: prayerNotifications ?? this.prayerNotifications,
+      prayerSilenceEnabled: prayerSilenceEnabled ?? this.prayerSilenceEnabled,
+      prayerSilence: prayerSilence ?? this.prayerSilence,
       selectedAdhanSound: selectedAdhanSound ?? this.selectedAdhanSound,
       selectedFajrSound: selectedFajrSound ?? this.selectedFajrSound,
       selectedFullAdhanSound: selectedFullAdhanSound ?? this.selectedFullAdhanSound,
@@ -285,6 +294,8 @@ class AppSettings {
         'highLatitudeRule': highLatitudeRule.name,
         'hijriOffset': hijriOffset,
         'prayerAdjustments': prayerAdjustments,
+        'prayerSilenceEnabled': prayerSilenceEnabled,
+        'prayerSilence': prayerSilence.map((k, v) => MapEntry(k, v.toJson())),
         'prayerNotifications':
             prayerNotifications.map((k, v) => MapEntry(k, v.name)),
         'selectedAdhanSound': selectedAdhanSound,
@@ -363,6 +374,8 @@ class AppSettings {
       prayerAdjustments:
           ((j['prayerAdjustments'] as Map<String, dynamic>?) ?? {})
               .map((k, v) => MapEntry(k, v as int)),
+      prayerSilenceEnabled: j['prayerSilenceEnabled'] == true,
+      prayerSilence: PrayerSilence.readAll(j['prayerSilence']),
       prayerNotifications:
           ((j['prayerNotifications'] as Map<String, dynamic>?) ?? {}).map(
               (k, v) => MapEntry(

@@ -12,6 +12,7 @@ import 'features/aod/always_on_screen.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
 import 'data/notifications/prayer_alarm_sync.dart';
+import 'data/notifications/prayer_silence_sync.dart';
 import 'core/utils/alarm_bridge.dart';
 import 'data/prayer/prayer_repository.dart';
 import 'data/settings/settings_repository.dart';
@@ -292,7 +293,10 @@ class _SakinaShellState extends ConsumerState<SakinaShell>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _checkDeviceTime();
+    if (state == AppLifecycleState.resumed) {
+      _checkDeviceTime();
+      ref.invalidate(prayerSilenceSyncProvider);
+    }
   }
 
   void _dismissTimeNotice() {
@@ -380,6 +384,7 @@ class _SakinaShellState extends ConsumerState<SakinaShell>
     final currentTab = ref.watch(currentTabProvider);
     // Keep native adhan alarms in sync with prayer times & settings.
     ref.watch(prayerAlarmSyncProvider);
+    ref.watch(prayerSilenceSyncProvider);
     ref.watch(alwaysOnProvider);
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);

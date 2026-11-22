@@ -21,6 +21,7 @@
     <!-- ============================================================ -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
 
     <!-- ============================================================ -->
     <!-- WAKE & POWER -->
@@ -91,6 +92,11 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.app.action.AUTOMATIC_ZEN_RULE" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
 
             <!-- Deep link: sakina://prayer -->
@@ -172,6 +178,8 @@
         <!-- ======================================================= -->
         <!-- BOOT RECEIVER -->
         <!-- ======================================================= -->
+        <receiver android:name=".alarm.PrayerSilenceReceiver" android:exported="false" />
+
         <receiver
             android:name=".alarm.BootReceiver"
             android:exported="true"

@@ -22,6 +22,7 @@ import androidx.core.app.NotificationManagerCompat
 import com.sakina.app.alarm.AdhanReceiver
 import com.sakina.app.alarm.AlarmScheduler
 import com.sakina.app.alarm.BootReceiver
+import com.sakina.app.alarm.PrayerSilenceScheduler
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
@@ -273,6 +274,29 @@ class AlarmBridgePlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamH
                     tapExecutor.execute { tapFeedback(sound, haptic, volume, intensity, completion) }
                 } catch (_: Exception) {}
                 result.success(true)
+            }
+            "prayerSilenceStatus" -> result.success(mapOf(
+                "supported" to PrayerSilenceScheduler.supported,
+                "access" to PrayerSilenceScheduler.hasAccess(context),
+                "exactAlarm" to AlarmScheduler.canScheduleExactAlarms(context)
+            ))
+            "requestPrayerSilenceAccess" -> {
+                try {
+                    context.startActivity(Intent(android.provider.Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    result.success(null)
+                } catch (e: android.content.ActivityNotFoundException) {
+                    result.error("UNAVAILABLE", "Do Not Disturb settings are unavailable", null)
+                }
+            }
+            "setPrayerSilenceWindows" -> {
+                val json = call.arguments as? String ?: "[]"
+                try {
+                    PrayerSilenceScheduler.replace(context, json)
+                    result.success(null)
+                } catch (e: Exception) {
+                    result.error("SILENCE_SYNC_FAILED", e.message, null)
+                }
             }
             "schedulePrayerAlarms" -> {
                 val prayerTimesArg = call.argument<Any>("prayerTimes")

@@ -20,6 +20,7 @@ class TimeChangeReceiver : BroadcastReceiver() {
         val action = intent.action ?: return
         Log.i(TAG, "Time change event received: $action")
 
+        PrayerSilenceScheduler.refresh(context)
         // Reschedule alarms
         AlarmScheduler.rescheduleFromStorage(context)
 

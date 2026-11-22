@@ -3,6 +3,19 @@ import 'package:flutter/services.dart';
 
 /// Flutter MethodChannel wrapper for calling Kotlin AlarmScheduler and AodActivity.
 class AlarmBridge {
+  static Future<Map<String, bool>> prayerSilenceStatus() async =>
+      await _alarmChannel.invokeMapMethod<String, bool>('prayerSilenceStatus') ??
+      const {};
+
+  static Future<void> requestPrayerSilenceAccess() =>
+      _alarmChannel.invokeMethod<void>('requestPrayerSilenceAccess');
+
+  static Future<void> setPrayerSilenceWindows(List<List<int>> windows) =>
+      _alarmChannel.invokeMethod<void>(
+        'setPrayerSilenceWindows',
+        jsonEncode(windows),
+      );
+
   static Future<void> refreshTimeDisplays() async {
     try {
       await _alarmChannel.invokeMethod('refreshTimeDisplays');
