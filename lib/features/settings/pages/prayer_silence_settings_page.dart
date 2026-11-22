@@ -63,7 +63,7 @@ class _PrayerSilenceSettingsPageState
     String name,
     PrayerSilence Function(PrayerSilence) update,
   ) =>
-      ref.read(appSettingsProvider.notifier).update((settings) {
+      ref.read(settingsNotifierProvider.notifier).update((settings) {
         final current = settings.prayerSilence[name] ?? const PrayerSilence();
         return settings.copyWith(prayerSilence: {
           ...settings.prayerSilence,
@@ -91,7 +91,7 @@ class _PrayerSilenceSettingsPageState
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(appSettingsProvider);
-    final notifier = ref.read(appSettingsProvider.notifier);
+    final notifier = ref.read(settingsNotifierProvider.notifier);
     final status = _status;
     final supported = status?['supported'] == true;
     final hasAccess = status?['access'] == true;
