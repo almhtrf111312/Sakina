@@ -103,11 +103,15 @@ object PrayerSilenceScheduler {
         if (active) {
             alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, first.end, backup)
         } else {
+            if (ruleId != null) setCondition(notifications, ruleId, conditionId, false)
             alarms.cancel(backup)
         }
-        alarms.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP, if (active) first.end else first.start, transition
+        // Consecutive transitions can be minutes apart, even in deep idle.
+        val showApp = PendingIntent.getActivity(
+            context, 0, Intent(context, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE
         )
+        val nextChange = if (active) first.end else first.start
+        alarms.setAlarmClock(AlarmManager.AlarmClockInfo(nextChange, showApp), transition)
 
         if (ruleId == null && active) {
             val policy = ZenPolicy.Builder().disallowAllSounds().allowAlarms(true).build()
@@ -119,7 +123,7 @@ object PrayerSilenceScheduler {
             )
             if (ruleId != null) prefs.edit().putString(RULE, ruleId).commit()
         }
-        if (ruleId != null) setCondition(notifications, ruleId, conditionId, active)
+        if (active && ruleId != null) setCondition(notifications, ruleId, conditionId, true)
     }
 
     private fun mergeWindows(json: JSONArray, now: Long): List<Window> {
