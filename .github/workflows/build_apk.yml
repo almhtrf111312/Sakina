@@ -141,7 +141,7 @@ jobs:
           test -x "$signer"
           if [[ "$suffix" == "-preview" ]]; then
             "$signer" verify --verbose --print-certs "$apk" | tee "$signing_dir/verification.txt"
-            actual="$(awk -F 'digest:[[:space:]]*' '/^Signer #1 certificate SHA-256 digest:/ {print $2}' "$signing_dir/verification.txt" | tr -d ':[:space:]' | tr '[:upper:]' '[:lower:]')"
+            actual="$(awk -F 'digest:[[:space:]]*' '/certificate SHA-256 digest:/ {print $2}' "$signing_dir/verification.txt" | tr -d ':[:blank:]\r' | tr '[:upper:]' '[:lower:]' | sort -u)"
             expected=4fe009f4a0373abf507a09c82d1803218e50614134b6a274b9d82d8e92d1aaa6
             if [[ "$actual" != "$expected" ]]; then
               echo "::error::Preview signing certificate did not match the pinned certificate."
