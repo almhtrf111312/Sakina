@@ -9,6 +9,7 @@ import '../../data/location/location_service.dart';
 import '../../data/prayer/prayer_repository.dart';
 import '../aod/always_on_screen.dart';
 import '../location/location_picker_screen.dart';
+import 'monthly_prayer_calendar.dart';
 import 'providers/home_providers.dart';
 import 'widgets/hero_prayer_card.dart';
 import 'widgets/prayer_list_tile.dart';
@@ -169,6 +170,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // ── Hero Card: Next Prayer & Countdown ──
               const SliverToBoxAdapter(
                 child: HeroPrayerCard(),
+              ),
+
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: TextButton.icon(
+                      icon: const Icon(Icons.calendar_month_outlined),
+                      label: const Text('التقويم الشهري'),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const MonthlyPrayerCalendar(),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
 
               // ── Section Title: مواقيت الصلاة ──

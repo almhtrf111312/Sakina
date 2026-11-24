@@ -6,12 +6,10 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.os.SystemClock
 import android.util.TypedValue
 import android.widget.RemoteViews
 import com.sakina.app.MainActivity
 import com.sakina.app.R
-import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.text.DateFormat
@@ -70,11 +68,16 @@ abstract class BaseWidget : AppWidgetProvider() {
     companion object {
         fun hm(context: Context, ts: Long): String = AppTimeFormat.format(context, ts)
 
-        /** Live countdown with no refresh needed (platform Chronometer). */
-        fun countdown(v: RemoteViews, id: Int, targetTs: Long) {
-            val base = SystemClock.elapsedRealtime() + (targetTs - System.currentTimeMillis())
-            v.setChronometerCountDown(id, true)
-            v.setChronometer(id, base, null, true)
+        /** Launcher-owned chronometers keep counting past zero when refreshes are delayed. */
+        fun remaining(v: RemoteViews, targetTs: Long?) {
+            val millis = targetTs?.minus(System.currentTimeMillis()) ?: 0L
+            val minutes = (millis + 59_999L) / 60_000L
+            val text = when {
+                millis <= 0L -> ""
+                minutes >= 60 -> "${minutes / 60}س ${minutes % 60}د"
+                else -> "${minutes}د"
+            }
+            v.setTextViewText(R.id.w_count, text)
         }
     }
 }
@@ -84,13 +87,14 @@ class WidgetSmall : BaseWidget() {
     override fun bind(context: Context, v: RemoteViews, d: WidgetData?) {
         val n = d?.next
         if (n == null) {
+            remaining(v, null)
             v.setTextViewText(R.id.w_name, "افتح المؤذان لتحديث المواقيت")
             v.setTextViewText(R.id.w_time, "")
             return
         }
         v.setTextViewText(R.id.w_name, n.nameAr)
         v.setTextViewText(R.id.w_time, AppTimeFormat.compact(context, n.ts))
-        countdown(v, R.id.w_count, n.ts)
+        remaining(v, n.ts)
     }
 }
 
@@ -99,12 +103,13 @@ class WidgetClock : BaseWidget() {
     override fun bind(context: Context, v: RemoteViews, d: WidgetData?) {
         val n = d?.next
         if (n == null) {
+            remaining(v, null)
             v.setTextViewText(R.id.w_name, "المؤذان"); v.setTextViewText(R.id.w_time, "")
             return
         }
         v.setTextViewText(R.id.w_name, "الصلاة القادمة: " + n.nameAr)
         v.setTextViewText(R.id.w_time, hm(context, n.ts))
-        countdown(v, R.id.w_count, n.ts)
+        remaining(v, n.ts)
     }
 }
 
@@ -114,6 +119,7 @@ class WidgetProgress : BaseWidget() {
         val n = d?.next
         v.setTextViewText(R.id.w_city, d?.city ?: "")
         if (n == null) {
+            remaining(v, null)
             v.setTextViewText(R.id.w_name, "المؤذان"); v.setTextViewText(R.id.w_time, "--:--")
             v.setProgressBar(R.id.w_progress, 100, 0, false)
             return
@@ -121,7 +127,7 @@ class WidgetProgress : BaseWidget() {
         v.setTextViewText(R.id.w_name, n.nameAr)
         v.setTextViewText(R.id.w_time, hm(context, n.ts))
         v.setProgressBar(R.id.w_progress, 100, d.progress, false)
-        countdown(v, R.id.w_count, n.ts)
+        remaining(v, n.ts)
     }
 }
 
@@ -137,7 +143,7 @@ class WidgetList : BaseWidget() {
         v.setTextColor(R.id.w_next, colors.accent)
         v.setTextViewText(R.id.w_next, next?.let { "القادمة: ${it.nameAr}" }
             ?: "افتح المؤذان لتحديث المواقيت")
-        if (next != null) countdown(v, R.id.w_count, next.ts)
+        remaining(v, next?.ts)
         for (i in 0 until 5) {
             val p = list.getOrNull(i)
             v.setTextViewText(names[i], p?.nameAr ?: "")
@@ -181,7 +187,7 @@ class WidgetLarge : BaseWidget() {
         v.setTextViewText(R.id.w_name, next?.nameAr ?: "افتح المؤذان لتحديث المواقيت")
         v.setTextViewText(R.id.w_time, next?.let { hm(context, it.ts) } ?: "")
         v.setProgressBar(R.id.w_progress, 100, d?.progress ?: 0, false)
-        if (next != null) countdown(v, R.id.w_count, next.ts)
+        remaining(v, next?.ts)
         val prayers = d?.todayFive() ?: emptyList()
         for (i in names.indices) {
             val prayer = prayers.getOrNull(i)
@@ -225,8 +231,7 @@ class WidgetCircle : BaseWidget() {
         v.setTextViewText(R.id.w_name, n?.nameAr ?: "الصلاة القادمة")
         v.setTextViewText(R.id.w_time, n?.let { AppTimeFormat.compact(context, it.ts) }
             ?: "افتح المؤذان")
-        if (n != null) countdown(v, R.id.w_count, n.ts)
-        else v.setTextViewText(R.id.w_count, "")
+        remaining(v, n?.ts)
     }
 }
 
@@ -257,7 +262,6 @@ class WidgetBanner : BaseWidget() {
         v.setTextViewText(R.id.w_next, n?.nameAr ?: "الصلاة القادمة")
         v.setTextViewText(R.id.w_time, n?.let { AppTimeFormat.compact(context, it.ts) }
             ?: "افتح المؤذان")
-        if (n != null) countdown(v, R.id.w_count, n.ts)
-        else v.setTextViewText(R.id.w_count, "")
+        remaining(v, n?.ts)
     }
 }

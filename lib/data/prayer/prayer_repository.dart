@@ -137,6 +137,15 @@ class PrayerRepository {
     return all.first;
   }
 
+  /// Calculates an arbitrary range of civil dates without replacing today's cache.
+  List<DayPrayerTimes> calculateRange(DateTime firstDay, int days) {
+    final calculator = _buildCalculator();
+    return List.generate(days, (index) {
+      final date = DateTime(firstDay.year, firstDay.month, firstDay.day + index);
+      return DayPrayerTimes(date: date, times: calculator.calculate(date));
+    });
+  }
+
   DayPrayerTimes previousDay() {
     final today = _today();
     final yesterday = DateTime(today.year, today.month, today.day - 1);

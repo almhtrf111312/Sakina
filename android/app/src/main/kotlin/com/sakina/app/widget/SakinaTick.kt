@@ -45,6 +45,7 @@ class SakinaTick : BroadcastReceiver() {
         const val NOTIF_ID = 7001
         private const val REQ = 7002
         private const val REQ_RESTORE = 7003
+        private const val REQ_PRAYER_BOUNDARY = 7004
         private const val ACTION_DISMISSED = "com.sakina.app.PRAYER_NOTIFICATION_DISMISSED"
         private const val ACTION_RESTORE = "com.sakina.app.PRAYER_NOTIFICATION_RESTORE"
 
@@ -64,6 +65,8 @@ class SakinaTick : BroadcastReceiver() {
                     needTick = true
                 }
             }
+
+            armPrayerBoundary(app, data?.next?.ts?.takeIf { needTick })
 
             if (data?.notificationEnabled == true && data.next != null) {
                 postNotification(app, data)
@@ -95,6 +98,29 @@ class SakinaTick : BroadcastReceiver() {
                     am.setAndAllowWhileIdle(AlarmManager.RTC, at, pi)
                 else am.set(AlarmManager.RTC, at, pi)
             } catch (_: Exception) {}
+        }
+
+        private fun armPrayerBoundary(context: Context, target: Long?) {
+            val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val pi = PendingIntent.getBroadcast(
+                context, REQ_PRAYER_BOUNDARY, Intent(context, SakinaTick::class.java),
+                PendingIntent.FLAG_IMMUTABLE
+            )
+            if (target == null) {
+                am.cancel(pi)
+                return
+            }
+            try {
+                if (com.sakina.app.alarm.AlarmScheduler.canScheduleExactAlarms(context, am)) {
+                    // RTC avoids waking the screen. The minute refresher backs up this alarm.
+                    am.setExact(AlarmManager.RTC, target, pi)
+                } else {
+                    am.set(AlarmManager.RTC, target, pi)
+                }
+            } catch (_: SecurityException) {
+                // Exact-alarm access may be revoked between the permission check and scheduling.
+                am.set(AlarmManager.RTC, target, pi)
+            }
         }
 
         private fun disarm(context: Context) {

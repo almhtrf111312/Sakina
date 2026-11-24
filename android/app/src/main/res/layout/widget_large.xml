@@ -19,7 +19,7 @@
         android:layout_marginTop="8dp">
         <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
             android:text="المتبقي للأذان" android:textColor="#9DB0AA" android:textSize="13sp" />
-        <Chronometer android:id="@+id/w_count" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        <TextView android:id="@+id/w_count" android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:textColor="#C9A86A" android:textSize="16sp" android:textStyle="bold" />
     </LinearLayout>
     <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginTop="12dp"

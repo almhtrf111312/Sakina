@@ -66,86 +66,31 @@ class AppDateUtils {
   ];
 
   // ---------------------------------------------------------------------------
-  // Gregorian to Hijri Conversion (Kuwaiti / Astronomical Algorithm)
+  // Gregorian to Hijri conversion (tabular Islamic calendar)
   // ---------------------------------------------------------------------------
 
-  /// Converts a Gregorian DateTime into [HijriDate].
-  /// [adjustmentDays] allows manual correction by ±1 or ±2 days for moon sighting.
+  /// Converts a civil date using the arithmetic Hijri calendar.
+  /// [adjustmentDays] accounts for local differences in moon sighting.
   static HijriDate toHijri(DateTime date, {int adjustmentDays = 0}) {
-    DateTime adjustedDate = date.add(Duration(days: adjustmentDays));
-    int day = adjustedDate.day;
-    int month = adjustedDate.month;
-    int year = adjustedDate.year;
+    final civilDate = DateTime.utc(date.year, date.month, date.day + adjustmentDays);
+    final unixDay = civilDate.difference(DateTime.utc(1970)).inDays;
+    const islamicEpoch = 1948440;
+    const unixEpoch = 2440588;
+    final daysSinceEpoch = unixDay + unixEpoch - islamicEpoch;
+    final year = ((30 * daysSinceEpoch + 10646) / 10631).floor();
+    final yearStart = 354 * (year - 1) + ((3 + 11 * year) / 30).floor();
+    final dayOfYear = daysSinceEpoch - yearStart;
 
-    int m = month;
-    int y = year;
-    if (m < 3) {
-      y -= 1;
-      m += 12;
+    int monthStart(int month) => 29 * (month - 1) + month ~/ 2;
+    var month = 1;
+    while (month < 12 && dayOfYear >= monthStart(month + 1)) {
+      month++;
     }
-
-    int a = (y / 100).floor();
-    int b = 2 - a + (a / 4).floor();
-    if (y < 1583) b = 0;
-    if (y == 1582) {
-      if (m > 10) b = -10;
-      if (m == 10) {
-        b = 0;
-        if (day > 4) b = -10;
-      }
-    }
-
-    double jd = (365.25 * (y + 4716)).floor() +
-        (30.6001 * (m + 1)).floor() +
-        day +
-        b -
-        1524.5;
-
-    b = 0;
-    if (jd > 2299160) {
-      a = ((jd - 1867216.25) / 36524.25).floor();
-      b = a - (a / 4).floor() + 1;
-    }
-
-    double bb = jd + b + 1524;
-    int cc = ((bb - 122.1) / 365.25).floor();
-    int dd = (365.25 * cc).floor();
-    int ee = ((bb - dd) / 30.6001).floor();
-    day = (bb - dd - (30.6001 * ee).floor()).floor();
-    month = ee - 1;
-    if (ee > 13) {
-      cc += 1;
-      month = ee - 13;
-    }
-    year = cc - 4716;
-
-    double epoch = 1948439.5;
-    double wd = (jd + 1.5) % 7;
-
-    double z = jd - epoch;
-    double cyc = (z / 10631).floorToDouble();
-    z = z - 10631 * cyc;
-    double j = ((z - 0.1335) / 354.36667).floorToDouble();
-    double iy = 30 * cyc + j;
-    z = z - (j * 354.36667 + 0.5).floorToDouble();
-    double im = ((z + 28.5001) / 29.5).floorToDouble();
-    if (im == 13) im = 12;
-    int id = (z - (29.5001 * (im - 1) - 0.5).floorToDouble()).toInt();
-
-    int hYear = iy.toInt();
-    int hMonth = im.toInt();
-    int hDay = id;
-
-    // Guard bounds
-    if (hMonth < 1) hMonth = 1;
-    if (hMonth > 12) hMonth = 12;
-    if (hDay < 1) hDay = 1;
-    if (hDay > 30) hDay = 30;
 
     return HijriDate(
-      year: hYear,
-      month: hMonth,
-      day: hDay,
+      year: year,
+      month: month,
+      day: dayOfYear - monthStart(month) + 1,
       dayOfWeek: date.weekday,
     );
   }
