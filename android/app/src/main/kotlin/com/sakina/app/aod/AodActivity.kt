@@ -63,7 +63,7 @@ class AodActivity : Activity() {
 
     private lateinit var root: FrameLayout
     private lateinit var clockArea: FrameLayout
-    private lateinit var statusBar: TextView
+    private lateinit var statusBar: AodStatusView
     private lateinit var block: LinearLayout
     private lateinit var tvTime: TextView
     private var analogClock: AnalogClockView? = null
@@ -212,16 +212,9 @@ class AodActivity : Activity() {
         root.addView(clockArea, FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
         ))
-        statusBar = TextView(this).apply {
-            setTextColor(soft)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
-            gravity = Gravity.CENTER
-            textDirection = View.TEXT_DIRECTION_RTL
-            setPadding((20 * d).toInt(), (16 * d).toInt(), (20 * d).toInt(), (8 * d).toInt())
-        }
+        statusBar = AodStatusView(this, main)
         root.addView(statusBar, FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT,
-            Gravity.TOP
+            FrameLayout.LayoutParams.MATCH_PARENT, (44 * d).toInt(), Gravity.TOP
         ))
         statusBar.addOnLayoutChangeListener { _, _, top, _, bottom, _, oldTop, _, oldBottom ->
             if (bottom - top != oldBottom - oldTop) {
@@ -327,18 +320,20 @@ class AodActivity : Activity() {
 
     private val statusTick = object : Runnable {
         override fun run() {
-            val status = deviceStatus()
-            if (statusBar.text.toString() != status) statusBar.text = status
+            statusBar.bind(deviceStatus())
             handler.postDelayed(this, 5_000L)
         }
     }
 
     @Suppress("DEPRECATION")
-    private fun deviceStatus(): String {
+    private fun deviceStatus(): AodStatusView.Status {
         val battery = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         val level = battery?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
         val scale = battery?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
-        val percent = if (level >= 0 && scale > 0) num("${level * 100 / scale}٪") else "غير متاحة"
+        val percent = if (level >= 0 && scale > 0)
+            num("${(level * 100 / scale).coerceIn(0, 100)}٪") else "—"
+        val isCharging = battery?.getIntExtra(BatteryManager.EXTRA_STATUS, 0) ==
+            BatteryManager.BATTERY_STATUS_CHARGING
         val charging = when (battery?.getIntExtra(BatteryManager.EXTRA_STATUS, 0)) {
             BatteryManager.BATTERY_STATUS_CHARGING -> "قيد الشحن"
             BatteryManager.BATTERY_STATUS_FULL -> "ممتلئة"
@@ -346,7 +341,8 @@ class AodActivity : Activity() {
                 "متصلة بالشاحن" else "غير متصلة بالشاحن"
         }
         val audio = getSystemService(AudioManager::class.java)
-        val ringer = when (audio.ringerMode) {
+        val ringerMode = audio.ringerMode
+        val ringer = when (ringerMode) {
             AudioManager.RINGER_MODE_SILENT -> "صامت"
             AudioManager.RINGER_MODE_VIBRATE -> "اهتزاز"
             else -> "رنين"
@@ -354,9 +350,16 @@ class AodActivity : Activity() {
 
         val connectivity = getSystemService(ConnectivityManager::class.java)
         val networks = connectivity.allNetworks.mapNotNull(connectivity::getNetworkCapabilities)
-        val wifiEnabled = applicationContext.getSystemService(WifiManager::class.java)?.isWifiEnabled == true
+        val wifiManager = applicationContext.getSystemService(WifiManager::class.java)
+        val wifiConnected = networks.any { it.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) }
+        val wifiEnabled = wifiConnected || wifiManager?.isWifiEnabled == true
+        val wifiLevel = if (wifiConnected) runCatching {
+            wifiManager?.connectionInfo?.rssi?.takeIf { it > -127 && it < 0 }?.let {
+                WifiManager.calculateSignalLevel(it, 4) + 1
+            }
+        }.getOrNull() else null
         val wifi = when {
-            networks.any { it.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) } -> "متصل"
+            wifiConnected -> "متصل"
             wifiEnabled -> "غير متصل"
             else -> "متوقف"
         }
@@ -372,7 +375,10 @@ class AodActivity : Activity() {
             networks.any { it.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) } -> "متصلة"
             else -> "غير متاحة"
         }
-        return "البطارية $percent · $charging · $ringer\nالجوال: $mobile · واي فاي: $wifi"
+        return AodStatusView.Status(
+            percent, isCharging, ringerMode, cellSignal, wifiEnabled, wifiConnected, wifiLevel,
+            "البطارية $percent، $charging، $ringer، الجوال: $mobile، واي فاي: $wifi"
+        )
     }
 
     private fun hm(ts: Long): String {
