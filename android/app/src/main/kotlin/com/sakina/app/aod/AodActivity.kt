@@ -11,10 +11,17 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.InsetDrawable
+import android.media.AudioManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.net.wifi.WifiManager
+import android.os.BatteryManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
+import android.telephony.TelephonyManager
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.GestureDetector
@@ -55,6 +62,8 @@ class AodActivity : Activity() {
     private var preview = false
 
     private lateinit var root: FrameLayout
+    private lateinit var clockArea: FrameLayout
+    private lateinit var statusBar: TextView
     private lateinit var block: LinearLayout
     private lateinit var tvTime: TextView
     private var analogClock: AnalogClockView? = null
@@ -122,11 +131,13 @@ class AodActivity : Activity() {
         cachedMinute = -1
         updatePrayerAlert()
         tick.run()
+        statusTick.run()
         handler.post(drift)
     }
 
     override fun onStop() {
         handler.removeCallbacks(tick)
+        handler.removeCallbacks(statusTick)
         handler.removeCallbacks(drift)
         super.onStop()
     }
@@ -197,12 +208,34 @@ class AodActivity : Activity() {
         val d = resources.displayMetrics.density
 
         root = FrameLayout(this).apply { setBackgroundColor(Color.BLACK) }
+        clockArea = FrameLayout(this)
+        root.addView(clockArea, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
+        ))
+        statusBar = TextView(this).apply {
+            setTextColor(soft)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            gravity = Gravity.CENTER
+            textDirection = View.TEXT_DIRECTION_RTL
+            setPadding((20 * d).toInt(), (16 * d).toInt(), (20 * d).toInt(), (8 * d).toInt())
+        }
+        root.addView(statusBar, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT,
+            Gravity.TOP
+        ))
+        statusBar.addOnLayoutChangeListener { _, _, top, _, bottom, _, oldTop, _, oldBottom ->
+            if (bottom - top != oldBottom - oldTop) {
+                val params = clockArea.layoutParams as FrameLayout.LayoutParams
+                params.topMargin = bottom - top
+                clockArea.layoutParams = params
+            }
+        }
         block = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_HORIZONTAL
             setPadding((24 * d).toInt(), 0, (24 * d).toInt(), 0)
         }
-        root.addView(block, FrameLayout.LayoutParams(
+        clockArea.addView(block, FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT,
             Gravity.CENTER))
 
@@ -292,6 +325,56 @@ class AodActivity : Activity() {
         }
     }
 
+    private val statusTick = object : Runnable {
+        override fun run() {
+            val status = deviceStatus()
+            if (statusBar.text.toString() != status) statusBar.text = status
+            handler.postDelayed(this, 5_000L)
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun deviceStatus(): String {
+        val battery = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        val level = battery?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
+        val scale = battery?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
+        val percent = if (level >= 0 && scale > 0) num("${level * 100 / scale}٪") else "غير متاحة"
+        val charging = when (battery?.getIntExtra(BatteryManager.EXTRA_STATUS, 0)) {
+            BatteryManager.BATTERY_STATUS_CHARGING -> "قيد الشحن"
+            BatteryManager.BATTERY_STATUS_FULL -> "ممتلئة"
+            else -> if ((battery?.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) ?: 0) > 0)
+                "متصلة بالشاحن" else "غير متصلة بالشاحن"
+        }
+        val audio = getSystemService(AudioManager::class.java)
+        val ringer = when (audio.ringerMode) {
+            AudioManager.RINGER_MODE_SILENT -> "صامت"
+            AudioManager.RINGER_MODE_VIBRATE -> "اهتزاز"
+            else -> "رنين"
+        }
+
+        val connectivity = getSystemService(ConnectivityManager::class.java)
+        val networks = connectivity.allNetworks.mapNotNull(connectivity::getNetworkCapabilities)
+        val wifiEnabled = applicationContext.getSystemService(WifiManager::class.java)?.isWifiEnabled == true
+        val wifi = when {
+            networks.any { it.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) } -> "متصل"
+            wifiEnabled -> "غير متصل"
+            else -> "متوقف"
+        }
+        val airplaneMode = Settings.Global.getInt(contentResolver, Settings.Global.AIRPLANE_MODE_ON, 0) != 0
+        val cellSignal = if (!airplaneMode && Build.VERSION.SDK_INT >= 28) {
+            runCatching {
+                getSystemService(TelephonyManager::class.java)?.signalStrength?.level
+            }.getOrNull()
+        } else null
+        val mobile = when {
+            airplaneMode -> "وضع الطيران"
+            cellSignal != null -> num("إشارة $cellSignal/4")
+            networks.any { it.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) } -> "متصلة"
+            else -> "غير متاحة"
+        }
+        return "البطارية $percent · $charging · $ringer\nالجوال: $mobile · واي فاي: $wifi"
+    }
+
     private fun hm(ts: Long): String {
         val c = Calendar.getInstance().apply { timeInMillis = ts }
         return formattedTime(c)
@@ -372,7 +455,9 @@ class AodActivity : Activity() {
         override fun run() {
             val (x, y) = offsets[driftIndex]
             val density = resources.displayMetrics.density
-            val verticalRoom = ((root.height - block.height) / 2f).coerceAtLeast(0f)
+            val verticalRoom = ((clockArea.height - block.height) / 2f).coerceAtLeast(0f)
+            statusBar.translationX = x * density / 2
+            statusBar.translationY = (y + 10) * density / 4
             block.translationX = x * density
             block.translationY = (y * density).coerceIn(-verticalRoom, verticalRoom)
             driftIndex = (driftIndex + 1) % offsets.size
