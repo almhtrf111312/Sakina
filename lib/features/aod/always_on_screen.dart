@@ -256,11 +256,11 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
     if (mounted) setState(() => _status = s);
   }
 
-  Widget _card(Widget child) {
+  Widget _card(Widget child, {double padding = 14}) {
     final colors = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(20),
@@ -287,48 +287,21 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
     required List<(T, String)> items,
     required ValueChanged<T> onChanged,
   }) {
-    final colors = Theme.of(context).colorScheme;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const gap = 8.0;
-        final columns = items.length == 3 ? 3 : 2;
-        final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
-        return Wrap(
-          spacing: gap,
-          runSpacing: gap,
-          children: [
-            for (final it in items)
-              SizedBox(
-                width: width,
-                child: Material(
-                  color: value == it.$1
-                      ? colors.primary.withOpacity(0.16)
-                      : colors.onSurface.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(12),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () => onChanged(it.$1),
-                    child: Container(
-                      constraints: const BoxConstraints(minHeight: 54),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: value == it.$1
-                            ? colors.primary : colors.outline.withOpacity(0.18)),
-                      ),
-                      child: Center(
-                        child: Text(it.$2, textAlign: TextAlign.center,
-                          style: TextStyle(fontFamily: 'Cairo', fontSize: 13,
-                            fontWeight: value == it.$1 ? FontWeight.bold : FontWeight.normal,
-                            color: value == it.$1 ? colors.primary : colors.onSurface)),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
+    return DropdownButtonHideUnderline(
+      child: DropdownButton<T>(
+        isExpanded: true,
+        value: items.any((item) => item.$1 == value) ? value : null,
+        items: [
+          for (final (option, label) in items)
+            DropdownMenuItem<T>(
+              value: option,
+              child: Text(label, style: const TextStyle(fontFamily: 'Cairo')),
+            ),
+        ],
+        onChanged: (option) {
+          if (option != null) onChanged(option);
+        },
+      ),
     );
   }
 
@@ -383,7 +356,7 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
   }
 
   Widget _whenCard(AlwaysOnConfig cfg, AlwaysOnNotifier n) {
-    return _card(Column(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _title('طريقة التفعيل والظهور'),
@@ -449,7 +422,7 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
           ]),
         ],
       ],
-    ));
+    );
   }
 
   // ─── Clock look ────────────────────────────────────────────────────────────
@@ -526,7 +499,7 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
 
   Widget _lookCard(AlwaysOnConfig cfg, AlwaysOnNotifier n) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return _card(Column(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _title('نظام الوقت · ينطبق على التطبيق كله'),
@@ -598,28 +571,58 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
           ],
         ),
       ],
-    ));
+    );
   }
+
+  Widget _section(
+    String title,
+    String summary,
+    IconData icon,
+    List<Widget> children,
+  ) =>
+      _card(
+        ExpansionTile(
+          shape: const Border(),
+          collapsedShape: const Border(),
+          leading: Icon(icon),
+          title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+          subtitle: Text(summary),
+          childrenPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
+          children: children,
+        ),
+        padding: 0,
+      );
+
+  Widget _elementSwitch(
+    AlwaysOnConfig cfg, AlwaysOnNotifier n, String key, String title,
+  ) =>
+      SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        dense: true,
+        title: Text(title),
+        value: !cfg.hiddenElements.contains(key),
+        onChanged: (enabled) => n.update((c) {
+          final hidden = {...c.hiddenElements};
+          if (enabled) {
+            hidden.remove(key);
+          } else {
+            hidden.add(key);
+          }
+          return c.copyWith(hiddenElements: hidden);
+        }),
+      );
 
   @override
   Widget build(BuildContext context) {
     final cfg = ref.watch(alwaysOnProvider);
     final n = ref.read(alwaysOnProvider.notifier);
     final primary = Theme.of(context).colorScheme.primary;
+    final brightness = cfg.brightness.clamp(0.02, 0.24);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('الشاشة الدائمة', style: TextStyle(fontFamily: 'Cairo')),
-        actions: [
-          IconButton(
-            tooltip: 'معاينة الشاشة الدائمة',
-            icon: const Icon(Icons.visibility_outlined),
-            onPressed: () async {
-              await n.push();
-              await AlarmBridge.previewAlwaysOn();
-            },
-          ),
-        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -631,11 +634,6 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
                 contentPadding: EdgeInsets.zero,
                 title: const Text('تفعيل الشاشة الدائمة',
                     style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
-                subtitle: const Text(
-                  'عند إطفاء الشاشة تظهر الساعة والتاريخ والصلاة القادمة بسطوع منخفض. '
-                  'تستهلك بطارية أكثر من الوضع العادي.',
-                  style: TextStyle(fontFamily: 'Cairo', fontSize: 12),
-                ),
                 value: cfg.enabled,
                 activeColor: primary,
                 onChanged: (v) async {
@@ -645,114 +643,100 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
                   }
                 },
               ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  icon: const Icon(Icons.visibility_outlined),
+                  label: const Text('معاينة الشاشة الدائمة'),
+                  onPressed: () async {
+                    await n.push();
+                    await AlarmBridge.previewAlwaysOn();
+                  },
+                ),
+              ),
             ],
           )),
-          _card(Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _title('ترتيب العرض'),
-              _choices<String>(
-                value: cfg.layout,
-                items: const [
-                  ('classic', 'توسيط'),
-                  ('split', 'توزيع جانبي'),
-                  ('list', 'مواقيت عمودية'),
-                ],
-                onChanged: (value) => n.update((c) => c.copyWith(layout: value)),
-              ),
-              const SizedBox(height: 12),
-              _title('العناصر الظاهرة'),
-              Wrap(
-                spacing: 6,
-                runSpacing: 4,
+          _section('المظهر', 'الساعة، ترتيب العرض، اللون والسطوع', Icons.palette_outlined, [
+            _title('ترتيب العرض'),
+            _choices<String>(
+              value: cfg.layout,
+              items: const [
+                ('classic', 'توسيط'),
+                ('split', 'توزيع جانبي'),
+                ('list', 'مواقيت عمودية'),
+              ],
+              onChanged: (v) => n.update((c) => c.copyWith(layout: v)),
+            ),
+            _lookCard(cfg, n),
+            _title('حجم الكتابة'),
+            _choices<double>(
+              value: cfg.textScale,
+              items: const [(1.0, 'عادي'), (1.3, 'كبير'), (1.6, 'كبير جداً')],
+              onChanged: (v) => n.update((c) => c.copyWith(textScale: v)),
+            ),
+            _title('السطوع (${(brightness * 100).round()}%)'),
+            Slider(
+              value: brightness,
+              min: 0.02,
+              max: 0.24,
+              divisions: 11,
+              onChanged: (v) => n.update((c) => c.copyWith(brightness: v)),
+            ),
+          ]),
+          _section('المحتوى', 'التاريخ، مواقيت الصلاة وأيقونات الحالة', Icons.layers_outlined, [
+            _title('التاريخ'),
+            _choices<String>(
+              value: cfg.dateMode,
+              items: const [
+                ('none', 'بدون تاريخ'),
+                ('gregorian', 'ميلادي'),
+                ('hijri', 'هجري'),
+                ('both', 'ميلادي وهجري'),
+              ],
+              onChanged: (v) => n.update((c) => c.copyWith(dateMode: v)),
+            ),
+            if (cfg.clockStyle >= 6) ...[
+              _elementSwitch(cfg, n, 'digital', 'الوقت الرقمي'),
+              _elementSwitch(cfg, n, 'dial', 'إطار الساعة'),
+            ],
+            const Divider(),
+            _elementSwitch(cfg, n, 'name', 'اسم الصلاة القادمة'),
+            if (!cfg.hiddenElements.contains('name'))
+              _elementSwitch(cfg, n, 'caption', 'عنوان «الصلاة القادمة»'),
+            _elementSwitch(cfg, n, 'prayerTime', 'وقت الأذان'),
+            _elementSwitch(cfg, n, 'remaining', 'الوقت المتبقي'),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              title: const Text('جدول المواقيت'),
+              value: cfg.showPrayers,
+              onChanged: (v) => n.update((c) => c.copyWith(showPrayers: v)),
+            ),
+            const Divider(),
+            _elementSwitch(cfg, n, 'status', 'شريط الحالة'),
+            if (!cfg.hiddenElements.contains('status'))
+              ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                title: const Text('أيقونات شريط الحالة'),
                 children: [
-                  for (final (key, title) in [
-                    ('status', 'شريط الحالة'),
-                    ('ringer', 'الرنين'),
-                    ('cell', 'شبكة الجوال'),
-                    ('wifi', 'الواي فاي'),
-                    ('battery', 'البطارية والشحن'),
-                    ('name', 'اسم الصلاة'),
-                    ('caption', 'عنوان الصلاة القادمة'),
-                    ('prayerTime', 'وقت الأذان'),
-                    ('remaining', 'المتبقي'),
-                    if (cfg.clockStyle >= 6) ...[
-                      ('digital', 'الوقت الرقمي'),
-                      ('dial', 'إطار الساعة'),
-                    ],
-                  ])
-                    FilterChip(
-                      label: Text(title),
-                      selected: !cfg.hiddenElements.contains(key),
-                      onSelected: (visible) => n.update((c) {
-                        final hidden = {...c.hiddenElements};
-                        if (visible) {
-                          hidden.remove(key);
-                        } else {
-                          hidden.add(key);
-                        }
-                        return c.copyWith(hiddenElements: hidden);
-                      }),
-                    ),
-                  FilterChip(
-                    label: const Text('جدول المواقيت'),
-                    selected: cfg.showPrayers,
-                    onSelected: (visible) =>
-                        n.update((c) => c.copyWith(showPrayers: visible)),
-                  ),
+                  _elementSwitch(cfg, n, 'ringer', 'الرنين'),
+                  _elementSwitch(cfg, n, 'cell', 'شبكة الجوال'),
+                  _elementSwitch(cfg, n, 'wifi', 'الواي فاي'),
+                  _elementSwitch(cfg, n, 'battery', 'البطارية والشحن'),
                 ],
               ),
-              const SizedBox(height: 12),
-              _title('التاريخ'),
-              _choices<String>(
-                value: cfg.dateMode,
-                items: const [
-                  ('none', 'بدون تاريخ'),
-                  ('gregorian', 'ميلادي'),
-                  ('hijri', 'هجري'),
-                  ('both', 'ميلادي وهجري'),
-                ],
-                onChanged: (v) => n.update((c) => c.copyWith(dateMode: v)),
-              ),
-              const SizedBox(height: 12),
-              _title('حجم الكتابة'),
-              _choices<double>(
-                value: cfg.textScale,
-                items: const [(1.0, 'عادي'), (1.3, 'كبير'), (1.6, 'كبير جداً')],
-                onChanged: (v) => n.update((c) => c.copyWith(textScale: v)),
-              ),
-            ],
-          )),
-          _lookCard(cfg, n),
-          _whenCard(cfg, n),
-          _card(Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _title('السطوع (${(cfg.brightness.clamp(0.02, 0.24) * 100).round()}%)'),
-              Slider(
-                value: cfg.brightness.clamp(0.02, 0.24),
-                min: 0.02,
-                max: 0.24,
-                divisions: 11,
-                onChanged: (v) => n.update((c) => c.copyWith(brightness: v)),
-              ),
-              const Text(
-                'ينتقل المحتوى مسافة صغيرة كل دقيقة للمساعدة على حماية الشاشة.',
-                style: TextStyle(fontFamily: 'Cairo', fontSize: 11),
-              ),
-              const SizedBox(height: 14),
-              _title('مدة العرض بعد إطفاء الشاشة'),
-              _choices<int>(
-                value: cfg.timeoutMin,
-                items: const [(5, '5 دقائق'), (10, '10 دقائق'), (30, '30 دقيقة'), (0, 'حتى فتح القفل')],
-                onChanged: (v) => n.update((c) => c.copyWith(timeoutMin: v)),
-              ),
-            ],
-          )),
-          _card(Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _title('الأذونات المطلوبة'),
+          ]),
+          _section('التشغيل', 'وقت ظهور الشاشة ومدة العرض', Icons.timer_outlined, [
+            _whenCard(cfg, n),
+            _title('مدة العرض'),
+            _choices<int>(
+              value: cfg.timeoutMin,
+              items: const [(5, '5 دقائق'), (10, '10 دقائق'), (30, '30 دقيقة'), (0, 'حتى فتح القفل')],
+              onChanged: (v) => n.update((c) => c.copyWith(timeoutMin: v)),
+            ),
+          ]),
+          _section('الأذونات', 'شاشة القفل والتشغيل في الخلفية', Icons.security_outlined, [
               _permRow('الظهور فوق التطبيقات',
                   'يلزم ليفتح التطبيق الشاشة بعد القفل', _status['overlay'],
                   'requestDrawOverApps'),
@@ -775,8 +759,7 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
                     child: const Text('فتح', style: TextStyle(fontFamily: 'Cairo')),
                   ),
                 ),
-            ],
-          )),
+          ]),
         ],
       ),
     );
