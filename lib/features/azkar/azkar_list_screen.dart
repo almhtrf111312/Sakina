@@ -122,7 +122,7 @@ class AzkarListScreen extends ConsumerWidget {
                           ),
                         ),
                         Text(
-                          '$completedCount من $totalCount ذِكْر ($completedCount / $totalCount)',
+                          '$completedCount من $totalCount',
                           style: TextStyle(
                             fontFamily: AppConstants.fontCairo,
                             fontWeight: FontWeight.bold,
@@ -302,27 +302,9 @@ class AzkarListScreen extends ConsumerWidget {
 
               const SizedBox(height: 12),
 
-              // Bottom row: Quick action counter button & progress
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                textDirection: TextDirection.rtl,
                 children: [
-                  if (zikr.virtue != null && zikr.virtue!.isNotEmpty)
-                    Expanded(
-                      child: Text(
-                        zikr.virtue!,
-                        style: TextStyle(
-                          fontFamily: AppConstants.fontCairo,
-                          fontSize: 11,
-                          color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    )
-                  else
-                    const Spacer(),
-                  const SizedBox(width: 8),
-
                   // Mini tap counter button
                   InkWell(
                     onTap: () {
@@ -347,7 +329,8 @@ class AzkarListScreen extends ConsumerWidget {
                             const Icon(Icons.touch_app_rounded, color: Colors.white, size: 16),
                           const SizedBox(width: 6),
                           Text(
-                            isDone ? 'مكتمل' : '${zikr.currentCount} / ${zikr.count}',
+                            isDone ? 'مكتمل' : '${zikr.currentCount} من ${zikr.count}',
+                            textDirection: TextDirection.rtl,
                             style: TextStyle(
                               fontFamily: AppConstants.fontCairo,
                               fontSize: 12,
@@ -359,6 +342,23 @@ class AzkarListScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  if (zikr.virtue?.isNotEmpty == true) ...[
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        zikr.virtue!,
+                        textDirection: TextDirection.rtl,
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          fontFamily: AppConstants.fontCairo,
+                          fontSize: 12,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ],
