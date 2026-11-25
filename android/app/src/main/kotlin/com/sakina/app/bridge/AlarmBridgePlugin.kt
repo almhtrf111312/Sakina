@@ -377,29 +377,35 @@ class AlarmBridgePlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamH
     private fun checkAllPermissions(): Map<String, Boolean> {
         val permissions = HashMap<String, Boolean>()
 
-        // Exact Alarm
-        permissions["exactAlarm"] = AlarmScheduler.canScheduleExactAlarms(context)
-
-        // Notifications
-        permissions["notifications"] = NotificationManagerCompat.from(context).areNotificationsEnabled()
-
-        // Battery Optimizations
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
-            permissions["batteryOptimizationIgnored"] = pm.isIgnoringBatteryOptimizations(context.packageName)
-        } else {
-            permissions["batteryOptimizationIgnored"] = true
+        // A system service can fail on a vendor build. Leave that result unknown
+        // without discarding the permissions that were checked successfully.
+        fun read(key: String, check: () -> Boolean) {
+            runCatching(check).onSuccess { permissions[key] = it }
+                .onFailure { Log.w(TAG, "Could not check permission $key", it) }
         }
 
-        permissions["drawOverApps"] = Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
-            android.provider.Settings.canDrawOverlays(context)
-
-        // Full screen intent (Android 14+ / API 34+)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            permissions["fullScreenIntent"] = nm.canUseFullScreenIntent()
-        } else {
-            permissions["fullScreenIntent"] = true
+        read("exactAlarm") { AlarmScheduler.canScheduleExactAlarms(context) }
+        read("notifications") { NotificationManagerCompat.from(context).areNotificationsEnabled() }
+        read("batteryOptimizationIgnored") {
+            context.getSystemService(PowerManager::class.java)
+                .isIgnoringBatteryOptimizations(context.packageName)
+        }
+        read("drawOverApps") { android.provider.Settings.canDrawOverlays(context) }
+        read("fullScreenIntent") {
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
+                context.getSystemService(NotificationManager::class.java).canUseFullScreenIntent()
+        }
+        read("location") {
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                context, android.Manifest.permission.ACCESS_COARSE_LOCATION
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED ||
+                androidx.core.content.ContextCompat.checkSelfPermission(
+                    context, android.Manifest.permission.ACCESS_FINE_LOCATION
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
+        permissions["prayerSilenceSupported"] = PrayerSilenceScheduler.supported
+        if (PrayerSilenceScheduler.supported) {
+            read("doNotDisturb") { PrayerSilenceScheduler.hasAccess(context) }
         }
 
         return permissions

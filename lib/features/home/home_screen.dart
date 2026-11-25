@@ -8,6 +8,7 @@ import '../../core/theme/app_colors.dart';
 import '../../data/location/location_service.dart';
 import '../../data/prayer/prayer_repository.dart';
 import '../aod/always_on_screen.dart';
+import '../settings/widgets/permission_check_screen.dart';
 import '../location/location_picker_screen.dart';
 import 'monthly_prayer_calendar.dart';
 import 'providers/home_providers.dart';
@@ -75,93 +76,102 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       // Dates Column
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            hijriDate,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontFamily: 'Cairo',
-                              fontWeight: FontWeight.bold,
-                              color: isDark
-                                  ? AppColors.nightSecondary
-                                  : AppColors.daySecondary,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            gregorianDate,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontFamily: 'Cairo',
-                              fontWeight: FontWeight.w600,
-                              color: isDark
-                                  ? AppColors.nightTextSecondary
-                                  : AppColors.dayTextSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      // Tappable City Pill
-                      InkWell(
-                        onTap: () => _showCitySelector(context),
-                        borderRadius: BorderRadius.circular(20),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? AppColors.nightSurface
-                                : AppColors.daySurface,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: isDark
-                                  ? AppColors.nightPrimary.withOpacity(0.2)
-                                  : AppColors.dayPrimary.withOpacity(0.15),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                location.isManual
-                                    ? Icons.location_city_rounded
-                                    : Icons.my_location_rounded,
-                                size: 16,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              hijriDate,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontFamily: 'Cairo',
+                                fontWeight: FontWeight.bold,
                                 color: isDark
-                                    ? AppColors.nightPrimary
-                                    : AppColors.dayPrimary,
+                                    ? AppColors.nightSecondary
+                                    : AppColors.daySecondary,
                               ),
-                              const SizedBox(width: 6),
-                              Text(
-                                location.cityName,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontFamily: 'Cairo',
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark
-                                      ? AppColors.nightTextPrimary
-                                      : AppColors.dayTextPrimary,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Icon(
-                                Icons.keyboard_arrow_down_rounded,
-                                size: 18,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              gregorianDate,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontFamily: 'Cairo',
+                                fontWeight: FontWeight.w600,
                                 color: isDark
                                     ? AppColors.nightTextSecondary
                                     : AppColors.dayTextSecondary,
                               ),
-                            ],
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Tappable City Pill
+                      Flexible(
+                        child: InkWell(
+                          onTap: () => _showCitySelector(context),
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? AppColors.nightSurface
+                                  : AppColors.daySurface,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: isDark
+                                    ? AppColors.nightPrimary.withOpacity(0.2)
+                                    : AppColors.dayPrimary.withOpacity(0.15),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  location.isManual
+                                      ? Icons.location_city_rounded
+                                      : Icons.my_location_rounded,
+                                  size: 16,
+                                  color: isDark
+                                      ? AppColors.nightPrimary
+                                      : AppColors.dayPrimary,
+                                ),
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Text(
+                                    location.cityName,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      fontFamily: 'Cairo',
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark
+                                          ? AppColors.nightTextPrimary
+                                          : AppColors.dayTextPrimary,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  size: 18,
+                                  color: isDark
+                                      ? AppColors.nightTextSecondary
+                                      : AppColors.dayTextSecondary,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
+                      const PermissionShortcut(),
                     ],
                   ),
                 ),

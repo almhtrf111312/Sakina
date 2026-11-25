@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../core/theme/app_colors.dart';
@@ -33,16 +32,13 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
     with WidgetsBindingObserver {
   bool _isLoading = true;
   int _permissionCheckId = 0;
-  Map<String, bool> _permissionStatus = {
-    'notifications': false,
-    'exact_alarms': false,
-    'battery_optimization': false,
-    'location': false,
-    'full_screen_intent': false,
-    'draw_over_apps': false,
-  };
+  Map<String, bool> _permissionStatus = const {};
+  List<PermissionItemData> get _permissions => _permissionItems
+      .where((item) => item.key != 'doNotDisturb' ||
+          _permissionStatus['prayerSilenceSupported'] != false)
+      .toList();
 
-  final List<PermissionItemData> _permissions = const [
+  static const _permissionItems = [
     PermissionItemData(
       key: 'notifications',
       titleAr: 'إشعارات الأذان والذكر',
@@ -52,7 +48,7 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
       whyNeededAr: 'بدون هذا الإذن لن يتمكن التطبيق من تنبيهك عند دخول الوقت.',
     ),
     PermissionItemData(
-      key: 'exact_alarms',
+      key: 'exactAlarm',
       titleAr: 'المنبه الدقيق (Exact Alarms)',
       descriptionAr: 'لجدولة إطلاق الأذان في الثانية المحددة حتى لو كان الجهاز في وضع الخمول العميق.',
       icon: Icons.alarm_on_outlined,
@@ -60,7 +56,7 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
       whyNeededAr: 'ضروري جداً في أندرويد 12+ لضمان عدم تأخر الأذان دقيقة واحدة.',
     ),
     PermissionItemData(
-      key: 'battery_optimization',
+      key: 'batteryOptimizationIgnored',
       titleAr: 'تجاهل تحسين البطارية',
       descriptionAr: 'لمنع نظام أندرويد من قتل خدمة الأذان في الخلفية لتوفير الشحن.',
       icon: Icons.battery_charging_full_outlined,
@@ -76,7 +72,7 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
       whyNeededAr: 'يستخدم فقط لحساب الزوايا الشمسية واتجاه الكعبة المشرفة.',
     ),
     PermissionItemData(
-      key: 'full_screen_intent',
+      key: 'fullScreenIntent',
       titleAr: 'واجهة الأذان بملء الشاشة',
       descriptionAr: 'لإظهار شاشة الأذان التفاعلية عند رنين الأذان والشاشة مقفلة.',
       icon: Icons.fullscreen_outlined,
@@ -84,12 +80,20 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
       whyNeededAr: 'يتيح لك رؤية اسم الصلاة وخيار كتم الصوت من شاشة القفل فوراً.',
     ),
     PermissionItemData(
-      key: 'draw_over_apps',
-      titleAr: 'الظهور فوق التطبيقات (AOD)',
-      descriptionAr: 'خاص بميزة الشاشة الدائمة (Always-On Display) أثناء قفل الهاتف.',
+      key: 'drawOverApps',
+      titleAr: 'الظهور فوق التطبيقات',
+      descriptionAr: 'يُستخدم لإظهار الشاشة الدائمة أثناء قفل الهاتف.',
       icon: Icons.layers_outlined,
       isEssential: false,
       whyNeededAr: 'مطلوب فقط إذا كنت ترغب في تشغيل ميزة شاشة القفل الدائمة.',
+    ),
+    PermissionItemData(
+      key: 'doNotDisturb',
+      titleAr: 'التحكم في «عدم الإزعاج»',
+      descriptionAr: 'لتفعيل الصامت أثناء الصلاة حسب الأوقات التي تختارها.',
+      icon: Icons.do_not_disturb_on_outlined,
+      isEssential: false,
+      whyNeededAr: 'يتيح تشغيل الصامت وإيقافه تلقائياً حسب جدولك.',
     ),
   ];
 
@@ -118,48 +122,11 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
     final checkId = ++_permissionCheckId;
     setState(() => _isLoading = true);
 
-    bool notif = false;
-    bool exact = false;
-    bool battery = false;
-    bool loc = false;
-    bool fullScreen = !Platform.isAndroid;
-    bool drawOver = false;
-
-    try {
-      final nativeMap = await AlarmBridge.checkPermissions();
-      exact = nativeMap['exactAlarm'] ?? false;
-      battery = nativeMap['batteryOptimizationIgnored'] ?? false;
-      drawOver = nativeMap['drawOverApps'] ?? false;
-      fullScreen = nativeMap['fullScreenIntent'] ?? fullScreen;
-    } catch (_) {}
-
-    try {
-      final notifStatus = await Permission.notification.status;
-      notif = notifStatus.isGranted;
-
-      final locStatus = await Permission.locationWhenInUse.status;
-      loc = locStatus.isGranted;
-
-      if (!drawOver) {
-        final overlayStatus = await Permission.systemAlertWindow.status;
-        drawOver = overlayStatus.isGranted;
-      }
-      if (!battery) {
-        final batStatus = await Permission.ignoreBatteryOptimizations.status;
-        battery = batStatus.isGranted;
-      }
-    } catch (_) {}
+    final status = await _readPermissionStatus();
 
     if (mounted && checkId == _permissionCheckId) {
       setState(() {
-        _permissionStatus = {
-          'notifications': notif,
-          'exact_alarms': exact,
-          'battery_optimization': battery,
-          'location': loc,
-          'full_screen_intent': fullScreen,
-          'draw_over_apps': drawOver,
-        };
+        _permissionStatus = status;
         _isLoading = false;
       });
     }
@@ -167,20 +134,27 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
 
   Future<void> _fixPermission(String key) async {
     switch (key) {
+      case 'doNotDisturb':
+        try {
+          await AlarmBridge.requestPrayerSilenceAccess();
+        } catch (_) {
+          await openAppSettings();
+        }
+        break;
       case 'notifications':
         final status = await Permission.notification.request();
         if (status.isPermanentlyDenied) {
           await openAppSettings();
         }
         break;
-      case 'exact_alarms':
+      case 'exactAlarm':
         try {
           await AlarmBridge.requestExactAlarmPermission();
         } catch (_) {
           await openAppSettings();
         }
         break;
-      case 'battery_optimization':
+      case 'batteryOptimizationIgnored':
         try {
           await AlarmBridge.requestBatteryOptimizationExemption();
         } catch (_) {
@@ -193,14 +167,14 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
           await openAppSettings();
         }
         break;
-      case 'full_screen_intent':
+      case 'fullScreenIntent':
         var opened = false;
         try {
           opened = await AlarmBridge.openFullScreenIntentSettings();
         } catch (_) {}
         if (!opened) await openAppSettings();
         break;
-      case 'draw_over_apps':
+      case 'drawOverApps':
         try {
           await AlarmBridge.requestDrawOverApps();
         } catch (_) {
@@ -213,7 +187,7 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
   }
 
   int get _grantedCount =>
-      _permissionStatus.values.where((granted) => granted).length;
+      _permissions.where((p) => _permissionStatus[p.key] == true).length;
 
   bool get _allEssentialGranted {
     for (final p in _permissions.where((p) => p.isEssential)) {
@@ -294,7 +268,7 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
 
                   // Permission list
                   ..._permissions.map((p) {
-                    final isGranted = _permissionStatus[p.key] ?? false;
+                    final isGranted = _permissionStatus[p.key];
                     return _buildPermissionCard(p, isGranted, isDark, primary);
                   }),
 
@@ -353,7 +327,7 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
                 Text(
                   allGood
                       ? 'جميع الأذونات الأساسية مكتملة'
-                      : 'تنبيه: بعض الأذونات الأساسية مفقودة',
+                      : 'راجع حالة الأذونات الأساسية',
                   style: TextStyle(
                     fontFamily: 'Cairo',
                     fontSize: 15,
@@ -366,8 +340,8 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
                 const SizedBox(height: 3),
                 Text(
                   allGood
-                      ? 'تطبيق المؤذان جاهز لإطلاق الأذان في مواقيته بدقة دون انقطاع.'
-                      : 'يرجى تفعيل الأذونات المعلمة باللون الأحمر لضمان سماع الأذان.',
+                      ? 'أذونات التشغيل الأساسية مفعّلة.'
+                      : 'فعّل الأذونات المطلوبة من القائمة أدناه.',
                   style: TextStyle(
                     fontFamily: 'Cairo',
                     fontSize: 12,
@@ -395,10 +369,11 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
 
   Widget _buildPermissionCard(
     PermissionItemData p,
-    bool isGranted,
+    bool? status,
     bool isDark,
     Color primary,
   ) {
+    final isGranted = status == true;
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
@@ -432,7 +407,7 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
                   ),
                   child: Center(
                     child: Icon(
-                      isGranted ? Icons.check : Icons.close,
+                      status == null ? Icons.help_outline : (isGranted ? Icons.check : Icons.close),
                       color: isGranted ? AppColors.success : AppColors.error,
                       size: 20,
                     ),
@@ -515,8 +490,8 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
                       elevation: 0,
                     ),
                     onPressed: () => _fixPermission(p.key),
-                    child: const Text(
-                      'إصلاح',
+                    child: Text(
+                      status == null ? 'غير مؤكّد' : 'يحتاج تفعيل',
                       style: TextStyle(
                         fontFamily: 'Cairo',
                         fontSize: 12,
@@ -526,7 +501,7 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
                   )
                 else
                   Text(
-                    'مفعل ✔',
+                    'مفعّل ✔',
                     style: TextStyle(
                       fontFamily: 'Cairo',
                       fontSize: 12,
@@ -677,4 +652,73 @@ class _PermissionCheckScreenState extends State<PermissionCheckScreen>
       ],
     );
   }
+}
+
+
+Future<Map<String, bool>> _readPermissionStatus() async {
+  try {
+    return await AlarmBridge.checkPermissions();
+  } catch (_) {
+    return const {};
+  }
+}
+
+class PermissionShortcut extends StatefulWidget {
+  const PermissionShortcut({super.key});
+
+  @override
+  State<PermissionShortcut> createState() => _PermissionShortcutState();
+}
+
+class _PermissionShortcutState extends State<PermissionShortcut>
+    with WidgetsBindingObserver {
+  int _missing = 0;
+  int _revision = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _refresh();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final revision = ++_revision;
+    final status = await _readPermissionStatus();
+    if (!mounted || revision != _revision) return;
+    setState(() {
+      _missing = _PermissionCheckScreenState._permissionItems
+          .where((item) => status[item.key] == false)
+          .length;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => IconButton(
+        tooltip: _missing > 0
+            ? 'فحص الأذونات، $_missing تحتاج تفعيل'
+            : 'فحص الأذونات',
+        icon: Badge(
+          isLabelVisible: _missing > 0,
+          label: Text('$_missing'),
+          child: const Icon(Icons.security_outlined),
+        ),
+        onPressed: () async {
+          await Navigator.of(context).push(MaterialPageRoute<void>(
+            builder: (_) => const PermissionCheckScreen(),
+          ));
+          if (mounted) _refresh();
+        },
+      );
 }

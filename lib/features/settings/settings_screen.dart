@@ -105,26 +105,7 @@ class SettingsScreen extends ConsumerWidget {
                   : AppColors.dayTextPrimary,
             ),
           ),
-          actions: [
-            // Quick permissions shortcut
-            IconButton(
-              icon: Icon(
-                Icons.security_outlined,
-                color: isDark
-                    ? AppColors.nightSecondary
-                    : AppColors.daySecondary,
-              ),
-              tooltip: 'فحص الأذونات',
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const PermissionCheckScreen(),
-                  ),
-                );
-              },
-            ),
-          ],
+          actions: const [PermissionShortcut()],
         ),
         body: ListView(
           padding: const EdgeInsets.symmetric(vertical: 12),
