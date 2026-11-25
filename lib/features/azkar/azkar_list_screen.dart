@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/azkar/azkar_repository.dart';
+import '../../data/settings/settings_repository.dart';
 import '../../domain/models/azkar_model.dart';
 import 'azkar_detail_screen.dart';
 
@@ -28,6 +29,18 @@ class AzkarListScreen extends ConsumerWidget {
 
     final title = isFavoritesOnly ? 'أذكاري المفضلة' : category.titleAr;
     final state = ref.watch(azkarListProvider(_listId));
+    final fontPercent = (ref.watch(appSettingsProvider.select(
+      (settings) => settings.azkarFontSize,
+    )) * 100).round().clamp(80, 160);
+
+    void changeFontSize(int step) {
+      ref.read(settingsNotifierProvider.notifier).update((settings) {
+        final percent = (settings.azkarFontSize * 100).round().clamp(80, 160);
+        return settings.copyWith(
+          azkarFontSize: (percent + step).clamp(80, 160) / 100,
+        );
+      });
+    }
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -97,6 +110,27 @@ class AzkarListScreen extends ConsumerWidget {
 
           return Column(
             children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                textDirection: TextDirection.rtl,
+                children: [
+                  IconButton(
+                    tooltip: 'تكبير نص الأذكار',
+                    onPressed: fontPercent < 160 ? () => changeFontSize(10) : null,
+                    icon: const Icon(Icons.add),
+                  ),
+                  Text(
+                    '$fontPercent%',
+                    textDirection: TextDirection.ltr,
+                    semanticsLabel: 'حجم النص $fontPercent بالمئة',
+                  ),
+                  IconButton(
+                    tooltip: 'تصغير نص الأذكار',
+                    onPressed: fontPercent > 80 ? () => changeFontSize(-10) : null,
+                    icon: const Icon(Icons.remove),
+                  ),
+                ],
+              ),
               // Overall category progress banner
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -164,7 +198,9 @@ class AzkarListScreen extends ConsumerWidget {
                   separatorBuilder: (context, index) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final zikr = azkar[index];
-                    return _buildZikrTile(context, ref, zikr, index, azkar);
+                    return _buildZikrTile(
+                      context, ref, zikr, index, azkar, fontPercent / 100,
+                    );
                   },
                 ),
               ),
@@ -181,6 +217,7 @@ class AzkarListScreen extends ConsumerWidget {
     AzkarModel zikr,
     int index,
     List<AzkarModel> fullList,
+    double fontScale,
   ) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -288,15 +325,13 @@ class AzkarListScreen extends ConsumerWidget {
                 zikr.text,
                 style: TextStyle(
                   fontFamily: AppConstants.fontAmiri,
-                  fontSize: 19,
+                  fontSize: 19 * fontScale,
                   height: 1.8,
                   fontWeight: FontWeight.w500,
                   color: isDone
                       ? theme.textTheme.bodyLarge?.color?.withOpacity(0.65)
                       : theme.textTheme.bodyLarge?.color,
                 ),
-                maxLines: 4,
-                overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.right,
               ),
 
