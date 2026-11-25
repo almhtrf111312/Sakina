@@ -10,7 +10,7 @@ import kotlin.math.min
 import kotlin.math.sin
 
 /** Dim, drifted together with the rest of the AOD to reduce static pixels. */
-class AnalogClockView(context: Context, private val color: Int, private val classic: Boolean) : View(context) {
+class AnalogClockView(context: Context, private val color: Int, private val classic: Boolean, private val showFrame: Boolean) : View(context) {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { strokeCap = Paint.Cap.ROUND }
     private val density = resources.displayMetrics.density
 
@@ -28,7 +28,7 @@ class AnalogClockView(context: Context, private val color: Int, private val clas
         paint.color = color
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = (if (classic) 2f else 1.3f) * density
-        canvas.drawCircle(cx, cy, r, paint)
+        if (showFrame) canvas.drawCircle(cx, cy, r, paint)
         for (i in 0 until 60) {
             if (!classic && i % 5 != 0) continue
             val angle = i * Math.PI / 30 - Math.PI / 2

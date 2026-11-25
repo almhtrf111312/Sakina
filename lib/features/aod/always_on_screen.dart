@@ -50,6 +50,8 @@ class AlwaysOnConfig {
   final double textScale; // 1.0 | 1.3 | 1.6
   final double brightness; // 0.02 .. 0.24
   final bool showPrayers;
+  final String layout;
+  final Set<String> hiddenElements;
   final int timeoutMin; // 0 = until unlock
   final int clockStyle; // 0..5 digital | 6..7 analog
   final bool arabicNumerals;
@@ -66,6 +68,8 @@ class AlwaysOnConfig {
     this.textScale = 1.3,
     this.brightness = 0.08,
     this.showPrayers = true,
+    this.layout = 'classic',
+    this.hiddenElements = const {},
     this.timeoutMin = 5,
     this.clockStyle = 0,
     this.arabicNumerals = false,
@@ -83,6 +87,8 @@ class AlwaysOnConfig {
     double? textScale,
     double? brightness,
     bool? showPrayers,
+    String? layout,
+    Set<String>? hiddenElements,
     int? timeoutMin,
     int? clockStyle,
     bool? arabicNumerals,
@@ -99,6 +105,8 @@ class AlwaysOnConfig {
         textScale: textScale ?? this.textScale,
         brightness: brightness ?? this.brightness,
         showPrayers: showPrayers ?? this.showPrayers,
+        layout: layout ?? this.layout,
+        hiddenElements: hiddenElements ?? this.hiddenElements,
         timeoutMin: timeoutMin ?? this.timeoutMin,
         clockStyle: clockStyle ?? this.clockStyle,
         arabicNumerals: arabicNumerals ?? this.arabicNumerals,
@@ -116,6 +124,8 @@ class AlwaysOnConfig {
         'textScale': textScale,
         'brightness': brightness,
         'showPrayers': showPrayers,
+        'layout': layout,
+        'hiddenElements': hiddenElements.toList(),
         'timeoutMin': timeoutMin,
         'clockStyle': clockStyle,
         'arabicNumerals': arabicNumerals,
@@ -133,6 +143,11 @@ class AlwaysOnConfig {
         textScale: (j['textScale'] as num?)?.toDouble() ?? 1.3,
         brightness: (j['brightness'] as num?)?.toDouble() ?? 0.08,
         showPrayers: j['showPrayers'] as bool? ?? true,
+        layout: const ['split', 'list'].contains(j['layout'])
+            ? j['layout'] as String
+            : 'classic',
+        hiddenElements: (j['hiddenElements'] as List?)
+                ?.whereType<String>().toSet() ?? const {},
         timeoutMin: (j['timeoutMin'] as num?)?.toInt() ?? 5,
         clockStyle: ((j['clockStyle'] as num?)?.toInt() ?? 0).clamp(0, 7).toInt(),
         arabicNumerals: j['arabicNumerals'] as bool? ?? false,
@@ -595,6 +610,16 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('الشاشة الدائمة', style: TextStyle(fontFamily: 'Cairo')),
+        actions: [
+          IconButton(
+            tooltip: 'معاينة الشاشة الدائمة',
+            icon: const Icon(Icons.visibility_outlined),
+            onPressed: () async {
+              await n.push();
+              await AlarmBridge.previewAlwaysOn();
+            },
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -620,26 +645,64 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
                   }
                 },
               ),
-              const SizedBox(height: 4),
-              Row(children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      await n.push();
-                      AlarmBridge.previewAlwaysOn();
-                    },
-                    icon: const Icon(Icons.visibility_outlined),
-                    label: const Text('معاينة', style: TextStyle(fontFamily: 'Cairo')),
-                  ),
-                ),
-              ]),
             ],
           )),
-          _whenCard(cfg, n),
-          _lookCard(cfg, n),
           _card(Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _title('ترتيب العرض'),
+              _choices<String>(
+                value: cfg.layout,
+                items: const [
+                  ('classic', 'توسيط'),
+                  ('split', 'توزيع جانبي'),
+                  ('list', 'مواقيت عمودية'),
+                ],
+                onChanged: (value) => n.update((c) => c.copyWith(layout: value)),
+              ),
+              const SizedBox(height: 12),
+              _title('العناصر الظاهرة'),
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: [
+                  for (final (key, title) in [
+                    ('status', 'شريط الحالة'),
+                    ('ringer', 'الرنين'),
+                    ('cell', 'شبكة الجوال'),
+                    ('wifi', 'الواي فاي'),
+                    ('battery', 'البطارية والشحن'),
+                    ('name', 'اسم الصلاة'),
+                    ('caption', 'عنوان الصلاة القادمة'),
+                    ('prayerTime', 'وقت الأذان'),
+                    ('remaining', 'المتبقي'),
+                    if (cfg.clockStyle >= 6) ...[
+                      ('digital', 'الوقت الرقمي'),
+                      ('dial', 'إطار الساعة'),
+                    ],
+                  ])
+                    FilterChip(
+                      label: Text(title),
+                      selected: !cfg.hiddenElements.contains(key),
+                      onSelected: (visible) => n.update((c) {
+                        final hidden = {...c.hiddenElements};
+                        if (visible) {
+                          hidden.remove(key);
+                        } else {
+                          hidden.add(key);
+                        }
+                        return c.copyWith(hiddenElements: hidden);
+                      }),
+                    ),
+                  FilterChip(
+                    label: const Text('جدول المواقيت'),
+                    selected: cfg.showPrayers,
+                    onSelected: (visible) =>
+                        n.update((c) => c.copyWith(showPrayers: visible)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
               _title('التاريخ'),
               _choices<String>(
                 value: cfg.dateMode,
@@ -651,29 +714,17 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
                 ],
                 onChanged: (v) => n.update((c) => c.copyWith(dateMode: v)),
               ),
-              _hint('يتبع التاريخ الهجري إزاحة الأيام المضبوطة في: الإعدادات ← الموقع وحساب المواقيت.'),
-            ],
-          )),
-          _card(Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+              const SizedBox(height: 12),
               _title('حجم الكتابة'),
               _choices<double>(
                 value: cfg.textScale,
                 items: const [(1.0, 'عادي'), (1.3, 'كبير'), (1.6, 'كبير جداً')],
                 onChanged: (v) => n.update((c) => c.copyWith(textScale: v)),
               ),
-              const SizedBox(height: 14),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('عرض الصلوات الخمس',
-                    style: TextStyle(fontFamily: 'Cairo', fontSize: 14)),
-                value: cfg.showPrayers,
-                activeColor: primary,
-                onChanged: (v) => n.update((c) => c.copyWith(showPrayers: v)),
-              ),
             ],
           )),
+          _lookCard(cfg, n),
+          _whenCard(cfg, n),
           _card(Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

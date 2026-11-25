@@ -158,6 +158,7 @@ class PrayerListTile extends ConsumerWidget {
                 // ── Time Text ──
                 Text(
                   formattedTime,
+                  textDirection: TextDirection.ltr,
                   style: theme.textTheme.bodyLarge?.copyWith(
                     fontFamily: 'Cairo',
                     fontWeight: FontWeight.w600,
@@ -194,7 +195,8 @@ class PrayerListTile extends ConsumerWidget {
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(time, style: Theme.of(context).textTheme.headlineSmall),
+                Text(time, textDirection: TextDirection.ltr,
+                    style: Theme.of(context).textTheme.headlineSmall),
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,

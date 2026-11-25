@@ -66,6 +66,7 @@ class AodActivity : Activity() {
     private lateinit var statusBar: AodStatusView
     private lateinit var block: LinearLayout
     private lateinit var tvTime: TextView
+    private var tvClockMinutes: TextView? = null
     private var analogClock: AnalogClockView? = null
     private lateinit var tvDate: TextView
     private lateinit var tvHijri: TextView
@@ -131,7 +132,7 @@ class AodActivity : Activity() {
         cachedMinute = -1
         updatePrayerAlert()
         tick.run()
-        statusTick.run()
+        if (statusBar.visibility == View.VISIBLE) statusTick.run()
         handler.post(drift)
     }
 
@@ -212,7 +213,10 @@ class AodActivity : Activity() {
         root.addView(clockArea, FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
         ))
-        statusBar = AodStatusView(this, main)
+        statusBar = AodStatusView(this, main, cfg.hiddenElements)
+        if (!visible("status") || listOf("ringer", "cell", "wifi", "battery").none(::visible)) {
+            statusBar.visibility = View.GONE
+        }
         root.addView(statusBar, FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT, (44 * d).toInt(), Gravity.TOP
         ))
@@ -232,49 +236,119 @@ class AodActivity : Activity() {
             FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT,
             Gravity.CENTER))
 
-        if (cfg.clockStyle >= 6) {
-            analogClock = AnalogClockView(this, main, cfg.clockStyle == 6).also {
-                block.addView(it, lp(0))
+        val split = cfg.layout == "split"
+        val analog = cfg.clockStyle >= 6
+        val stackClock = split && !analog && cfg.clockStyle != 3
+        val clock = column()
+        val dates = column()
+        if (split) block.addView(paired(dates, clock), lp(0))
+        else {
+            block.addView(clock, lp(0))
+            block.addView(dates, lp(0))
+        }
+
+        if (analog) {
+            analogClock = AnalogClockView(this, main, cfg.clockStyle == 6, visible("dial")).also {
+                clock.addView(it, LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                ))
             }
         }
         val timeSize = when (cfg.clockStyle) {
             1 -> 80f; 2 -> 74f; 3 -> 66f; 4 -> 68f; 5 -> 82f
             6, 7 -> 28f; else -> 86f
         }
-        tvTime = label(timeSize, main, cfg.clockStyle != 2).also { block.addView(it, lp(0)) }
+        tvTime = timeLabel(timeSize, main, cfg.clockStyle != 2).also { clock.addView(it, lp(0)) }
         styleClock(tvTime, d)
-        tvDate = label(20f, soft).also { block.addView(it, lp(6)) }
-        tvHijri = label(20f, soft).also { block.addView(it, lp(2)) }
-        block.addView(View(this), LinearLayout.LayoutParams(1, (28 * d).toInt()))
+        if (analog && !visible("digital")) tvTime.visibility = View.GONE
+        if (stackClock) {
+            tvClockMinutes = timeLabel(timeSize, main, cfg.clockStyle != 2).also {
+                styleClock(it, d)
+                clock.addView(it, lp(0))
+            }
+        }
+        tvDate = label(if (split) 16f else 20f, soft).also { dates.addView(it, lp(6)) }
+        tvHijri = label(if (split) 16f else 20f, soft).also { dates.addView(it, lp(2)) }
+        tvDate.visibility = if (cfg.dateMode == "gregorian" || cfg.dateMode == "both") View.VISIBLE else View.GONE
+        tvHijri.visibility = if (cfg.dateMode == "hijri" || cfg.dateMode == "both") View.VISIBLE else View.GONE
+        if (tvDate.visibility == View.GONE && tvHijri.visibility == View.GONE) dates.visibility = View.GONE
+
         tvAlert = label(24f, main, true).apply {
             visibility = View.GONE
             accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
         }.also { block.addView(it, lp(0)) }
-        tvName = label(44f, main, true).also { block.addView(it, lp(0)) }
-        tvPrayerTime = label(38f, main).also { block.addView(it, lp(4)) }
-        // A single clock in the framed style; prayer name/countdown remain below it.
-        if (cfg.clockStyle == 3) tvPrayerTime.visibility = View.GONE
-        tvCountdown = label(30f, soft).also { block.addView(it, lp(10)) }
+
+        val prayer = column()
+        val countdown = column()
+        val upcoming = if (split) paired(countdown, prayer) else column().apply {
+            addView(prayer, lp(0))
+            addView(countdown, lp(0))
+        }
+        block.addView(upcoming, lp(24))
+        if (visible("name") && visible("caption")) {
+            prayer.addView(label(15f, soft).apply { text = "الصلاة القادمة" }, lp(0))
+        }
+        tvName = label(44f, main, true).also { prayer.addView(it, lp(3)) }
+        if (!visible("name")) tvName.visibility = View.GONE
+        tvPrayerTime = timeLabel(38f, main).also { prayer.addView(it, lp(4)) }
+        if (!visible("prayerTime")) tvPrayerTime.visibility = View.GONE
+        if (visible("remaining")) {
+            countdown.addView(label(15f, soft).apply { text = "المتبقي" }, lp(if (split) 0 else 8))
+        }
+        tvCountdown = timeLabel(30f, soft).also { countdown.addView(it, lp(2)) }
+        if (!visible("remaining")) {
+            tvCountdown.visibility = View.GONE
+            countdown.visibility = View.GONE
+        }
+        if (!visible("name") && !visible("prayerTime")) prayer.visibility = View.GONE
+        if (prayer.visibility == View.GONE && countdown.visibility == View.GONE) upcoming.visibility = View.GONE
 
         rowPrayers = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
+            orientation = if (cfg.layout == "list") LinearLayout.VERTICAL else LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
             layoutDirection = View.LAYOUT_DIRECTION_RTL
+            tag = Pair(main, faint)
         }
-        block.addView(rowPrayers, lp(30))
+        block.addView(rowPrayers, lp(18))
         if (!cfg.showPrayers) rowPrayers.visibility = View.GONE
-        tvDate.visibility = if (cfg.dateMode == "gregorian" || cfg.dateMode == "both") View.VISIBLE else View.GONE
-        tvHijri.visibility = if (cfg.dateMode == "hijri" || cfg.dateMode == "both") View.VISIBLE else View.GONE
-        // keep colours used by rows
-        rowPrayers.tag = Pair(main, faint)
+
         tvExit = label(16f, soft).apply {
-            text = "إظهار شاشة القفل"
-            setPadding(0, (12 * d).toInt(), 0, (12 * d).toInt())
+            val lock = getDrawable(com.sakina.app.R.drawable.ic_aod_lock)?.mutate()
+            lock?.setTint(soft)
+            setCompoundDrawablesWithIntrinsicBounds(null, lock, null, null)
+            contentDescription = "إظهار شاشة القفل"
+            gravity = Gravity.CENTER
+            setPadding((12 * d).toInt(), (8 * d).toInt(), (12 * d).toInt(), (8 * d).toInt())
             setOnClickListener { dismiss() }
         }
-        block.addView(tvExit, lp(14))
+        root.addView(tvExit, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT,
+            Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+        ).apply { bottomMargin = (24 * d).toInt() })
+        val clockBounds = clockArea.layoutParams as FrameLayout.LayoutParams
+        clockBounds.bottomMargin = (64 * d).toInt()
+        clockArea.layoutParams = clockBounds
         setContentView(root)
     }
+
+    private fun visible(key: String): Boolean = key !in cfg.hiddenElements
+
+    private fun column() = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        gravity = Gravity.CENTER
+    }
+
+    /** Physical left/right columns are independent of the device locale. */
+    private fun paired(left: View, right: View) = LinearLayout(this).apply {
+        layoutDirection = View.LAYOUT_DIRECTION_LTR
+        gravity = Gravity.CENTER_VERTICAL
+        for (view in listOf(left, right)) {
+            addView(view, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        }
+    }
+
+    private fun timeLabel(size: Float, color: Int, bold: Boolean = false) =
+        label(size, color, bold).apply { textDirection = View.TEXT_DIRECTION_LTR }
 
     /** Applies the clock design chosen in the app (digital / classic / minimal / boxed). */
     private fun styleClock(tv: TextView, d: Float) {
@@ -403,7 +477,14 @@ class AodActivity : Activity() {
 
     private fun update() {
         val now = Calendar.getInstance()
-        tvTime.text = formattedTime(now)
+        val clockMinutes = tvClockMinutes
+        val time = formattedTime(now)
+        if (clockMinutes == null) {
+            tvTime.text = time
+        } else {
+            tvTime.text = time.substringBefore(':')
+            clockMinutes.text = time.substringAfter(':')
+        }
         analogClock?.invalidate()
         if (tvDate.visibility == View.VISIBLE) tvDate.text = num("${daysAr[now.get(Calendar.DAY_OF_WEEK) - 1]} ${now.get(Calendar.DAY_OF_MONTH)} " +
             "${monthsAr[now.get(Calendar.MONTH)]} ${now.get(Calendar.YEAR)}")
@@ -420,10 +501,10 @@ class AodActivity : Activity() {
             tvName.text = "المؤذان"; tvPrayerTime.text = ""; tvCountdown.text = ""
             return
         }
-        tvName.text = "الصلاة القادمة: " + next.nameAr
+        tvName.text = next.nameAr
         tvPrayerTime.text = hm(next.ts)
         val minutes = ((next.ts - System.currentTimeMillis() + 59_999L) / 60_000L).coerceAtLeast(0)
-        tvCountdown.text = num(String.format(Locale.US, "المتبقي %d س %02d د",
+        tvCountdown.text = num(String.format(Locale.US, "%02d:%02d",
             minutes / 60, minutes % 60))
 
         if (cfg.showPrayers) fillRow(data.todayFive(), next)
@@ -437,19 +518,29 @@ class AodActivity : Activity() {
         rowPrayers.removeAllViews()
         @Suppress("UNCHECKED_CAST")
         val cols = rowPrayers.tag as Pair<Int, Int>
+        val vertical = cfg.layout == "list"
         for (p in list) {
+            if (p.ts == next.ts && visible("name") && visible("prayerTime") && cfg.layout != "classic") continue
             val isNext = p.ts == next.ts
-            val cell = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER }
+            val cell = column()
             val c = if (isNext) cols.first else cols.second
-            cell.addView(TextView(this).apply {
+            val size = 15f * cfg.textScale.coerceAtMost(1.3f)
+            val name = TextView(this).apply {
                 text = p.nameAr; setTextColor(c); gravity = Gravity.CENTER
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f * cfg.textScale.coerceAtMost(1.3f))
-            })
-            cell.addView(TextView(this).apply {
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, size)
+            }
+            val time = TextView(this).apply {
                 text = hm(p.ts); setTextColor(c); gravity = Gravity.CENTER
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f * cfg.textScale.coerceAtMost(1.3f))
-            })
-            rowPrayers.addView(cell, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+                textDirection = View.TEXT_DIRECTION_LTR
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, size)
+            }
+            if (vertical) {
+                rowPrayers.addView(paired(time, name), lp(4))
+            } else {
+                cell.addView(name)
+                cell.addView(time)
+                rowPrayers.addView(cell, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            }
         }
     }
 
@@ -462,6 +553,7 @@ class AodActivity : Activity() {
             val (x, y) = offsets[driftIndex]
             val density = resources.displayMetrics.density
             val verticalRoom = ((clockArea.height - block.height) / 2f).coerceAtLeast(0f)
+            tvExit.translationX = x * density / 2
             statusBar.translationX = x * density / 2
             statusBar.translationY = (y + 10) * density / 4
             block.translationX = x * density
@@ -500,13 +592,13 @@ class AodActivity : Activity() {
         if (name == null) {
             tvAlert.animate().cancel()
             tvAlert.visibility = View.GONE
-            tvExit.text = "إظهار شاشة القفل"
+            tvExit.contentDescription = "إظهار شاشة القفل"
             if (intent.getBooleanExtra(EXTRA_PRAYER_ALERT, false)) finish()
             return
         }
         val title = "حان الآن موعد أذان $name"
         if (tvAlert.visibility == View.VISIBLE && tvAlert.text == title) return
-        tvExit.text = "المس الشاشة لإيقاف التنبيه"
+        tvExit.contentDescription = "المس الشاشة لإيقاف التنبيه"
         tvAlert.text = title
         tvAlert.visibility = View.VISIBLE
         tvAlert.alpha = 0.25f

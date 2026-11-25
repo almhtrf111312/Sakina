@@ -107,7 +107,8 @@ class HeroPrayerCard extends ConsumerWidget {
               const SizedBox(height: 2),
               // Target Adhan Time
               Text(
-                '$formattedTime',
+                formattedTime,
+                textDirection: TextDirection.ltr,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: isDark
                       ? AppColors.nightTextSecondary
@@ -193,6 +194,7 @@ class _LiveClockState extends ConsumerState<_LiveClock> {
             Text(
               AppDateUtils.formatPrayerTime(_now,
                   is24Hour: settings.use24HourTime, languageCode: settings.languageCode),
+              textDirection: TextDirection.ltr,
               style: TextStyle(
                 fontFamily: 'Cairo',
                 fontSize: settings.use24HourTime ? 52 : 40,

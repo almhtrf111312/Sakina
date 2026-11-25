@@ -9,6 +9,8 @@ class AlwaysOnConfig(
     val textScale: Float,        // 1.0 / 1.3 / 1.6
     val brightness: Float,       // 0.02 .. 0.30
     val showPrayers: Boolean,
+    val layout: String,
+    val hiddenElements: Set<String>,
     val timeoutMin: Int,         // 0 = until the phone is unlocked
     val color: Int,
     val clockStyle: Int,         // 0..5 digital, 6..7 analog
@@ -31,6 +33,9 @@ class AlwaysOnConfig(
                 .putFloat("textScale", (m["textScale"] as? Number)?.toFloat() ?: 1.3f)
                 .putFloat("brightness", (m["brightness"] as? Number)?.toFloat() ?: 0.08f)
                 .putBoolean("showPrayers", m["showPrayers"] as? Boolean ?: true)
+                .putString("layout", m["layout"] as? String ?: "classic")
+                .putStringSet("hiddenElements",
+                    (m["hiddenElements"] as? List<*>)?.filterIsInstance<String>()?.toSet() ?: emptySet())
                 .putInt("timeoutMin", (m["timeoutMin"] as? Number)?.toInt() ?: 5)
                 .putInt("color", (m["color"] as? Number)?.toInt() ?: 0xFF5FB59B.toInt())
                 .putInt("clockStyle", (m["clockStyle"] as? Number)?.toInt() ?: 0)
@@ -53,6 +58,8 @@ class AlwaysOnConfig(
                 p.getFloat("textScale", 1.3f),
                 p.getFloat("brightness", 0.08f).coerceIn(0.01f, 0.5f),
                 p.getBoolean("showPrayers", true),
+                p.getString("layout", "classic") ?: "classic",
+                p.getStringSet("hiddenElements", emptySet())?.toSet() ?: emptySet(),
                 p.getInt("timeoutMin", 5),
                 p.getInt("color", 0xFF5FB59B.toInt()),
                 p.getInt("clockStyle", 0).coerceIn(0, 7),

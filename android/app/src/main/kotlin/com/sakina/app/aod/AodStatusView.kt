@@ -9,7 +9,7 @@ import android.media.AudioManager
 import android.view.View
 
 /** Compact status icons drawn in density-independent coordinates. */
-internal class AodStatusView(context: Context, private val ink: Int) : View(context) {
+internal class AodStatusView(context: Context, private val ink: Int, private val hidden: Set<String>) : View(context) {
     data class Status(
         val percent: String,
         val charging: Boolean,
@@ -47,17 +47,27 @@ internal class AodStatusView(context: Context, private val ink: Int) : View(cont
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val current = status ?: return
-        val groupWidth = if (current.charging) 116f else 104f
+        val batteryWidth = if (current.charging) 48f else 36f
+        val groupWidth = (if ("ringer" in hidden) 0f else 25f) +
+            (if ("cell" in hidden) 0f else 22f) +
+            (if ("wifi" in hidden) 0f else 23f) +
+            (if ("battery" in hidden) 0f else batteryWidth)
         canvas.save()
         canvas.translate(width - (groupWidth + 16) * density, 15 * density)
         canvas.scale(density, density)
-        drawRinger(canvas, current.ringer)
-        canvas.translate(25f, 0f)
-        drawCell(canvas, current.cellLevel)
-        canvas.translate(22f, 0f)
-        drawWifi(canvas, current)
-        canvas.translate(23f, 0f)
-        drawBattery(canvas, current)
+        if ("ringer" !in hidden) {
+            drawRinger(canvas, current.ringer)
+            canvas.translate(25f, 0f)
+        }
+        if ("cell" !in hidden) {
+            drawCell(canvas, current.cellLevel)
+            canvas.translate(22f, 0f)
+        }
+        if ("wifi" !in hidden) {
+            drawWifi(canvas, current)
+            canvas.translate(23f, 0f)
+        }
+        if ("battery" !in hidden) drawBattery(canvas, current)
         canvas.restore()
     }
 
