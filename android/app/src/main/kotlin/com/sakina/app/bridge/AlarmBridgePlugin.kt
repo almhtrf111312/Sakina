@@ -245,6 +245,16 @@ class AlarmBridgePlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamH
                 stopPreview()
                 result.success(true)
             }
+            "widgetCatalogue" -> {
+                try {
+                    result.success(com.sakina.app.widget.WidgetPinning.catalogue(context))
+                } catch (e: Exception) {
+                    result.error("WIDGET_CATALOGUE_FAILED", e.message, null)
+                }
+            }
+            "pinWidget" -> result.success(runCatching {
+                com.sakina.app.widget.WidgetPinning.request(context, call.argument<String>("id"))
+            }.getOrDefault(false))
             "updateWidgetData" -> {
                 val json = call.argument<String>("json")
                 if (json != null) {

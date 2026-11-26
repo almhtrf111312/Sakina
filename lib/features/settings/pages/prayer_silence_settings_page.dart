@@ -71,23 +71,6 @@ class _PrayerSilenceSettingsPageState
         });
       });
 
-  String _offsetLabel(int offset) {
-    if (offset == 0) return 'عند الأذان';
-    return '${offset.abs()} د ${offset < 0 ? 'قبل الأذان' : 'بعد الأذان'}';
-  }
-
-  Future<void> _edit(String name, String label, PrayerSilence rule) async {
-    final interval = await showDialog<(int, int)>(
-      context: context,
-      builder: (_) => _IntervalDialog(label: label, rule: rule),
-    );
-    if (interval == null || !mounted) return;
-    await _saveRule(
-      name,
-      (current) => current.copyWith(start: interval.$1, end: interval.$2),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(appSettingsProvider);
@@ -144,17 +127,12 @@ class _PrayerSilenceSettingsPageState
                     ),
                   ),
                   if (settings.prayerSilence[entry.key]?.enabled == true)
-                    ListTile(
-                      title: const Text('بداية الصامت ونهايته'),
-                      subtitle: Text(
-                        'البداية ${_offsetLabel(settings.prayerSilence[entry.key]!.start)}\n'
-                        'النهاية ${_offsetLabel(settings.prayerSilence[entry.key]!.end)}',
-                      ),
-                      trailing: const Icon(Icons.edit_outlined),
-                      onTap: () => _edit(
+                    _IntervalEditor(
+                      key: ValueKey(entry.key),
+                      rule: settings.prayerSilence[entry.key]!,
+                      onSave: (start, end) => _saveRule(
                         entry.key,
-                        entry.value,
-                        settings.prayerSilence[entry.key]!,
+                        (rule) => rule.copyWith(start: start, end: end),
                       ),
                     ),
                 ],
@@ -166,17 +144,17 @@ class _PrayerSilenceSettingsPageState
   }
 }
 
-class _IntervalDialog extends StatefulWidget {
-  const _IntervalDialog({required this.label, required this.rule});
+class _IntervalEditor extends StatefulWidget {
+  const _IntervalEditor({super.key, required this.rule, required this.onSave});
 
-  final String label;
+  final Future<void> Function(int start, int end) onSave;
   final PrayerSilence rule;
 
   @override
-  State<_IntervalDialog> createState() => _IntervalDialogState();
+  State<_IntervalEditor> createState() => _IntervalEditorState();
 }
 
-class _IntervalDialogState extends State<_IntervalDialog> {
+class _IntervalEditorState extends State<_IntervalEditor> {
   final _formKey = GlobalKey<FormState>();
   late final _start = TextEditingController(text: '${widget.rule.start.abs()}');
   late final _end = TextEditingController(text: '${widget.rule.end.abs()}');
@@ -207,7 +185,9 @@ class _IntervalDialogState extends State<_IntervalDialog> {
       setState(() => _error = 'اختر نهاية بعد وقت البداية.');
       return;
     }
-    Navigator.of(context).pop((start, end));
+    setState(() => _error = null);
+    widget.onSave(start, end);
+    FocusScope.of(context).unfocus();
   }
 
   Widget _offset({
@@ -216,47 +196,55 @@ class _IntervalDialogState extends State<_IntervalDialog> {
     required TextEditingController controller,
     required ValueChanged<int> onChanged,
   }) =>
-      Column(
+      Row(
         children: [
-          DropdownButtonFormField<int>(
-            initialValue: direction,
-            isExpanded: true,
-            decoration: InputDecoration(labelText: label),
-            items: const [
-              DropdownMenuItem(value: -1, child: Text('قبل الأذان')),
-              DropdownMenuItem(value: 0, child: Text('عند الأذان')),
-              DropdownMenuItem(value: 1, child: Text('بعد الأذان')),
-            ],
-            onChanged: (value) => onChanged(value!),
+          Expanded(
+            flex: 3,
+            child: DropdownButtonFormField<int>(
+              initialValue: direction,
+              isExpanded: true,
+              decoration: InputDecoration(labelText: label),
+              items: const [
+                DropdownMenuItem(value: -1, child: Text('قبل الأذان')),
+                DropdownMenuItem(value: 0, child: Text('عند الأذان')),
+                DropdownMenuItem(value: 1, child: Text('بعد الأذان')),
+              ],
+              onChanged: (value) => onChanged(value!),
+            ),
           ),
-          if (direction != 0)
-            TextFormField(
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 2,
+            child: TextFormField(
               controller: controller,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'عدد الدقائق'),
+              enabled: direction != 0,
+              decoration: const InputDecoration(labelText: 'دقائق'),
               validator: (text) {
+                if (direction == 0) return null;
                 final value = _minutes(text);
                 return value == null || value < 1 || value > PrayerSilence.maxOffset
                     ? 'أدخل عدداً من 1 إلى ${PrayerSilence.maxOffset}.'
                     : null;
               },
             ),
+          ),
         ],
       );
 
   @override
   Widget build(BuildContext context) => Directionality(
         textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          title: Text('فترة الصامت لصلاة ${widget.label}'),
-          scrollable: true,
-          content: Form(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Form(
             key: _formKey,
             child: Column(
-              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                const Text('بداية الصامت ونهايته'),
                 _offset(
-                  label: 'بداية الصامت',
+                  label: 'البداية',
                   direction: _startDirection,
                   controller: _start,
                   onChanged: (direction) => setState(() {
@@ -264,9 +252,9 @@ class _IntervalDialogState extends State<_IntervalDialog> {
                     _error = null;
                   }),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 _offset(
-                  label: 'نهاية الصامت',
+                  label: 'النهاية',
                   direction: _endDirection,
                   controller: _end,
                   onChanged: (direction) => setState(() {
@@ -275,20 +263,14 @@ class _IntervalDialogState extends State<_IntervalDialog> {
                   }),
                 ),
                 if (_error != null)
-                  Text(
-                    _error!,
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
-                  ),
+                  Text(_error!,
+                      style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: TextButton(onPressed: _save, child: const Text('حفظ الفترة')),
+                ),
               ],
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('إلغاء'),
-            ),
-            FilledButton(onPressed: _save, child: const Text('حفظ')),
-          ],
         ),
       );
-}

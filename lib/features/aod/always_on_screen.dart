@@ -52,6 +52,7 @@ class AlwaysOnConfig {
   final bool showPrayers;
   final String layout;
   final Set<String> hiddenElements;
+  final bool showAgainWhenLocked;
   final int timeoutMin; // 0 = until unlock
   final int clockStyle; // 0..5 digital | 6..7 analog
   final bool arabicNumerals;
@@ -70,6 +71,7 @@ class AlwaysOnConfig {
     this.showPrayers = true,
     this.layout = 'classic',
     this.hiddenElements = const {},
+    this.showAgainWhenLocked = true,
     this.timeoutMin = 5,
     this.clockStyle = 0,
     this.arabicNumerals = false,
@@ -89,6 +91,7 @@ class AlwaysOnConfig {
     bool? showPrayers,
     String? layout,
     Set<String>? hiddenElements,
+    bool? showAgainWhenLocked,
     int? timeoutMin,
     int? clockStyle,
     bool? arabicNumerals,
@@ -107,6 +110,7 @@ class AlwaysOnConfig {
         showPrayers: showPrayers ?? this.showPrayers,
         layout: layout ?? this.layout,
         hiddenElements: hiddenElements ?? this.hiddenElements,
+        showAgainWhenLocked: showAgainWhenLocked ?? this.showAgainWhenLocked,
         timeoutMin: timeoutMin ?? this.timeoutMin,
         clockStyle: clockStyle ?? this.clockStyle,
         arabicNumerals: arabicNumerals ?? this.arabicNumerals,
@@ -126,6 +130,7 @@ class AlwaysOnConfig {
         'showPrayers': showPrayers,
         'layout': layout,
         'hiddenElements': hiddenElements.toList(),
+        'showAgainWhenLocked': showAgainWhenLocked,
         'timeoutMin': timeoutMin,
         'clockStyle': clockStyle,
         'arabicNumerals': arabicNumerals,
@@ -148,6 +153,7 @@ class AlwaysOnConfig {
             : 'classic',
         hiddenElements: (j['hiddenElements'] as List?)
                 ?.whereType<String>().toSet() ?? const {},
+        showAgainWhenLocked: j['showAgainWhenLocked'] as bool? ?? true,
         timeoutMin: (j['timeoutMin'] as num?)?.toInt() ?? 5,
         clockStyle: ((j['clockStyle'] as num?)?.toInt() ?? 0).clamp(0, 7).toInt(),
         arabicNumerals: j['arabicNumerals'] as bool? ?? false,
@@ -730,11 +736,20 @@ class _AlwaysOnScreenState extends ConsumerState<AlwaysOnScreen>
           _section('التشغيل', 'وقت ظهور الشاشة ومدة العرض', Icons.timer_outlined, [
             _whenCard(cfg, n),
             _title('مدة العرض'),
+
             _choices<int>(
               value: cfg.timeoutMin,
-              items: const [(5, '5 دقائق'), (10, '10 دقائق'), (30, '30 دقيقة'), (0, 'حتى فتح القفل')],
+              items: const [(1, 'دقيقة'), (5, '5 دقائق'), (10, '10 دقائق'), (30, '30 دقيقة'), (0, 'حتى فتح القفل')],
               onChanged: (v) => n.update((c) => c.copyWith(timeoutMin: v)),
             ),
+            if (cfg.timeoutMin > 0)
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('إعادة العرض دون فتح القفل'),
+                subtitle: const Text('20 ثانية عند الإيقاظ، و10 ثوانٍ عند الإطفاء السريع.'),
+                value: cfg.showAgainWhenLocked,
+                onChanged: (v) => n.update((c) => c.copyWith(showAgainWhenLocked: v)),
+              ),
           ]),
           _section('الأذونات', 'شاشة القفل والتشغيل في الخلفية', Icons.security_outlined, [
               _permRow('الظهور فوق التطبيقات',

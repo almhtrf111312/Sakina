@@ -671,9 +671,30 @@ class PermissionShortcut extends StatefulWidget {
 }
 
 class _PermissionShortcutState extends State<PermissionShortcut>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   int _missing = 0;
   int _revision = 0;
+  late final _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1000),
+  );
+  late final _opacity = Tween<double>(begin: 1, end: 0.4).animate(
+    CurvedAnimation(parent: _pulse, curve: Curves.easeInOut),
+  );
+
+  void _updatePulse() {
+    if (_missing > 0 && !MediaQuery.disableAnimationsOf(context)) {
+      if (!_pulse.isAnimating) _pulse.repeat(reverse: true);
+    } else {
+      _pulse.reset();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updatePulse();
+  }
 
   @override
   void initState() {
@@ -684,6 +705,7 @@ class _PermissionShortcutState extends State<PermissionShortcut>
 
   @override
   void dispose() {
+    _pulse.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -702,6 +724,7 @@ class _PermissionShortcutState extends State<PermissionShortcut>
           .where((item) => status[item.key] == false)
           .length;
     });
+    _updatePulse();
   }
 
   @override
@@ -711,7 +734,22 @@ class _PermissionShortcutState extends State<PermissionShortcut>
             : 'فحص الأذونات',
         icon: Badge(
           isLabelVisible: _missing > 0,
-          label: Text('$_missing'),
+          backgroundColor: Colors.transparent,
+          padding: EdgeInsets.zero,
+          label: FadeTransition(
+            opacity: _opacity,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.error,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text('$_missing', style: TextStyle(
+                color: Theme.of(context).colorScheme.onError,
+                fontSize: 11,
+              )),
+            ),
+          ),
           child: const Icon(Icons.security_outlined),
         ),
         onPressed: () async {

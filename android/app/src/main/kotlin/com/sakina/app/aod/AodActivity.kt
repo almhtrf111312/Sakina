@@ -20,6 +20,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.provider.Settings
 import android.telephony.TelephonyManager
 import android.util.TypedValue
@@ -50,6 +51,7 @@ import kotlin.math.abs
 class AodActivity : Activity() {
 
     companion object {
+        const val EXTRA_DEADLINE = "aod_deadline"
         const val EXTRA_ALWAYS_ON = "always_on"
         const val EXTRA_PRAYER_ALERT = "prayer_alert"
         const val EXTRA_PREVIEW = "preview"
@@ -115,15 +117,28 @@ class AodActivity : Activity() {
         }
         if (Build.VERSION.SDK_INT >= 33) registerReceiver(receiver, f, Context.RECEIVER_NOT_EXPORTED)
         else registerReceiver(receiver, f)
-        val timeout = if (preview) 60_000L else cfg.timeoutMin * 60_000L
-        if (timeout > 0 && !intent.getBooleanExtra(EXTRA_PRAYER_ALERT, false)) {
-            handler.postDelayed({ timeoutClose() }, timeout)
+        armTimeout()
+    }
+
+    private val timeoutTask = Runnable { timeoutClose() }
+
+    private fun armTimeout() {
+        handler.removeCallbacks(timeoutTask)
+        if (intent.getBooleanExtra(EXTRA_PRAYER_ALERT, false)) return
+        val deadline = intent.getLongExtra(EXTRA_DEADLINE, -1L)
+        val timeout = when {
+            preview -> 60_000L
+            deadline > 0 -> (deadline - SystemClock.elapsedRealtime()).coerceAtLeast(1)
+            deadline == 0L -> 0L
+            else -> cfg.timeoutMin * 60_000L
         }
+        if (timeout > 0) handler.postDelayed(timeoutTask, timeout)
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        armTimeout()
         updatePrayerAlert()
     }
 
@@ -575,8 +590,13 @@ class AodActivity : Activity() {
     }
 
     private fun timeoutClose() {
-        if (AdhanForegroundService.activePrayer != null) return
-        if (!preview) suppressUntilUnlock()
+        if (AdhanForegroundService.activePrayer != null) {
+            handler.postDelayed(timeoutTask, 1_000L)
+            return
+        }
+        if (!preview) {
+            sendBroadcast(Intent(AlwaysOnService.ACTION_TIMEOUT).setPackage(packageName))
+        }
         finish()
     }
 

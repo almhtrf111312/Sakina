@@ -13,6 +13,7 @@ import 'pages/location_settings_page.dart';
 import 'pages/notifications_settings_page.dart';
 import 'pages/qibla_settings_page.dart';
 import 'pages/prayer_silence_settings_page.dart';
+import 'pages/widgets_settings_page.dart';
 import 'widgets/permission_check_screen.dart';
 import 'widgets/settings_common.dart';
 
@@ -127,6 +128,15 @@ class SettingsScreen extends ConsumerWidget {
               title: 'التنبيهات والأذان',
               subtitle: 'نوع التنبيه لكل صلاة، صوت الأذان، التذكيرات',
               page: const NotificationsSettingsPage(),
+            ),
+            _entry(
+              context,
+              isDark: isDark,
+              primary: primary,
+              icon: Icons.widgets_outlined,
+              title: 'ودجت الشاشة الرئيسية',
+              subtitle: 'معاينة الأشكال وإضافتها',
+              page: const WidgetsSettingsPage(),
             ),
             _entry(
               context,

@@ -11,6 +11,7 @@ class AlwaysOnConfig(
     val showPrayers: Boolean,
     val layout: String,
     val hiddenElements: Set<String>,
+    val showAgainWhenLocked: Boolean,
     val timeoutMin: Int,         // 0 = until the phone is unlocked
     val color: Int,
     val clockStyle: Int,         // 0..5 digital, 6..7 analog
@@ -36,6 +37,7 @@ class AlwaysOnConfig(
                 .putString("layout", m["layout"] as? String ?: "classic")
                 .putStringSet("hiddenElements",
                     (m["hiddenElements"] as? List<*>)?.filterIsInstance<String>()?.toSet() ?: emptySet())
+                .putBoolean("showAgainWhenLocked", m["showAgainWhenLocked"] as? Boolean ?: true)
                 .putInt("timeoutMin", (m["timeoutMin"] as? Number)?.toInt() ?: 5)
                 .putInt("color", (m["color"] as? Number)?.toInt() ?: 0xFF5FB59B.toInt())
                 .putInt("clockStyle", (m["clockStyle"] as? Number)?.toInt() ?: 0)
@@ -60,6 +62,7 @@ class AlwaysOnConfig(
                 p.getBoolean("showPrayers", true),
                 p.getString("layout", "classic") ?: "classic",
                 p.getStringSet("hiddenElements", emptySet())?.toSet() ?: emptySet(),
+                p.getBoolean("showAgainWhenLocked", true),
                 p.getInt("timeoutMin", 5),
                 p.getInt("color", 0xFF5FB59B.toInt()),
                 p.getInt("clockStyle", 0).coerceIn(0, 7),

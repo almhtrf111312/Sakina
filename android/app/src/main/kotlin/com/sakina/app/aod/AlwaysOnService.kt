@@ -16,6 +16,8 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.os.PowerManager
+import android.os.SystemClock
 import android.provider.Settings
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -36,6 +38,7 @@ class AlwaysOnService : Service() {
         private const val FSI_ID = 7102
         @Volatile var running = false
             private set
+        const val ACTION_TIMEOUT = "com.sakina.app.ACTION_AOD_TIMEOUT"
         const val ACTION_SUPPRESS = "com.sakina.app.ACTION_AOD_SUPPRESS"
 
         fun start(ctx: Context) {
@@ -92,21 +95,74 @@ class AlwaysOnService : Service() {
 
     private val handler = Handler(Looper.getMainLooper())
     private var suppressed = false
+    private var initialDeadline = 0L
+    private var expired = false
+    private var waitingForWake = false
+    private var lockedWake = 0L
+
+    private val showAfterOff = Runnable {
+        if (getSystemService(PowerManager::class.java).isInteractive) return@Runnable
+        val cfg = AlwaysOnConfig.load(this)
+        val now = SystemClock.elapsedRealtime()
+        if (expired) {
+            val wake = lockedWake
+            lockedWake = 0L
+            if (cfg.showAgainWhenLocked && wake != 0L && now - wake <= 5_350L) {
+                waitingForWake = false
+                if (!showAod(now + 10_000L)) waitingForWake = true
+            } else {
+                waitingForWake = true
+            }
+            return@Runnable
+        }
+        if (cfg.timeoutMin == 0) {
+            showAod(0)
+        } else if (initialDeadline == 0L) {
+            val deadline = now + cfg.timeoutMin * 60_000L
+            if (showAod(deadline)) initialDeadline = deadline
+        } else if (now < initialDeadline) {
+            showAod(initialDeadline)
+        } else {
+            expired = true
+            waitingForWake = true
+        }
+    }
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
                 Intent.ACTION_SCREEN_OFF -> {
-                    val cfg = AlwaysOnConfig.load(context)
-                    if (!suppressed && cfg.enabled && shouldShowNow(context, cfg)) {
-                        handler.postDelayed({ showAod() }, 350)
+                    handler.removeCallbacks(showAfterOff)
+                    if (expired && lockedWake == 0L) waitingForWake = true
+                    handler.postDelayed(showAfterOff, 350)
+                }
+                Intent.ACTION_SCREEN_ON -> {
+                    handler.removeCallbacks(showAfterOff)
+                    if (expired && waitingForWake && !suppressed &&
+                        AlwaysOnConfig.load(context).showAgainWhenLocked) {
+                        waitingForWake = false
+                        lockedWake = SystemClock.elapsedRealtime()
+                        showAod(lockedWake + 20_000L)
                     }
                 }
                 Intent.ACTION_USER_PRESENT -> {
+                    handler.removeCallbacks(showAfterOff)
                     suppressed = false
+                    initialDeadline = 0L
+                    expired = false
+                    waitingForWake = false
+                    lockedWake = 0L
                     sendBroadcast(Intent(AodActivity.ACTION_CLOSE_AOD).setPackage(packageName))
                 }
-                ACTION_SUPPRESS -> suppressed = true
+                ACTION_TIMEOUT -> {
+                    expired = true
+                    lockedWake = 0L
+                    waitingForWake = !getSystemService(PowerManager::class.java).isInteractive
+                }
+                ACTION_SUPPRESS -> {
+                    suppressed = true
+                    handler.removeCallbacks(showAfterOff)
+                }
             }
         }
     }
@@ -119,11 +175,17 @@ class AlwaysOnService : Service() {
         (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).apply { cancel(7101); cancel(FSI_ID) }
         val f = IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_OFF)
+            addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_USER_PRESENT)
-            addAction(ACTION_SUPPRESS)
+
         }
-        if (Build.VERSION.SDK_INT >= 33) registerReceiver(receiver, f, Context.RECEIVER_EXPORTED)
-        else registerReceiver(receiver, f)
+        val internal = IntentFilter(ACTION_SUPPRESS).apply { addAction(ACTION_TIMEOUT) }
+        androidx.core.content.ContextCompat.registerReceiver(
+            this, receiver, f, androidx.core.content.ContextCompat.RECEIVER_EXPORTED
+        )
+        androidx.core.content.ContextCompat.registerReceiver(
+            this, receiver, internal, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
+        )
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
@@ -147,20 +209,21 @@ class AlwaysOnService : Service() {
         }
     }
 
-    private fun showAod() {
+    private fun showAod(deadline: Long): Boolean {
         val cfg = AlwaysOnConfig.load(this)
         if (!cfg.enabled || suppressed || !shouldShowNow(this, cfg) ||
-            !(getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked) return
+            !(getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked) return false
         val intent = Intent(this, AodActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or
                     Intent.FLAG_ACTIVITY_NO_ANIMATION)
             putExtra(AodActivity.EXTRA_ALWAYS_ON, true)
+            putExtra(AodActivity.EXTRA_DEADLINE, deadline)
         }
         val canOverlay = Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(this)
         if (canOverlay || Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             try {
                 startActivity(intent)
-                return
+                return true
             } catch (e: Exception) {
                 Log.w(TAG, "startActivity failed: ${e.message}")
             }
@@ -186,5 +249,6 @@ class AlwaysOnService : Service() {
             .setSilent(true)
             .build()
         nm.notify(FSI_ID, n)
+        return true
     }
 }

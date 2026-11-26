@@ -20,6 +20,8 @@ void main() {
     final config = const AlwaysOnConfig().copyWith(
       layout: 'split',
       clockStyle: 2,
+      timeoutMin: 1,
+      showAgainWhenLocked: false,
       hiddenElements: {'wifi', 'caption', 'remaining'},
     );
     final restored = AlwaysOnConfig.fromJson(config.toJson());
@@ -27,5 +29,7 @@ void main() {
     expect(restored.layout, 'split');
     expect(restored.hiddenElements, config.hiddenElements);
     expect(restored.clockStyle, 2);
+    expect(restored.timeoutMin, 1);
+    expect(restored.showAgainWhenLocked, isFalse);
   });
 }

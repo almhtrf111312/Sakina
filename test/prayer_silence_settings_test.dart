@@ -68,6 +68,27 @@ void main() {
     expect(settings.prayerSilence.keys, ['Fajr']);
     expect(settings.prayerSilence['Fajr']?.enabled, isTrue);
     expect(find.text('بداية الصامت ونهايته'), findsOneWidget);
+
+    await tester.tap(find.byType(DropdownButtonFormField<int>).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('بعد الأذان').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField).first, '10');
+    await tester.enterText(find.byType(TextFormField).last, '5');
+    final save = find.text('حفظ الفترة');
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+    expect(find.text('اختر نهاية بعد وقت البداية.'), findsOneWidget);
+    expect(container.read(appSettingsProvider).prayerSilence['Fajr']?.start, 0);
+
+    await tester.enterText(find.byType(TextFormField).first, '5');
+    await tester.enterText(find.byType(TextFormField).last, '10');
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+    final updated = container.read(appSettingsProvider).prayerSilence['Fajr']!;
+    expect((updated.start, updated.end), (5, 10));
   });
 
   test('invalid ranges and non-prayer entries are discarded individually', () {
