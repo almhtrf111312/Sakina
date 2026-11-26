@@ -10,6 +10,13 @@ val releaseKeyPassword = providers.environmentVariable("ALMUADHAN_KEY_PASSWORD")
 val releaseSigningAvailable = listOf(releaseStore, releaseStorePassword, releaseKeyAlias, releaseKeyPassword)
     .all { !it.isNullOrBlank() }
 
+// Release builds must never silently fall back to debug or unsigned output.
+gradle.taskGraph.whenReady {
+    if (allTasks.any { it.name.contains("Release", ignoreCase = true) } && !releaseSigningAvailable) {
+        throw GradleException("Private release signing requires all four ALMUADHAN signing environment variables.")
+    }
+}
+
 android {
     namespace = "com.sakina.app"
     compileSdk = 36

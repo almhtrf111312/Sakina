@@ -7,6 +7,9 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: true
@@ -52,6 +55,7 @@ jobs:
 
       - name: Build single compressed release APK
         id: apk
+        if: github.event_name != 'pull_request'
         env:
           ALMUADHAN_KEYSTORE_B64: ${{ secrets.ALMUADHAN_KEYSTORE_B64 }}
           ALMUADHAN_KEYSTORE_PASSWORD: ${{ secrets.ALMUADHAN_KEYSTORE_PASSWORD }}
@@ -64,69 +68,11 @@ jobs:
           trap 'rm -rf "$signing_dir"' EXIT
           export ALMUADHAN_KEYSTORE_PATH="$signing_dir/signing.p12"
 
-          if [[ -n "$ALMUADHAN_KEYSTORE_B64" ]]; then
-            : "${ALMUADHAN_KEYSTORE_PASSWORD:?Missing release keystore password}"
-            : "${ALMUADHAN_KEY_ALIAS:?Missing release key alias}"
-            : "${ALMUADHAN_KEY_PASSWORD:?Missing release key password}"
-            printf '%s' "$ALMUADHAN_KEYSTORE_B64" | base64 --decode > "$ALMUADHAN_KEYSTORE_PATH"
-            suffix=""
-          else
-            # Public, intentionally distributable test key. Keep these bytes
-            # stable so preview APKs can update each other. Never use for production.
-            echo "::notice::Signing this preview with the fixed public preview key."
-            export ALMUADHAN_KEYSTORE_PASSWORD=preview-only
-            export ALMUADHAN_KEY_PASSWORD="$ALMUADHAN_KEYSTORE_PASSWORD"
-            export ALMUADHAN_KEY_ALIAS=preview
-            base64 --decode > "$ALMUADHAN_KEYSTORE_PATH" <<'PREVIEW_KEY'
-          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
-          PREVIEW_KEY
-            suffix="-preview"
-          fi
+          : "${ALMUADHAN_KEYSTORE_B64:?Missing private release keystore}"
+          : "${ALMUADHAN_KEYSTORE_PASSWORD:?Missing release keystore password}"
+          : "${ALMUADHAN_KEY_ALIAS:?Missing release key alias}"
+          : "${ALMUADHAN_KEY_PASSWORD:?Missing release key password}"
+          printf '%s' "$ALMUADHAN_KEYSTORE_B64" | base64 --decode > "$ALMUADHAN_KEYSTORE_PATH"
           flutter build apk --release --no-pub
           apk="build/app/outputs/flutter-apk/app-release.apk"
           test "$("$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" manifest application-id "$apk")" = "com.almuadhan.app"
@@ -139,23 +85,20 @@ jobs:
           PYTHON
           signer="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
           test -x "$signer"
-          if [[ "$suffix" == "-preview" ]]; then
-            "$signer" verify --verbose --print-certs "$apk" | tee "$signing_dir/verification.txt"
-            actual="$(awk -F 'digest:[[:space:]]*' '/certificate SHA-256 digest:/ {print $2}' "$signing_dir/verification.txt" | tr -d ':[:blank:]\r' | tr '[:upper:]' '[:lower:]' | sort -u)"
-            expected=4fe009f4a0373abf507a09c82d1803218e50614134b6a274b9d82d8e92d1aaa6
-            if [[ "$actual" != "$expected" ]]; then
-              echo "::error::Preview signing certificate did not match the pinned certificate."
-              exit 1
-            fi
-          else
-            "$signer" verify --verbose "$apk"
+          "$signer" verify --verbose --print-certs "$apk" | tee "$signing_dir/verification.txt"
+          actual="$(awk -F 'digest:[[:space:]]*' '/certificate SHA-256 digest:/ {print $2}' "$signing_dir/verification.txt" | tr -d ':[:blank:]\r' | tr '[:upper:]' '[:lower:]' | sort -u)"
+          expected=6784d7cb36ebbccdb6e8d8e3028e2c16b2e37538c06581e8a64def4f11415059
+          if [[ "$actual" != "$expected" ]]; then
+            echo "::error::Release signing certificate did not match the pinned private identity."
+            exit 1
           fi
           version="$(awk '/^version: / {print $2; exit}' pubspec.yaml)"
-          echo "version=${version%+*}${suffix}" >> "$GITHUB_OUTPUT"
+          echo "version=${version%+*}" >> "$GITHUB_OUTPUT"
           mkdir -p artifacts
-          cp "$apk" "artifacts/Al-Muadhan-${version%+*}${suffix}.apk"
+          cp "$apk" "artifacts/Al-Muadhan-${version%+*}.apk"
 
       - name: Upload APK
+        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v6
         with:
           name: Al-Muadhan-${{ steps.apk.outputs.version }}
