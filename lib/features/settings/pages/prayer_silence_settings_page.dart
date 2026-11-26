@@ -274,3 +274,4 @@ class _IntervalEditorState extends State<_IntervalEditor> {
           ),
         ),
       );
+}
